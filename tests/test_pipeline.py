@@ -62,16 +62,16 @@ class CollectTests(unittest.TestCase):
         first = pipe.run(snap({"karni": [member("a", 100), member("b", 90)]}), T0)
         self.assertEqual(set(first["players"]), {"a", "b"})
         again = pipe.run(snap({"karni": [member("a", 100), member("b", 95)]}), T0 + 900)
-        self.assertEqual(again["players"], {"b": {"name": "B", "gear": 95, "donated": 0, "active": True,
-                                                  "guild": "karni"}})
+        self.assertEqual(again["players"], {"b": {"gear": 95}})  # only the field that changed
+        self.assertEqual(again["guilds"], {"karni": {"gear": 195}})
         self.assertNotIn("channels", again)  # unchanged
 
     def test_player_leaving_every_guild_keeps_the_last_gear(self):
         pipe = Pipeline()
         pipe.run(snap({"karni": [member("a", 100), member("b", 90)]}), T0)
         rec = pipe.run(snap({"karni": [member("a", 100)]}), T0 + 900)
-        self.assertEqual(rec["players"]["b"]["guild"], None)
-        self.assertEqual(rec["players"]["b"]["gear"], 90)
+        self.assertEqual(rec["players"]["b"], {"active": None, "guild": None})
+        self.assertEqual(pipe.prev["players"]["b"]["gear"], 90)
 
     def test_fights_and_quests_are_new_ones_only(self):
         pipe = Pipeline()
@@ -139,6 +139,11 @@ class BuildTests(unittest.TestCase):
     def test_fight_groups(self):
         groups = self.summary["fights"]["groups"]
         self.assertEqual([(g["name"], g["level"], g["n"], g["wins"]) for g in groups], [("Drache", 2, 8, 4)])
+
+    def test_guild_series_is_complete_from_partial_records(self):
+        series = self.summary["guilds"][0]["series"]
+        self.assertTrue(all(None not in row for row in series))
+        self.assertEqual(len(series), 8)
 
     def test_players_index_is_sorted_by_gear(self):
         index = json.loads((self.out / "players.json").read_text())

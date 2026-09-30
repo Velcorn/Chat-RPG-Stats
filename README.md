@@ -25,7 +25,8 @@ Das sind etwa 10 Anfragen pro Lauf im Abstand von 2 Sekunden, rund 700 am Tag, e
 ansehen: Besucher lesen nur die fertigen Dateien. Jede Anfrage nennt das Projekt im User-Agent. Ist die Seite nicht
 erreichbar, fällt der Lauf einfach aus.
 
-Gespeichert wird nur, was sich seit dem letzten Lauf geändert hat, eine Datei pro Tag im Zweig `data`.
+Gespeichert wird nur, was sich seit dem letzten Lauf geändert hat (bei einem Spieler nur die geänderten Werte), eine
+Datei pro Tag im Zweig `data`.
 
 ## Beobachtungsliste
 

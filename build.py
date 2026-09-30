@@ -42,14 +42,15 @@ class History:
         self.first = self.last = None
         self.runs = 0
         board: list[str] = []
+        guild_now: dict[str, dict] = {}
         for rec in records:
             t = rec["t"]
             self.first = self.first or t
             self.last, self.runs = t, self.runs + 1
             for login, p in rec.get("players", {}).items():
                 for series, key in ((self.gear, "gear"), (self.donated, "donated"), (self.guild, "guild")):
-                    if p.get(key) is not None or key == "guild":
-                        put(series[login], t, p.get(key))
+                    if key in p and (p[key] is not None or key == "guild"):  # a record only has changed fields
+                        put(series[login], t, p[key])
             for login, d in rec.get("details", {}).items():
                 self.details[login].append([t, d])
             if "gear" in rec.get("boards", {}):
@@ -60,7 +61,8 @@ class History:
                     put(self.rank[login], t, i + 1)
                 board = new
             for g, v in rec.get("guilds", {}).items():
-                self.guilds[g].append([t, v.get("treasury"), v.get("members"), v.get("active"), v.get("gear")])
+                full = guild_now[g] = {**guild_now.get(g, {}), **v}
+                self.guilds[g].append([t, *(full.get(k) for k in ("treasury", "members", "active", "gear"))])
             self.fights += rec.get("fights", [])
             for login, qs in rec.get("quests", {}).items():
                 self.quests[login] += qs

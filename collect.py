@@ -119,8 +119,16 @@ def state_from(snap: dict, prev: dict) -> dict:
 
 
 def changed(old: dict, new: dict) -> dict:
-    """Entries of `new` that are new or differ from `old` (one level deep: whole entries, not single fields)."""
-    return {k: v for k, v in new.items() if old.get(k) != v}
+    """Entries of `new` that are new or differ from `old`; of an entry seen before, only the fields that changed."""
+    out = {}
+    for k, v in new.items():
+        before = old.get(k)
+        if before == v:
+            continue
+        if isinstance(v, dict) and isinstance(before, dict):
+            v = {f: x for f, x in v.items() if before.get(f) != x}
+        out[k] = v
+    return out
 
 
 def record(snap: dict, prev: dict, cur: dict, t: int) -> dict:

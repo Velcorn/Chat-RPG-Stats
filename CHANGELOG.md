@@ -2,6 +2,11 @@
 
 Versionen nach [SemVer](https://semver.org/lang/de/). Solange die Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.4.1 (30.09.2026)
+
+**Oberfläche**
+- Bonus-Formel: Hinweis, dass die 225 nur der Achsenabschnitt der Anpassung ist und die Zahlen sich mit mehr Daten ändern werden.
+
 ## 0.4.0 (30.09.2026)
 
 **Geändert**

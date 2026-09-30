@@ -7,7 +7,9 @@
 
 Ranglisten, Verlauf und Prognosen für das Twitch-Chat-RPG [rpg.sola.rip](https://rpg.sola.rip): Wie schnell wächst
 deine Ausrüstung, wann erreichst du den nächsten Rang oder die Top 100, wie verteilen ähnlich starke Spieler ihre
-Werte, wo stehst du in deiner Gilde, welche Kämpfe gewinnt man meistens.
+Werte, wo stehst du in deiner Gilde, welche Kämpfe gewinnt man meistens. Die Seite hat drei Bereiche mit
+Unterseiten: Ranglisten (Ausrüstung, Silber, Errungenschaften, Quests, Aufsteiger), Gilden (eine Seite pro Gilde) und
+Kämpfe (Kampfarten, letzte Kämpfe, fahrender Händler), dazu eine Seite pro Spieler.
 
 **Zur Seite: <https://velcorn.github.io/chat-rpg-stats/>**
 
@@ -26,12 +28,12 @@ zeigt:
 | Daten | Quelle | Anfragen pro Lauf |
 |---|---|---|
 | Ausrüstungswert, Spenden und Aktivität aller Gildenmitglieder | Gildenliste und Gildenseiten | 1 + 1 pro Gilde |
-| Top 100 nach Ausrüstung und nach Quests (mit ATK/DEF/SUP) | Ranglisten | 2 |
+| Top 100 nach Ausrüstung (mit ATK/DEF/SUP), Silber, Errungenschaften und Quests | Ranglisten | 4 |
 | Die letzten 20 Kämpfe aller Kanäle | Kampfarchiv | 1 |
 | Fahrender Händler, Kanäle | Händler, Kanalliste | 2 |
 | Spieler auf der Beobachtungsliste | Spielerseite | 1 pro Spieler |
 
-Das sind etwa 10 Anfragen pro Lauf im Abstand von 2 Sekunden, rund 700 am Tag, egal wie viele Leute die Seite ansehen:
+Das sind etwa 12 Anfragen pro Lauf im Abstand von 2 Sekunden, rund 800 am Tag, egal wie viele Leute die Seite ansehen:
 Besucher lesen nur fertige Dateien. Jede Anfrage nennt das Projekt im User-Agent. Ist die Seite nicht erreichbar, fällt
 der Lauf aus. Gespeichert wird nur, was sich geändert hat.
 

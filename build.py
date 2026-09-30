@@ -172,10 +172,16 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
         board_rows.append({**row(login), "rank": i + 1, "rank_change": None if prev is None else prev - (i + 1),
                            "board_gear": board_gear[login],
                            **{k: details.get(login, {}).get(k) for k in ("atk", "def", "sup")}})
-    quest_rows = [{**row(login), "rank": i + 1, "quests": details.get(login, {}).get("quests"),
-                   "quests_day": change([[t, d.get("quests")] for t, d in h.details[login] if d.get("quests")], now,
-                                        DAY)}
-                  for i, (login, _) in enumerate(state["boards"].get("quests", []))]
+
+    def value_board(name: str, key: str):
+        """A ranking by one value: rank, the board's own value and its change in 24 hours."""
+        return [{**row(login), "rank": i + 1, "value": v,
+                 "value_day": change([[t, d[key]] for t, d in h.details[login] if d.get(key)], now, DAY)}
+                for i, (login, v) in enumerate(state["boards"].get(name, []))]
+
+    quest_rows = value_board("quests", "quests")
+    silver_rows = value_board("gold", "silver")
+    achievement_rows = value_board("errungenschaften", "ach")
 
     guild_members: dict[str, list[str]] = defaultdict(list)
     for login, p in players.items():
@@ -193,7 +199,8 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
 
     summary = {"generated": int(now), "since": h.first, "runs": h.runs, "players": len(gear),
                "active": sum(1 for p in players.values() if p.get("active")),
-               "board": board_rows, "quests": quest_rows,
+               "board": board_rows, "quests": quest_rows, "silver": silver_rows,
+               "achievements": achievement_rows,
                "risers": {"day": risers(day), "week": risers(week)},
                "top100": {"gear": top100_gear, "pace": rounded(top100_pace)},
                "guilds": sorted(guild_rows, key=lambda g: -(g.get("gear") or 0)),

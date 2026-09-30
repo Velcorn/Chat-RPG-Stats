@@ -39,7 +39,8 @@ keep it.
   Writes `data/days/YYYY-MM-DD.jsonl` (one line per run) and `data/state.json` on the `data` branch.
 - `build.py`: replays the day files (`History`), computes pace, forecasts, peers, guild standing, fight odds; writes
   `_site/data/summary.json`, `players.json` (search index) and `p/<login>.json`.
-- `site/index.html`: the whole dashboard (no build step; hash routes `#/`, `#/spieler/<login>`, `#/gilden`, `#/kaempfe`).
+- `site/index.html`: the whole dashboard (no build step; hash routes `#/<section>/<sub>` with sections `rangliste`, `gilden`, `kaempfe` (see `SECTIONS`: each sub
+  page is a tab in the second row) and `#/spieler/<login>`).
 - `watchlist.py` + `watchlist.txt`: the opt-in list, changed by the issue form via `.github/workflows/watchlist.yml`.
 - `docs/funktionsweise.md`: German detail: data flow, storage, watchlist, every calculation. README stays short.
 - `.pre-commit-config.yaml` (prek: ruff, tests, hygiene, plain punctuation), `.github/workflows/ci.yml` (hooks + coverage; writes

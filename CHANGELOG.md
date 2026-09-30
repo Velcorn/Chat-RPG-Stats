@@ -2,6 +2,14 @@
 
 Versionen nach [SemVer](https://semver.org/lang/de/). Solange die Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.2.0 (30.09.2026)
+
+**Neu**
+- Ranglisten nach Silber und Errungenschaften (zusätzlich zu Ausrüstung und Quests), also alle vier des Spiels. Der Sammler macht dafür 2 Anfragen mehr pro Lauf (jetzt etwa 12).
+
+**Oberfläche**
+- Jeder Bereich hat eine zweite Tab-Zeile mit Unterseiten: Ranglisten (Ausrüstung, Silber, Errungenschaften, Quests, Aufsteiger), Gilden (eine Seite pro Gilde), Kämpfe (Kampfarten, letzte Kämpfe, fahrender Händler). Die Seiten sind kürzer, die Adressen (`#/gilden/karni`) lassen sich teilen.
+
 ## 0.1.1 (30.09.2026)
 
 **Oberfläche**

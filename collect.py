@@ -1,7 +1,7 @@
 """Collector: one snapshot of the game's public data, stored as the changes since the last one.
 
 Runs every 15 minutes in GitHub Actions during the game's play window. Reads only public endpoints (no login,
-no cookies) and never sends anything but GETs. One run is about ten requests, two seconds apart.
+no cookies) and never sends anything but GETs. One run is about twelve requests, two seconds apart.
 """
 from __future__ import annotations
 
@@ -21,7 +21,8 @@ BASE = "https://rpg.sola.rip"
 BERLIN = ZoneInfo("Europe/Berlin")
 PLAY_FROM, PLAY_TO = 7, 24  # the game's play window (Berlin time); nothing changes outside it
 PAUSE = 2.0
-BOARD_FIELDS = {"gear": "gearScore", "quests": "quests"}  # the only distinct boards (silver, level: the gear board)
+# The site's four rankings (`by=` value -> the value they rank by). Others (silver, level) just return the gear board.
+BOARD_FIELDS = {"gear": "gearScore", "gold": "silver", "errungenschaften": "achievements", "quests": "quests"}
 
 
 def user_agent() -> str:

@@ -32,6 +32,16 @@ Issue-Text (untrusted: nur ein gültiger Twitch-Name, `^[a-z0-9_]{3,25}$`, und n
 ändert `watchlist.txt`, antwortet und schließt das Issue. Höchstens 150 Einträge, weil jeder eine Anfrage pro Lauf
 kostet. Für diese Spieler kommen Überleben, Leben, Erfolge, Statistiken und die Quest-Historie dazu.
 
+## Aufbau der Seite
+
+Drei Bereiche mit einer zweiten Tab-Zeile, damit keine Seite überladen ist (Adresse `#/<Bereich>/<Unterseite>`):
+
+- **Ranglisten** (`#/rangliste/...`): `ausruestung` (Standard, mit Kennzahlen), `silber`, `errungenschaften`, `quests`,
+  `aufsteiger`. Die vier Ranglisten sind die des Spiels (Parameter `by=gear|gold|errungenschaften|quests`, je Top 100).
+- **Gilden** (`#/gilden/<Gilde>`): eine Unterseite pro Gilde.
+- **Kämpfe** (`#/kaempfe/...`): `arten`, `letzte`, `haendler`.
+- **Spieler** (`#/spieler/<Name>`): eine Seite pro Spieler, erreichbar über die Suche.
+
 ## So rechnet die Seite
 
 - **Rang:** In den Top 100 der Rang aus der Rangliste des Spiels. Darunter "etwa": der Platz unter allen erfassten
@@ -48,6 +58,8 @@ kostet. Für diese Spieler kommen Überleben, Leben, Erfolge, Statistiken und di
   8 nächsten.
 - **Gilde:** Platz bei Spenden und Ausrüstung innerhalb der Gilde, Abstand zur nächsten Spende, Anteil am
   Gildenwert.
+- **Ranglisten Silber, Errungenschaften, Quests:** Rang und Wert wie in der Rangliste des Spiels; "24 h" ist die
+  Änderung dieses Werts seit gestern (beim Silber kann sie auch negativ sein, wenn jemand etwas ausgibt).
 - **Aufsteiger:** größter Zuwachs in 24 Stunden bzw. 7 Tagen.
 - **Kämpfe:** Siegquote pro Kampfart der letzten 30 Tage, Bosse nach Name und Stufe, sonst nach Art und Schwierigkeit.
   Das Kampfarchiv des Spiels hält nur die letzten 20 Kämpfe, deshalb sammelt der Sammler sie fortlaufend.

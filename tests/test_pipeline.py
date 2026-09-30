@@ -27,7 +27,7 @@ def snap(members: dict, board=None, fights=(), watch=None, treasury=1000) -> dic
                   "boss": {"wins": 3, "losses": 1}, "members": ms} for g, ms in members.items()}
     rows = [{"login": lo, "displayName": lo, "gearScore": g, "attack": a, "defense": d, "support": s, "silver": 100,
              "quests": 10, "achievements": 5} for lo, g, a, d, s in board or []]
-    return {"guilds": guilds, "boards": {"gear": rows, "quests": rows}, "fights": list(fights),
+    return {"guilds": guilds, "boards": {b: rows for b in collect.BOARD_FIELDS}, "fights": list(fights),
             "trader": {"visiting": False, "lastVisit": None}, "channels": [{"login": "sola", "live": True,
                                                                           "enabled": True}],
             "watch": watch or {}}
@@ -147,6 +147,12 @@ class BuildTests(unittest.TestCase):
         series = self.summary["guilds"][0]["series"]
         self.assertTrue(all(None not in row for row in series))
         self.assertEqual(len(series), 8)
+
+    def test_value_boards_rank_by_their_own_value(self):
+        self.assertEqual([(r["login"], r["rank"], r["value"]) for r in self.summary["quests"]],
+                         [("top", 1, 10), ("slow", 2, 10)])
+        self.assertEqual([r["value"] for r in self.summary["silver"]], [100, 100])
+        self.assertEqual([r["value"] for r in self.summary["achievements"]], [5, 5])
 
     def test_players_index_is_sorted_by_gear(self):
         index = json.loads((self.out / "players.json").read_text())

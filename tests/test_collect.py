@@ -31,10 +31,10 @@ class FakeSite:
 
 
 def answers(**extra):
-    board = [{"login": "a", "gearScore": 100, "quests": 3}]
+    board = [{"login": "a", "gearScore": 100, "quests": 3, "silver": 500, "achievements": 7}]
     return {"/api/guilds": [{"login": "karni", "members": 2}, {"login": "leer", "members": 0}],
             "/api/guilds/karni": {"guild": {"name": "Karni"}, "members": [member("a", 100)]},
-            "/api/leaderboard?by=gear&limit=100": board, "/api/leaderboard?by=quests&limit=100": board,
+            **{f"/api/leaderboard?by={b}&limit=100": board for b in collect.BOARD_FIELDS},
             "/api/combat/history": [], "/api/trader": {"visiting": False}, "/api/channels": [], **extra}
 
 
@@ -43,14 +43,14 @@ class SnapshotTests(unittest.TestCase):
         site = FakeSite(answers())
         s = collect.snapshot(site, [])
         self.assertEqual(list(s["guilds"]), ["karni"])  # a guild without members costs no request
-        self.assertEqual(site.requests, 7)
+        self.assertEqual(site.requests, 9)
         self.assertEqual(s["watch"], {})
 
     def test_watchlist_costs_one_request_each_and_skips_unknown_players(self):
         site = FakeSite(answers(**{"/api/players/sola": {"displayName": "Sola"}, "/api/players/weg": 404}))
         s = collect.snapshot(site, ["sola", "weg"])
         self.assertEqual(list(s["watch"]), ["sola"])
-        self.assertEqual(site.requests, 9)
+        self.assertEqual(site.requests, 11)
 
     def test_other_http_errors_are_raised(self):
         with self.assertRaises(urllib.error.HTTPError):
@@ -96,6 +96,13 @@ class StateTests(unittest.TestCase):
         self.assertEqual(state["details"]["sola"]["atk"], 5)
         self.assertEqual(state["players"]["sola"]["gear"], 50)  # the last known gear stays
         self.assertEqual(state["players"]["sola"]["guild"], "karni")
+
+    def test_every_ranking_keeps_the_value_it_ranks_by(self):
+        s = snap({"karni": [member("a", 100)]}, board=[("a", 100, 1, 2, 3)])
+        state = collect.state_from(s, {})
+        self.assertEqual({b: state["boards"][b] for b in ("gear", "gold", "errungenschaften", "quests")},
+                         {"gear": [["a", 100]], "gold": [["a", 100]], "errungenschaften": [["a", 5]],
+                          "quests": [["a", 10]]})
 
     def test_board_player_without_a_guild(self):
         s = snap({"karni": [member("a", 100)]}, board=[("solo", 80, 1, 2, 3)])

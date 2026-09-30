@@ -34,6 +34,9 @@
             border: 1px solid var(--border); background: var(--surface-2); }
   .tabs a:hover { border-color: var(--text-muted); }
   .tabs a[aria-current] { background: var(--accent); border-color: var(--accent); color: var(--text-primary); }
+  .sub { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+  .sub a { padding: 3px 10px; font-size: 13px; background: none; border-color: transparent; }
+  .sub a[aria-current] { background: var(--surface-2); border-color: var(--border); color: var(--text-primary); }
   h1 { font-size: 18px; margin: 0; font-weight: 600; }
   h1 a { color: inherit; text-decoration: none; }
   h2 { font-size: 13px; margin: 0 0 10px; font-weight: 600; color: var(--text-secondary);
@@ -115,11 +118,12 @@
       <div id="suggest" class="suggest" hidden></div>
     </div>
     <nav class="tabs">
-      <a href="#/" data-view="home">Ranglisten</a>
-      <a href="#/gilden" data-view="guilds">Gilden</a>
-      <a href="#/kaempfe" data-view="fights">Kämpfe</a>
+      <a href="#/rangliste" data-view="rangliste">Ranglisten</a>
+      <a href="#/gilden" data-view="gilden">Gilden</a>
+      <a href="#/kaempfe" data-view="kaempfe">Kämpfe</a>
     </nav>
   </header>
+  <nav id="subtabs" class="tabs sub" aria-label="Bereich" hidden></nav>
   <div id="view" class="grid"></div>
   <footer id="footer"></footer>
 </main>
@@ -286,19 +290,34 @@ function chartCard(title, series, opts) {
 }
 
 // ---- views ----
-function viewHome(s) {
-  let span = "day";
-  const riserBox = el("div");
-  const renderRisers = () => {
-    const rows = s.risers[span];
-    riserBox.replaceChildren(rows.length ? table([
-      { label: "Spieler", get: playerLink },
-      { label: "Gilde", get: (r) => r.guild || "-" },
-      { label: "Wert", num: true, get: (r) => fmtInt(r.gear) },
-      { label: span === "day" ? "24 Stunden" : "7 Tage", num: true, get: (r) => delta(r[span]) },
-    ], rows) : el("p", { class: "note" }, span === "day" ? "Aufsteiger gibt es nach einem Tag Datensammlung." : "Aufsteiger der Woche gibt es nach sieben Tagen Datensammlung."));
-  };
-  renderRisers();
+function viewRanks(s, sub) {
+  const scroll = (title, cols, rows) => [card(title, el("div", { class: "scroll" }, table(cols, rows)))];
+  const valueBoard = (title, label, rows, fmt = fmtInt) => scroll(title, [
+    { label: "#", num: true, get: (r) => r.rank },
+    { label: "Spieler", get: playerLink },
+    { label: "Gilde", get: (r) => r.guild || "-" },
+    { label: label, num: true, get: (r) => fmt(r.value) },
+    { label: "24 h", num: true, get: (r) => delta(r.value_day) },
+  ], rows);
+  if (sub === "silber") return valueBoard("Rangliste Silber (Top 100)", "Silber", s.silver);
+  if (sub === "errungenschaften") return valueBoard("Rangliste Errungenschaften (Top 100)", "Errungenschaften", s.achievements);
+  if (sub === "quests") return valueBoard("Rangliste Quests (Top 100)", "Quests", s.quests);
+  if (sub === "aufsteiger") {
+    let span = "day";
+    const riserBox = el("div");
+    const renderRisers = () => {
+      const rows = s.risers[span];
+      riserBox.replaceChildren(rows.length ? table([
+        { label: "Spieler", get: playerLink },
+        { label: "Gilde", get: (r) => r.guild || "-" },
+        { label: "Wert", num: true, get: (r) => fmtInt(r.gear) },
+        { label: span === "day" ? "24 Stunden" : "7 Tage", num: true, get: (r) => delta(r[span]) },
+      ], rows) : el("p", { class: "note" }, span === "day" ? "Aufsteiger gibt es nach einem Tag Datensammlung." : "Aufsteiger der Woche gibt es nach sieben Tagen Datensammlung."));
+    };
+    renderRisers();
+    return [el("section", { class: "card" }, el("div", { class: "head" }, el("h2", {}, "Aufsteiger (Ausrüstung)"),
+      seg([["day", "24 Stunden"], ["week", "7 Tage"]], span, (k) => { span = k; renderRisers(); })), riserBox)];
+  }
   const t = s.top100;
   return [
     el("div", { class: "grid tiles" },
@@ -306,26 +325,16 @@ function viewHome(s) {
       tile("Grenze Top 100", t.gear == null ? "-" : count(t.gear, "Punkt", "Punkte"), t.pace == null ? "Tempo dort: nach 12 Stunden Verlauf" : `Tempo dort: ${signed(t.pace, 1)} pro Tag`),
       tile("Gilden", fmtInt(s.guilds.length), `${fmtInt(s.guilds.reduce((a, g) => a + (g.members || 0), 0))} Mitglieder`),
       tile("Kämpfe erfasst", fmtInt(s.fights.total), s.since ? `seit ${fmtTime(s.since)}` : "")),
-    el("div", { class: "grid two" },
-      card("Rangliste Ausrüstung (Top 100)", el("div", { class: "scroll" }, table([
-        { label: "#", num: true, get: (r) => r.rank },
-        { label: "", num: true, title: "Plätze seit gestern", get: (r) => r.rank_change ? delta(r.rank_change) : "" },
-        { label: "Spieler", get: playerLink },
-        { label: "Gilde", get: (r) => r.guild || "-" },
-        { label: "Wert", num: true, title: "Wert laut Rangliste des Spiels (hinkt der Gildenseite ein paar Minuten nach)", get: (r) => fmtInt(r.board_gear) },
-        { label: "24 h", num: true, get: (r) => delta(r.day) },
-        { label: "Pro Tag", num: true, title: "Durchschnitt der letzten 7 Tage", get: (r) => r.pace == null ? "-" : fmtDec(r.pace) },
-        { label: "ATK / DEF / SUP", num: true, get: (r) => `${fmtInt(r.atk)} / ${fmtInt(r.def)} / ${fmtInt(r.sup)}` },
-      ], s.board))),
-      el("div", { class: "grid" },
-        el("section", { class: "card" }, el("div", { class: "head" }, el("h2", {}, "Aufsteiger"),
-          seg([["day", "24 Stunden"], ["week", "7 Tage"]], span, (k) => { span = k; renderRisers(); })), riserBox),
-        card("Rangliste Quests (Top 100)", el("div", { class: "scroll" }, table([
-          { label: "#", num: true, get: (r) => r.rank },
-          { label: "Spieler", get: playerLink },
-          { label: "Quests", num: true, get: (r) => fmtInt(r.quests) },
-          { label: "24 h", num: true, get: (r) => delta(r.quests_day) },
-        ], s.quests))))),
+    ...scroll("Rangliste Ausrüstung (Top 100)", [
+      { label: "#", num: true, get: (r) => r.rank },
+      { label: "", num: true, title: "Plätze seit gestern", get: (r) => r.rank_change ? delta(r.rank_change) : "" },
+      { label: "Spieler", get: playerLink },
+      { label: "Gilde", get: (r) => r.guild || "-" },
+      { label: "Wert", num: true, title: "Wert laut Rangliste des Spiels (hinkt der Gildenseite ein paar Minuten nach)", get: (r) => fmtInt(r.board_gear) },
+      { label: "24 h", num: true, get: (r) => delta(r.day) },
+      { label: "Pro Tag", num: true, title: "Durchschnitt der letzten 7 Tage", get: (r) => r.pace == null ? "-" : fmtDec(r.pace) },
+      { label: "ATK / DEF / SUP", num: true, get: (r) => `${fmtInt(r.atk)} / ${fmtInt(r.def)} / ${fmtInt(r.sup)}` },
+    ], s.board),
   ];
 }
 
@@ -419,8 +428,9 @@ async function viewPlayer(s, login) {
   return out;
 }
 
-function viewGuilds(s) {
-  return s.guilds.map((g) => el("section", { class: "grid" },
+function viewGuild(s, login) {
+  const g = s.guilds.find((x) => x.login === login);
+  return [el("section", { class: "grid" },
     el("div", { class: "head" }, el("h1", {}, g.name), el("span", { class: "muted" }, g.login)),
     el("div", { class: "grid tiles" },
       tile("Kasse", fmtSilver(g.treasury), `gespendet insgesamt: ${fmtSilver(g.donated)}`),
@@ -435,31 +445,32 @@ function viewGuilds(s) {
         { label: "Spieler", get: playerLink }, { label: "Wert", num: true, get: (r) => fmtInt(r.gear) },
         { label: "24 h", num: true, get: (r) => delta(r.day) }], g.top)),
       card("Größte Spender", table([
-        { label: "Spieler", get: playerLink }, { label: "Gespendet", num: true, get: (r) => fmtSilver(r.donated) }], g.donors)))));
+        { label: "Spieler", get: playerLink }, { label: "Gespendet", num: true, get: (r) => fmtSilver(r.donated) }], g.donors))))];
 }
 
-function viewFights(s) {
+function viewFights(s, sub) {
   const groups = s.fights.groups;
-  return [
-    el("div", { class: "grid two" },
-      card("Siegquote nach Kampfart (30 Tage)", groups.length ? table([
-        { label: "Kampf", get: fightLabel },
-        { label: "Kämpfe", num: true, get: (g) => fmtInt(g.n) },
-        { label: "Siege", num: true, get: (g) => `${fmtInt(g.wins)} (${pct(g.wins, g.n)})` },
-        { label: "Ø Teilnehmer", num: true, get: (g) => fmtInt(g.fighters) },
-      ], groups) : el("p", { class: "note" }, "Noch keine Kämpfe erfasst."),
-      el("p", { class: "note" }, "Aus dem Kampfarchiv des Spiels (alle Kanäle). Wenige Kämpfe einer Art sagen noch wenig.")),
-      card("Fahrender Händler", s.trader.length ? el("div", { class: "scroll" }, table([
-        { label: "Gesehen", get: (v) => fmtTime(v.t) }, { label: "Kanal", get: (v) => "#" + v.channel }], s.trader))
-        : el("p", { class: "note" }, "Noch kein Besuch gesehen. Erfasst werden nur Besuche, die beim Sammeln gerade laufen."))),
+  if (sub === "letzte") return [
     card("Letzte Kämpfe", el("div", { class: "scroll" }, table([
       { label: "Ende", get: (f) => fmtTime(iso(f.endedAt)) },
       { label: "Kanal", get: (f) => "#" + f.channel },
       { label: "Kampf", get: (f) => f.kind === "BOSS" ? fightLabel(f) : `${f.name} (${fightLabel(f)})` },
       { label: "Teilnehmer", num: true, get: (f) => fmtInt(f.fighters) },
       { label: "Ausgang", get: (f) => f.outcome === "VICTORY" ? el("span", { class: "up" }, "gewonnen") : el("span", { class: "down" }, "verloren") },
-    ], s.fights.recent))),
-  ];
+    ], s.fights.recent)))];
+  if (sub === "haendler") return [
+    card("Fahrender Händler", s.trader.length ? el("div", { class: "scroll" }, table([
+      { label: "Gesehen", get: (v) => fmtTime(v.t) }, { label: "Kanal", get: (v) => "#" + v.channel }], s.trader))
+      : el("p", { class: "note" }, "Noch kein Besuch gesehen."),
+      el("p", { class: "note" }, "Erfasst werden nur Besuche, die beim Sammeln gerade laufen (ein Besuch dauert 5 Minuten)."))];
+  return [
+    card("Siegquote nach Kampfart (30 Tage)", groups.length ? table([
+      { label: "Kampf", get: fightLabel },
+      { label: "Kämpfe", num: true, get: (g) => fmtInt(g.n) },
+      { label: "Siege", num: true, get: (g) => `${fmtInt(g.wins)} (${pct(g.wins, g.n)})` },
+      { label: "Ø Teilnehmer", num: true, get: (g) => fmtInt(g.fighters) },
+    ], groups) : el("p", { class: "note" }, "Noch keine Kämpfe erfasst."),
+    el("p", { class: "note" }, "Aus dem Kampfarchiv des Spiels (alle Kanäle). Wenige Kämpfe einer Art sagen noch wenig."))];
 }
 
 // ---- search ----
@@ -489,16 +500,35 @@ $("q").addEventListener("keydown", (ev) => {
 document.addEventListener("click", (ev) => { if (!ev.target.closest(".search")) $("suggest").hidden = true; });
 
 // ---- routing ----
+// Each section has sub pages (one per ranking, guild or fight table), shown as a second tab row.
+const SECTIONS = {
+  rangliste: { subs: () => [["ausruestung", "Ausrüstung"], ["silber", "Silber"], ["errungenschaften", "Errungenschaften"],
+                            ["quests", "Quests"], ["aufsteiger", "Aufsteiger"]], render: viewRanks },
+  gilden: { subs: (s) => s.guilds.map((g) => [g.login, g.name]), render: viewGuild },
+  kaempfe: { subs: () => [["arten", "Kampfarten"], ["letzte", "Letzte Kämpfe"], ["haendler", "Fahrender Händler"]],
+             render: viewFights },
+};
 async function route() {
   $("suggest").hidden = true; $("q").value = "";
   const [, name, arg] = location.hash.split("/");
-  const view = { spieler: "player", gilden: "guilds", kaempfe: "fights" }[name] || "home";
-  for (const a of document.querySelectorAll(".tabs a")) a.toggleAttribute("aria-current", a.dataset.view === view);
+  const view = name === "spieler" ? "player" : SECTIONS[name] ? name : "rangliste";
+  for (const a of document.querySelectorAll("header .tabs a")) a.toggleAttribute("aria-current", a.dataset.view === view);
   let s;
   try { s = await load("summary.json"); }
   catch { $("view").replaceChildren(card("Keine Daten", el("p", { class: "note" }, "Die Daten konnten nicht geladen werden."))); return; }
   const login = decodeURIComponent(arg || "").toLowerCase();
-  const parts = await ({ home: viewHome, player: (x) => viewPlayer(x, login), guilds: viewGuilds, fights: viewFights })[view](s);
+  let parts;
+  if (view === "player") {
+    $("subtabs").hidden = true;
+    parts = await viewPlayer(s, login);
+  } else {
+    const subs = SECTIONS[view].subs(s);
+    const sub = (subs.find(([key]) => key === login) || subs[0] || [])[0];
+    $("subtabs").replaceChildren(...subs.map(([key, label]) =>
+      el("a", { href: `#/${view}/${key}`, ...(key === sub ? { "aria-current": "page" } : {}) }, label)));
+    $("subtabs").hidden = subs.length < 2;
+    parts = await SECTIONS[view].render(s, sub);
+  }
   $("view").replaceChildren(...parts);
   document.title = view === "player" ? `${login} | Chat-RPG Statistik` : "Chat-RPG Statistik";
   $("footer").replaceChildren(`Stand ${fmtTime(s.generated)}. Liest nur öffentliche Daten von `,

@@ -75,7 +75,7 @@ class SnapshotTests(unittest.TestCase):
             self.assertEqual(site.get("/api/rules"), {"ok": True})
             site.get("/api/rules")
         self.assertEqual(seen["method"], "GET")
-        self.assertIn("chat-rpg-stats", seen["agent"])
+        self.assertIn("Chat-RPG-Stats", seen["agent"])
         self.assertIn("github.com/", seen["agent"])
         sleep.assert_called_once_with(2)  # a pause between requests, none before the first
 

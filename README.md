@@ -1,9 +1,9 @@
 # Chat-RPG Statistik
 
-[![CI](https://github.com/Velcorn/chat-rpg-stats/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Velcorn/chat-rpg-stats/actions/workflows/ci.yml)
-[![Abdeckung](https://raw.githubusercontent.com/Velcorn/chat-rpg-stats/badges/coverage.svg)](https://github.com/Velcorn/chat-rpg-stats/actions/workflows/ci.yml)
-[![Sammler](https://github.com/Velcorn/chat-rpg-stats/actions/workflows/collect.yml/badge.svg)](https://github.com/Velcorn/chat-rpg-stats/actions/workflows/collect.yml)
-[![Lizenz: MIT](https://img.shields.io/github/license/Velcorn/chat-rpg-stats)](LICENSE)
+[![CI](https://github.com/Velcorn/Chat-RPG-Stats/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Velcorn/Chat-RPG-Stats/actions/workflows/ci.yml)
+[![Abdeckung](https://raw.githubusercontent.com/Velcorn/Chat-RPG-Stats/badges/coverage.svg)](https://github.com/Velcorn/Chat-RPG-Stats/actions/workflows/ci.yml)
+[![Sammler](https://github.com/Velcorn/Chat-RPG-Stats/actions/workflows/collect.yml/badge.svg)](https://github.com/Velcorn/Chat-RPG-Stats/actions/workflows/collect.yml)
+[![Lizenz: MIT](https://img.shields.io/github/license/Velcorn/Chat-RPG-Stats)](LICENSE)
 
 Ranglisten, Verlauf und Prognosen für das Twitch-Chat-RPG [rpg.sola.rip](https://rpg.sola.rip): Wie schnell wächst
 deine Kampfkraft, wann erreichst du den nächsten Rang oder die Top 100, wie verteilen ähnlich starke Spieler ihre
@@ -11,7 +11,7 @@ Werte, wo stehst du in deiner Gilde, welche Kämpfe gewinnt man meistens. Die Se
 Unterseiten: Ranglisten (Kampfkraft, Silber, Errungenschaften, Quests, Aufsteiger, Bonus-Formel), Gilden (eine Seite pro Gilde) und
 Kämpfe (Kampfarten, letzte Kämpfe, fahrender Händler), dazu eine Seite pro Spieler.
 
-**Zur Seite: <https://velcorn.github.io/chat-rpg-stats/>**
+**Zur Seite: <https://velcorn.github.io/Chat-RPG-Stats/>**
 
 > **Hinweis:** Dieses Projekt ist (fast) komplett vibe-coded, also größtenteils von einer KI geschrieben und nur
 > stichprobenartig von Hand geprüft. Die Zahlen sind Schätzungen; Benutzung auf eigene Gefahr.
@@ -42,13 +42,13 @@ Wie gerechnet wird (Rang, Tempo, Prognose, Vergleich) und wie die Daten liegen: 
 ## Beobachtungsliste
 
 Ausrüstung je Platz, Siegquoten, Überleben, Markt und Verlosungen gibt es für Spieler auf der Beobachtungsliste. Eintragen oder austragen
-geht über das Issue-Formular ["Auf die Beobachtungsliste"](https://github.com/Velcorn/chat-rpg-stats/issues/new?template=watchlist.yml);
+geht über das Issue-Formular ["Auf die Beobachtungsliste"](https://github.com/Velcorn/Chat-RPG-Stats/issues/new?template=watchlist.yml);
 eine Action prüft den Namen, trägt ihn ein und schließt das Issue. Bitte nur den eigenen Namen. Die Liste ist auf 150
 Spieler begrenzt, weil jeder Eintrag eine Anfrage pro Lauf kostet.
 
 ## Wünsche und Fehler
 
-Ideen, Wünsche oder Fehler bitte als [Issue](https://github.com/Velcorn/chat-rpg-stats/issues/new) melden.
+Ideen, Wünsche oder Fehler bitte als [Issue](https://github.com/Velcorn/Chat-RPG-Stats/issues/new) melden.
 
 ## Entwicklung
 

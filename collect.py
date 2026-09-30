@@ -26,8 +26,8 @@ BOARD_FIELDS = {"gear": "gearScore", "gold": "silver", "errungenschaften": "achi
 
 
 def user_agent() -> str:
-    repo = os.getenv("GITHUB_REPOSITORY", "Velcorn/chat-rpg-stats")
-    return f"chat-rpg-stats (read-only community stats, https://github.com/{repo})"
+    repo = os.getenv("GITHUB_REPOSITORY", "Velcorn/Chat-RPG-Stats")
+    return f"Chat-RPG-Stats (read-only community stats, https://github.com/{repo})"
 
 
 class Site:

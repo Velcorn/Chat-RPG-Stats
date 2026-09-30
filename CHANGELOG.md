@@ -2,6 +2,11 @@
 
 Versionen nach [SemVer](https://semver.org/lang/de/). Solange die Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.4.2 (30.09.2026)
+
+**Geändert**
+- Das Repository heißt jetzt `Chat-RPG-Stats`, die Seite liegt unter `https://velcorn.github.io/Chat-RPG-Stats/`. Die alten Adressen leiten weiter. Der Sammler meldet sich mit dem neuen Namen.
+
 ## 0.4.1 (30.09.2026)
 
 **Oberfläche**

@@ -163,7 +163,7 @@ const fightLabel = (f) => f.kind === "BOSS" ? `Boss ${f.name || ""}, Stufe ${f.l
   : `${KINDS[f.kind] || f.kind} Schwierigkeit ${f.level ?? f.difficulty ?? "?"}`;
 // The repo behind the page (user.github.io/repo), for the watchlist form and the footer.
 const REPO = location.hostname.endsWith(".github.io")
-  ? `${location.hostname.split(".")[0]}/${location.pathname.split("/")[1]}` : "Velcorn/chat-rpg-stats";
+  ? `${location.hostname.split(".")[0]}/${location.pathname.split("/")[1]}` : "Velcorn/Chat-RPG-Stats";
 const WATCH_FORM = `https://github.com/${REPO}/issues/new?template=watchlist.yml`;
 
 const cache = {};

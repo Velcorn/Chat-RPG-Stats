@@ -1,0 +1,33 @@
+# Git hooks, run by prek (`uv run prek install` once; `uv run prek run --all-files` by hand).
+repos:
+  - repo: builtin
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+      - id: detect-private-key
+
+  - repo: local
+    hooks:
+      - id: ruff
+        name: ruff
+        entry: uv run ruff check --force-exclude
+        language: system
+        types: [python]
+      - id: tests
+        name: tests
+        entry: uv run python -m unittest discover tests
+        language: system
+        types: [python]
+        pass_filenames: false
+      # House style for everything a user reads: no en/em dashes, ellipsis character, arrows or typographic
+      # quotes (the tests use some on purpose, to check the parsers).
+      - id: plain-punctuation
+        name: plain punctuation
+        entry: "–|—|…|→|←|“|”|„|‘|’"  # alternation: a character class would match bytes of umlauts
+        language: pygrep
+        types_or: [python, markdown, toml, html, yaml]
+        exclude: ^(tests/|\.pre-commit-config\.yaml$)  # this file lists the characters

@@ -503,7 +503,7 @@ async function route() {
   document.title = view === "player" ? `${login} | Chat-RPG Statistik` : "Chat-RPG Statistik";
   $("footer").replaceChildren(`Stand ${fmtTime(s.generated)}. Liest nur öffentliche Daten von `,
     el("a", { href: "https://rpg.sola.rip" }, "rpg.sola.rip"),
-    " (etwa alle 15 Minuten von 7 bis 24 Uhr, ohne Anmeldung). Kein offizielles Angebot des Spiels. ",
+    " (etwa alle 15 Minuten von 7 bis 24 Uhr, ohne Anmeldung). Kein offizielles Angebot des Spiels. Fast komplett vibe-coded (von einer KI geschrieben, nur stichprobenartig geprüft), die Zahlen sind Schätzungen. ",
     el("a", { href: `https://github.com/${REPO}` }, "Quellcode und Beobachtungsliste"), ".");
   window.scrollTo(0, 0);
 }

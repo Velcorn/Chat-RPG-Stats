@@ -63,6 +63,7 @@ def snapshot(site: Site, watchlist: list[str]) -> dict:
         try:
             snap["watch"][login] = site.get(f"/api/players/{quote(login)}")
         except urllib.error.HTTPError as exc:
+            exc.close()
             if exc.code != 404:
                 raise
     return snap

@@ -1,15 +1,50 @@
-name: Tests
+name: CI
 
 on:
   push:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: write  # the badges branch
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.2.0
-      - run: uv run ruff check
-      - run: uv run python -m unittest discover tests
+      - run: uv sync --frozen
+      # The same hooks as on every local commit: ruff, tests, plain punctuation, file hygiene.
+      - run: uv run prek run --all-files --show-diff-on-failure
+      - id: coverage
+        name: Coverage
+        run: |
+          uv run coverage run -m unittest discover tests
+          uv run coverage report --format=markdown >> "$GITHUB_STEP_SUMMARY"
+          uv run coverage report
+          echo "percent=$(uv run coverage report --format=total)" >> "$GITHUB_OUTPUT"
+      # The coverage badge lives on its own branch, so main gets no extra commits. An extra: a hiccup on
+      # GitHub's side must not turn the run red.
+      - name: Badge
+        if: github.event_name == 'push'
+        continue-on-error: true
+        env:
+          PERCENT: ${{ steps.coverage.outputs.percent }}
+        run: |
+          color=$([ "$PERCENT" -ge 80 ] && echo "#4c1" || ([ "$PERCENT" -ge 60 ] && echo "#dfb317" || echo "#e05d44"))
+          mkdir -p /tmp/badges
+          uv run python .github/badge.py Abdeckung "$PERCENT %" "$color" /tmp/badges/coverage.svg
+          cd /tmp/badges
+          git init -q -b badges
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add . && git commit -qm "Badge for ${GITHUB_SHA::7}"
+          for try in 1 2 3; do
+            git push -qf "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" badges && break
+            sleep $((try * 10))
+          done

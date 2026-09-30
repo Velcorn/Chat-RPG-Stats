@@ -23,12 +23,13 @@ Public, read-only stats dashboard for the Twitch chat RPG at rpg.sola.rip. A Git
 
 Everything users see is German (README, page, issue form, Action names and replies); code, comments and commits stay
 English. Amounts in silver with the German thousands separator (`fmtSilver`), numbers with nouns via `count`. Plain
-punctuation: `-` instead of dashes, `...` instead of the ellipsis character, `->` instead of arrows, straight quotes.
+punctuation: `-` instead of dashes, `...` instead of the ellipsis character, `->` instead of arrows, straight quotes. The README and the page footer carry the vibe-coding notice (mostly AI-written, spot-checked);
+keep it.
 
 ## After every change
 
-1. `uv run python -m unittest discover tests` and `uv run ruff check`.
-2. Update README.md (and this file's map) where the change touches them.
+1. `uv run python -m unittest discover tests` and `uv run ruff check` (the commit hook runs both; CI runs the same hooks plus coverage).
+2. Update README.md (short), docs/funktionsweise.md (data flow and every calculation) and this file's map where the change touches them.
 3. If users notice it: bump the version in `pyproject.toml`, `uv lock`, add a German `CHANGELOG.md` entry. No git tags.
 4. Commit, push: `SSH_AUTH_SOCK=$XDG_RUNTIME_DIR/ssh-agent.socket git push`.
 
@@ -40,6 +41,9 @@ punctuation: `-` instead of dashes, `...` instead of the ellipsis character, `->
   `_site/data/summary.json`, `players.json` (search index) and `p/<login>.json`.
 - `site/index.html`: the whole dashboard (no build step; hash routes `#/`, `#/spieler/<login>`, `#/gilden`, `#/kaempfe`).
 - `watchlist.py` + `watchlist.txt`: the opt-in list, changed by the issue form via `.github/workflows/watchlist.yml`.
+- `docs/funktionsweise.md`: German detail: data flow, storage, watchlist, every calculation. README stays short.
+- `.pre-commit-config.yaml` (prek: ruff, tests, hygiene, plain punctuation), `.github/workflows/ci.yml` (hooks + coverage; writes
+  the coverage badge with `.github/badge.py` to the `badges` branch, don't commit there), `.github/dependabot.yml`.
 - `.github/workflows/collect.yml`: schedule (4-22 UTC, collect.py skips outside 7-24 Berlin), data branch, Pages deploy.
 
 ## Game API facts

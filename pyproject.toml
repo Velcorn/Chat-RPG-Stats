@@ -1,15 +1,26 @@
 [project]
 name = "chat-rpg-stats"
-version = "0.1.0"
+version = "0.1.1"
 description = "Öffentliches Statistik-Dashboard für das Twitch-Chat-RPG rpg.sola.rip"
 requires-python = ">=3.13"
 dependencies = []
 
 [dependency-groups]
-dev = ["ruff"]
+dev = [
+    "coverage>=7.16.2",
+    "prek>=0.5.4",
+    "ruff",
+]
 
 [tool.ruff]
 line-length = 120
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "B", "I", "UP", "RUF"]
+
+[tool.uv]
+package = false
+
+[tool.coverage.run]
+source = ["."]
+omit = ["tests/*", ".venv/*"]

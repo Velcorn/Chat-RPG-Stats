@@ -1,9 +1,12 @@
 """Collector and build on made-up snapshots: changes only, history replay, pace, forecasts, guild standing."""
+import io
 import json
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from datetime import datetime
 from pathlib import Path
+from unittest import mock
 
 import build
 import collect
@@ -148,6 +151,94 @@ class BuildTests(unittest.TestCase):
     def test_players_index_is_sorted_by_gear(self):
         index = json.loads((self.out / "players.json").read_text())
         self.assertEqual([r[0] for r in index], ["top", "fast", "slow"])
+
+
+class BuildEdgeTests(unittest.TestCase):
+    def test_top100_border(self):
+        pipe = Pipeline()
+        for d in range(3):
+            board = [(f"p{i:03d}", 500 - i + 2 * d, 10, 10, 10) for i in range(100)]
+            pipe.run(snap({"karni": [member(lo, g) for lo, g, *_ in board]}, board=board), T0 + d * DAY)
+        summary, out = pipe.build(T0 + 2 * DAY)
+        self.assertEqual(summary["top100"]["gear"], 500 - 99 + 4)
+        self.assertEqual(summary["top100"]["pace"], 2.0)
+        page = json.loads((out / "p" / "p050.json").read_text())
+        self.assertIsNone(page["forecast"]["top100_gap"])  # already in
+
+    def test_a_player_in_no_guild(self):
+        pipe = Pipeline()
+        pipe.run(snap({"karni": [member("a", 100)]}, board=[("solo", 40, 1, 1, 1)]), T0)
+        _, out = pipe.build(T0)
+        solo = json.loads((out / "p" / "solo.json").read_text())
+        self.assertIsNone(solo["guild"])
+        self.assertEqual((solo["forecast"]["rank"], solo["forecast"]["exact"]), (1, True))
+
+    def test_top100_days_use_the_pace_relative_to_the_border(self):
+        pipe = Pipeline()
+        for d in range(3):
+            board = [(f"p{i:03d}", 500 - i + d, 10, 10, 10) for i in range(100)]
+            board.append(("chaser", 350 + 5 * d, 1, 1, 1))
+            pipe.run(snap({"karni": [member(lo, g) for lo, g, *_ in board]}, board=board[:100]), T0 + d * DAY)
+        summary, out = pipe.build(T0 + 2 * DAY)
+        chaser = json.loads((out / "p" / "chaser.json").read_text())
+        gap = summary["top100"]["gear"] - chaser["gear"] + 1
+        self.assertEqual(chaser["forecast"]["top100_gap"], gap)
+        self.assertEqual(chaser["forecast"]["top100_days"], round(gap / (5 - 1), 1))
+
+    def test_watch_data_quests_and_trader(self):
+        pipe = Pipeline()
+        quests = [{"at": f"2026-09-30T1{i}:00:00Z", "channel": "sola", "failed": False,
+                   "line": f"erhält {i} Gold 5 Silber"} for i in range(3)]
+        watch = {"a": {"displayName": "A", "attack": 1, "defense": 2, "support": 3, "silver": 9, "survivalPercent": 70,
+                       "life": 1, "achievementsUnlocked": 4, "stats": {"fights": 2}, "questHistory": quests}}
+        s = snap({"karni": [member("a", 100)]}, watch=watch)
+        s["trader"] = {"visiting": True, "channel": "sola", "lastVisit": None}
+        pipe.run(s, T0)
+        s["trader"] = {"visiting": True, "channel": "sola", "lastVisit": None}  # same visit, later run
+        pipe.run(s, T0 + 900)
+        summary, out = pipe.build(T0 + 900)
+        page = json.loads((out / "p" / "a.json").read_text())
+        self.assertEqual(page["watch"]["survival"], 70)
+        self.assertEqual([q["silver"] for q in page["watch"]["quests"]], [205, 105, 5])  # newest first
+        self.assertEqual(len(summary["trader"]), 1)  # one visit, seen twice
+        self.assertEqual(page["split"]["atk"], 1)
+
+    def test_old_fights_leave_the_statistics_window(self):
+        old = {"id": 1, "kind": "RAID", "difficulty": 1, "outcome": "VICTORY", "fighters": 5,
+               "endedAt": "2026-06-01T10:00:00Z"}
+        new = {"id": 2, "kind": "RAID", "difficulty": 1, "outcome": "DEFEAT", "fighters": 15,
+               "endedAt": "2026-09-30T10:00:00Z"}
+        now = datetime.fromisoformat("2026-09-30T12:00:00+00:00").timestamp()
+        groups = build.fight_groups([old, new], now)
+        self.assertEqual([(g["n"], g["wins"], g["fighters"]) for g in groups], [(1, 0, 15)])
+        self.assertIsNone(build.iso_ts(None))
+
+    def test_main_copies_the_page_and_writes_the_files(self):
+        pipe = Pipeline()
+        pipe.run(snap({"karni": [member("a", 100)]}, board=[("a", 100, 1, 2, 3)]), T0)
+        out = Path(tempfile.mkdtemp()) / "site"
+        with mock.patch("sys.argv", ["build.py", "--data", str(pipe.data), "--out", str(out)]), \
+                redirect_stdout(io.StringIO()) as printed:
+            build.main()
+        self.assertTrue((out / "index.html").exists())
+        self.assertTrue((out / "data" / "p" / "a.json").exists())
+        self.assertIn("1 Spieler", printed.getvalue())
+
+    def test_rebuild_replaces_old_player_files(self):
+        pipe = Pipeline()
+        pipe.run(snap({"karni": [member("a", 100)]}), T0)
+        out = Path(tempfile.mkdtemp())
+        build.build(pipe.data, out, T0)
+        (out / "data" / "p" / "stale.json").write_text("{}")
+        build.build(pipe.data, out, T0)
+        self.assertFalse((out / "data" / "p" / "stale.json").exists())
+
+    def test_ties_share_a_rank(self):
+        pipe = Pipeline()
+        pipe.run(snap({"karni": [member("a", 100), member("b", 100), member("c", 90)]}), T0)
+        _, out = pipe.build(T0)
+        ranks = {lo: json.loads((out / "p" / f"{lo}.json").read_text())["forecast"]["rank"] for lo in "abc"}
+        self.assertEqual(ranks, {"a": 1, "b": 1, "c": 3})
 
 
 class HelperTests(unittest.TestCase):

@@ -504,7 +504,7 @@ document.addEventListener("click", (ev) => { if (!ev.target.closest(".search")) 
 const SECTIONS = {
   rangliste: { subs: () => [["ausruestung", "Ausrüstung"], ["silber", "Silber"], ["errungenschaften", "Errungenschaften"],
                             ["quests", "Quests"], ["aufsteiger", "Aufsteiger"]], render: viewRanks },
-  gilden: { subs: (s) => s.guilds.map((g) => [g.login, g.name]), render: viewGuild },
+  gilden: { subs: (s) => s.guilds.map((g) => [g.login, g.login]), render: viewGuild },
   kaempfe: { subs: () => [["arten", "Kampfarten"], ["letzte", "Letzte Kämpfe"], ["haendler", "Fahrender Händler"]],
              render: viewFights },
 };

@@ -38,7 +38,7 @@ Drei Bereiche mit einer zweiten Tab-Zeile, damit keine Seite überladen ist (Adr
 
 - **Ranglisten** (`#/rangliste/...`): `ausruestung` (Standard, mit Kennzahlen), `silber`, `errungenschaften`, `quests`,
   `aufsteiger`. Die vier Ranglisten sind die des Spiels (Parameter `by=gear|gold|errungenschaften|quests`, je Top 100).
-- **Gilden** (`#/gilden/<Gilde>`): eine Unterseite pro Gilde.
+- **Gilden** (`#/gilden/<Gilde>`): eine Unterseite pro Gilde, der Tab trägt den Namen des Streamers, die Seite den vollen Gildennamen.
 - **Kämpfe** (`#/kaempfe/...`): `arten`, `letzte`, `haendler`.
 - **Spieler** (`#/spieler/<Name>`): eine Seite pro Spieler, erreichbar über die Suche.
 

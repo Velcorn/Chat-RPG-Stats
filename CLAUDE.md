@@ -56,4 +56,7 @@ keep it.
   donations), `/api/combat/history` (last 20 fights, about a day), `/api/trader`, `/api/channels`.
   `/api/market/board` needs a login (not used).
 - The leaderboard lags the guild pages by a few minutes.
+- Since 30.09.2026 `gearScore` (boards, guild pages, guild total) is Kampfkraft: gear (ATK+DEF+SUP) plus a talent bonus the API
+  doesn't show. The page calls it Kampfkraft; the estimated bonus formula on `#/rangliste/formel` is hand-written text (update it
+  when the fit changes).
 - Play window 7-24 Berlin time; nothing changes at night.

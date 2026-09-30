@@ -6,9 +6,9 @@
 [![Lizenz: MIT](https://img.shields.io/github/license/Velcorn/chat-rpg-stats)](LICENSE)
 
 Ranglisten, Verlauf und Prognosen für das Twitch-Chat-RPG [rpg.sola.rip](https://rpg.sola.rip): Wie schnell wächst
-deine Ausrüstung, wann erreichst du den nächsten Rang oder die Top 100, wie verteilen ähnlich starke Spieler ihre
+deine Kampfkraft, wann erreichst du den nächsten Rang oder die Top 100, wie verteilen ähnlich starke Spieler ihre
 Werte, wo stehst du in deiner Gilde, welche Kämpfe gewinnt man meistens. Die Seite hat drei Bereiche mit
-Unterseiten: Ranglisten (Ausrüstung, Silber, Errungenschaften, Quests, Aufsteiger), Gilden (eine Seite pro Gilde) und
+Unterseiten: Ranglisten (Kampfkraft, Silber, Errungenschaften, Quests, Aufsteiger, Bonus-Formel), Gilden (eine Seite pro Gilde) und
 Kämpfe (Kampfarten, letzte Kämpfe, fahrender Händler), dazu eine Seite pro Spieler.
 
 **Zur Seite: <https://velcorn.github.io/chat-rpg-stats/>**
@@ -27,8 +27,8 @@ zeigt:
 
 | Daten | Quelle | Anfragen pro Lauf |
 |---|---|---|
-| Ausrüstungswert, Spenden und Aktivität aller Gildenmitglieder | Gildenliste und Gildenseiten | 1 + 1 pro Gilde |
-| Top 100 nach Ausrüstung (mit ATK/DEF/SUP), Silber, Errungenschaften und Quests | Ranglisten | 4 |
+| Kampfkraft, Spenden und Aktivität aller Gildenmitglieder | Gildenliste und Gildenseiten | 1 + 1 pro Gilde |
+| Top 100 nach Kampfkraft (mit ATK/DEF/SUP), Silber, Errungenschaften und Quests | Ranglisten | 4 |
 | Die letzten 20 Kämpfe aller Kanäle | Kampfarchiv | 1 |
 | Fahrender Händler, Kanäle | Händler, Kanalliste | 2 |
 | Spieler auf der Beobachtungsliste | Spielerseite | 1 pro Spieler |

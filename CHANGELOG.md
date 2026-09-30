@@ -2,6 +2,15 @@
 
 Versionen nach [SemVer](https://semver.org/lang/de/). Solange die Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.4.0 (30.09.2026)
+
+**Geändert**
+- Der Wert heißt jetzt überall Kampfkraft statt Ausrüstung bzw. Ausrüstungswert, denn so nennt das Spiel ihn seit dem 30.09.2026 (Ausrüstung plus Talentbonus). Die Ausrüstung je Platz bleibt, sie zeigt wirklich die Stücke. Die Adresse der Rangliste ist jetzt `#/rangliste/kampfkraft`.
+
+**Neu**
+- Rangliste Kampfkraft: Spalte "Bonus" (Kampfkraft minus ATK, DEF und SUP).
+- Unterseite "Bonus-Formel": geschätzte Formel für den Talentbonus, was über die Talente bekannt ist und wo die Schätzung an Grenzen stößt.
+
 ## 0.3.1 (30.09.2026)
 
 **Oberfläche**

@@ -37,8 +37,8 @@ und Kämpfe eines Spielers werden nicht gespeichert, nur Werte und ihre Änderun
 
 Drei Bereiche mit einer zweiten Tab-Zeile, damit keine Seite überladen ist (Adresse `#/<Bereich>/<Unterseite>`):
 
-- **Ranglisten** (`#/rangliste/...`): `ausruestung` (Standard, mit Kennzahlen), `silber`, `errungenschaften`, `quests`,
-  `aufsteiger`. Die vier Ranglisten sind die des Spiels (Parameter `by=gear|gold|errungenschaften|quests`, je Top 100).
+- **Ranglisten** (`#/rangliste/...`): `kampfkraft` (Standard, mit Kennzahlen und Bonus), `silber`, `errungenschaften`, `quests`,
+  `aufsteiger`, `formel`. Die vier Ranglisten sind die des Spiels (Parameter `by=gear|gold|errungenschaften|quests`; `gear` ist seit dem 30.09.2026 die Kampfkraft, je Top 100).
 - **Gilden** (`#/gilden/<Gilde>`): eine Unterseite pro Gilde, der Tab trägt den Namen des Streamers, die Seite den vollen Gildennamen.
 - **Kämpfe** (`#/kaempfe/...`): `arten`, `letzte`, `haendler`.
 - **Spieler** (`#/spieler/<Name>`): eine Seite pro Spieler, erreichbar über die Suche.
@@ -48,7 +48,7 @@ Drei Bereiche mit einer zweiten Tab-Zeile, damit keine Seite überladen ist (Adr
 - **Rang:** In den Top 100 der Rang aus der Rangliste des Spiels. Darunter "etwa": der Platz unter allen erfassten
   Spielern (Gildenmitglieder und Top 100); wer in keiner Gilde ist, fehlt dort. Gleiche Werte teilen sich einen Platz.
   Die Rangliste des Spiels hinkt der Gildenseite ein paar Minuten nach; die Tabelle zeigt deshalb ihren eigenen Wert.
-- **Tempo:** Zuwachs an Ausrüstungswert pro Tag, gemittelt über die letzten 7 Tage (oder seit Beginn der Aufzeichnung,
+- **Tempo:** Zuwachs an Kampfkraft pro Tag, gemittelt über die letzten 7 Tage (oder seit Beginn der Aufzeichnung,
   frühestens nach 12 Stunden).
 - **Nächster Rang:** Punkte bis über den nächsthöheren Wert, und wie lange das bei deinem Tempo dauert (ohne dass der
   andere weiter wächst).
@@ -57,8 +57,14 @@ Drei Bereiche mit einer zweiten Tab-Zeile, damit keine Seite überladen ist (Adr
 - **Vergleich mit ähnlichen Spielern:** Mittel von ATK/DEF/SUP der Spieler mit bekannter Verteilung (Top 100 und
   Beobachtungsliste), deren Wert höchstens 5 % (mindestens 10 Punkte) von deinem abweicht; sind das weniger als 8, die
   8 nächsten.
-- **Gilde:** Platz bei Spenden und Ausrüstung innerhalb der Gilde, Abstand zur nächsten Spende, Anteil am
+- **Gilde:** Platz bei Spenden und Kampfkraft innerhalb der Gilde, Abstand zur nächsten Spende, Anteil am
   Gildenwert.
+- **Kampfkraft und Bonus:** Kampfkraft = ATK + DEF + SUP + Talentbonus (das Spiel nennt nur die Summe). Die Spalte "Bonus" der
+  Rangliste ist Kampfkraft minus ATK, DEF und SUP. Die Seite "Bonus-Formel" hält die geschätzte Formel fest, von Hand aus
+  166 Spielern der Ranglisten Kampfkraft und Quests (30.09.2026) angepasst: Verteidiger mit vollem Bollwerk-Baum
+  (Bonus ab 135): Bonus etwa 225 + 0,32 ATK - 0,63 DEF + 0,28 SUP (Abweichung um 9); Angreifer: etwa 0,36 ATK. Sie ist
+  eine Schätzung im beobachteten Bereich und wird nicht automatisch neu angepasst; die Kennzahlen (kleinster, mittlerer, größter
+  Bonus) auf der Seite kommen dagegen live aus den aktuellen Top 100.
 - **Ranglisten Silber, Errungenschaften, Quests:** Rang und Wert wie in der Rangliste des Spiels; "24 h" ist die
   Änderung dieses Werts seit gestern (beim Silber kann sie auch negativ sein, wenn jemand etwas ausgibt).
 - **Ausrüstung je Platz** (nur Beobachtungsliste): Stück, Stufe und ATK/DEF/SUP je Platz. Als schwächstes Stück gilt

@@ -62,12 +62,10 @@ Drei Bereiche mit einer zweiten Tab-Zeile, damit keine Seite überladen ist (Adr
 - **Ranglisten Silber, Errungenschaften, Quests:** Rang und Wert wie in der Rangliste des Spiels; "24 h" ist die
   Änderung dieses Werts seit gestern (beim Silber kann sie auch negativ sein, wenn jemand etwas ausgibt).
 - **Ausrüstung je Platz** (nur Beobachtungsliste): Stück, Stufe und ATK/DEF/SUP je Platz. Als schwächstes Stück gilt
-  die niedrigste Stufe, bei Gleichstand die kleinste Summe aus ATK, DEF und SUP; ein leerer Platz wird extra genannt.
-- **Kampfquote** (nur Beobachtungsliste): gewonnene von den Kämpfen, an denen der Spieler teilgenommen hat, je Art
-  (Abenteuer, Überfälle, Bosse), daneben die Siegquote aller Kämpfe der Art aus dem Archiv der letzten 30 Tage (ab
-  5 Kämpfen). Dazu Fallquote und Schaden pro Kampf aus den Gesamtwerten.
-- **Silber und Markt:** Silber über die Zeit (Top 100 und Beobachtungsliste); beim Markt Einnahmen minus Ausgaben aus
-  den Gesamtwerten des Spielers, zu jedem Lauf, in dem sie sich änderten.
+  die niedrigste Stufe, bei Gleichstand die kleinste Summe aus ATK, DEF und SUP; leere Plätze zählen dabei nicht.
+- **Siegquote** (nur Beobachtungsliste): gewonnene von den Kämpfen, an denen der Spieler teilgenommen hat, je Art
+  (Abenteuer, Überfälle, Bosse), aus den Gesamtwerten seit Spielbeginn. Dazu Fallquote und Schaden pro Kampf.
+- **Silber:** Silber über die Zeit (Top 100 und Beobachtungsliste).
 - **Aufsteiger:** größter Zuwachs in 24 Stunden bzw. 7 Tagen.
 - **Kämpfe:** Siegquote pro Kampfart der letzten 30 Tage, Bosse nach Name und Stufe, sonst nach Art und Schwierigkeit.
   Das Kampfarchiv des Spiels hält nur die letzten 20 Kämpfe, deshalb sammelt der Sammler sie fortlaufend.

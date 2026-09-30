@@ -360,26 +360,19 @@ function gearCard(slots) {
         weakest.includes(r) && r.sum === lowSum ? el("span", { class: "tag" }, "schwächstes") : null) : el("span", { class: "muted" }, "leer") },
     { label: "Stufe", num: true, get: (r) => r.name ? r.tier : "-" },
     { label: "ATK / DEF / SUP", num: true, get: (r) => r.name ? `${fmtInt(r.v[3])} / ${fmtInt(r.v[4])} / ${fmtInt(r.v[5])}` : "-" },
-  ], rows)), el("p", { class: "note" }, "Schwächstes Stück: niedrigste Stufe, bei Gleichstand die kleinste Summe. Dort lohnt sich ein Upgrade am meisten; ein leerer Platz geht vor."));
+  ], rows)), el("p", { class: "note" }, "Schwächstes Stück: niedrigste Stufe, bei Gleichstand die kleinste Summe. Dort lohnt sich ein Upgrade am meisten. Leere Plätze zählen dabei nicht."));
 }
 
-function fightCard(st, groups) {
-  const game = (kind) => groups.filter((g) => g.kind === kind).reduce((a, g) => ({ n: a.n + g.n, wins: a.wins + g.wins }), { n: 0, wins: 0 });
-  const rate = (w, n) => n ? 100 * w / n : null;
+function fightCard(st) {
   const bars = el("div", { class: "bars" });
-  let compared = false;
-  for (const [kind, name, nKey, wKey] of FIGHT_KINDS) {
-    const mine = rate(st[wKey], st[nKey]), all = game(kind), theirs = all.n >= 5 ? rate(all.wins, all.n) : null;
-    compared = compared || theirs != null;
-    bars.append(el("div", { class: "bar", style: "grid-template-columns:150px 1fr 110px" },
-      el("span", {}, `${name} (${fmtInt(st[wKey])}/${fmtInt(st[nKey])})`),
-      el("div", { class: "track" }, mine == null ? null : el("div", { class: "fill", style: `width:${mine}%` }),
-        theirs == null ? null : el("div", { class: "peer", style: `width:${theirs}%` })),
-      el("span", { class: "val" }, theirs == null ? pct(st[wKey], st[nKey]) : `${pct(st[wKey], st[nKey])} / ${fmtDec(theirs, 0)} %`)));
+  for (const [, name, nKey, wKey] of FIGHT_KINDS) {
+    const rate = st[nKey] ? 100 * st[wKey] / st[nKey] : null;
+    bars.append(el("div", { class: "bar", style: "grid-template-columns:150px 1fr 60px" },
+      el("span", {}, `${name} (${fmtInt(st[wKey])} von ${fmtInt(st[nKey])})`),
+      el("div", { class: "track" }, rate == null ? null : el("div", { class: "fill", style: `width:${rate}%` })),
+      el("span", { class: "val" }, pct(st[wKey], st[nKey]))));
   }
-  bars.append(el("div", { class: "legend" }, el("span", {}, el("i", { style: "background:var(--series-1)" }), "Gewonnene Kämpfe, an denen du teilgenommen hast"),
-    compared ? el("span", {}, el("i", { style: "background:var(--series-2)" }), "Alle Kämpfe der Art (letzte 30 Tage, seit Beginn der Erfassung)") : null));
-  return card("Kämpfe", bars, el("p", { class: "note" }, `Gefallen in ${pct(st.fallen, st.fights)} der Kämpfe, ${fmtInt(st.damage / Math.max(1, st.fights))} Schaden pro Kampf, höchste Bossstufe ${fmtInt(st.highestBossLevel)}.`));
+  return card("Kämpfe: Siegquote", bars, el("p", { class: "note" }, `Gefallen in ${pct(st.fallen, st.fights)} der Kämpfe, ${fmtInt(st.damage / Math.max(1, st.fights))} Schaden pro Kampf, höchste Bossstufe ${fmtInt(st.highestBossLevel)}.`));
 }
 
 async function viewPlayer(s, login) {
@@ -438,13 +431,11 @@ async function viewPlayer(s, login) {
   const charts = [];
   if (p.series.rank.length) charts.push(chartCard("Rang (Top 100)", p.series.rank, { invert: true, until: s.generated }));
   if (p.series.silver.length) charts.push(chartCard("Silber", p.series.silver, { fmt: fmtSilver, until: s.generated }));
-  if (g) charts.push(chartCard("Gildenspende", p.series.donated, { fmt: fmtSilver, until: s.generated }));
-  if (p.series.market.length) charts.push(chartCard("Markt: Einnahmen minus Ausgaben", p.series.market, { fmt: fmtSilver, until: s.generated }));
   for (let i = 0; i < charts.length; i += 2) out.push(el("div", { class: "grid two" }, ...charts.slice(i, i + 2)));
 
   if (p.watch) {
     const st = p.watch.stats || {};
-    out.push(el("div", { class: "grid two" }, fightCard(st, s.fights.groups),
+    out.push(el("div", { class: "grid two" }, fightCard(st),
       card("Statistik (Beobachtungsliste)", el("dl", { class: "facts" },
         el("dt", {}, "Überleben"), el("dd", {}, `${fmtInt(p.watch.survival)} %, Leben ${fmtInt(p.watch.life)}`),
         STAT_ROWS.flatMap(([name, fn]) => [el("dt", {}, name), el("dd", {}, fn(st))])))));

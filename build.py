@@ -30,13 +30,11 @@ class History:
 
     def __init__(self, records):
         self.gear: dict[str, list] = defaultdict(list)       # login -> [[t, gear], ...] (only changes)
-        self.donated: dict[str, list] = defaultdict(list)
         self.guild: dict[str, list] = defaultdict(list)      # login -> [[t, guild login or None], ...]
         self.details: dict[str, list] = defaultdict(list)    # login -> [[t, {atk, def, sup, silver, quests}], ...]
         self.rank: dict[str, list] = defaultdict(list)       # login -> [[t, rank on the gear board or None], ...]
         self.guilds: dict[str, list] = defaultdict(list)     # guild -> [[t, treasury, members, active, gear], ...]
         self.fights: list[dict] = []
-        self.market: dict[str, list] = defaultdict(list)     # login -> [[t, silver earned - spent on the market], ...]
         self.trader: list[dict] = []
         self.first = self.last = None
         self.runs = 0
@@ -47,7 +45,7 @@ class History:
             self.first = self.first or t
             self.last, self.runs = t, self.runs + 1
             for login, p in rec.get("players", {}).items():
-                for series, key in ((self.gear, "gear"), (self.donated, "donated"), (self.guild, "guild")):
+                for series, key in ((self.gear, "gear"), (self.guild, "guild")):
                     if key in p and (p[key] is not None or key == "guild"):  # a record only has changed fields
                         put(series[login], t, p[key])
             for login, d in rec.get("details", {}).items():
@@ -63,10 +61,6 @@ class History:
                 full = guild_now[g] = {**guild_now.get(g, {}), **v}
                 self.guilds[g].append([t, *(full.get(k) for k in ("treasury", "members", "active", "gear"))])
             self.fights += rec.get("fights", [])
-            for login, w in rec.get("watch", {}).items():
-                st = w.get("stats") or {}
-                if "marketSilverEarned" in st or "marketSilverSpent" in st:
-                    put(self.market[login], t, (st.get("marketSilverEarned") or 0) - (st.get("marketSilverSpent") or 0))
             if tr := rec.get("trader"):
                 if tr.get("channel") and (not self.trader or self.trader[-1]["channel"] != tr["channel"]
                                           or t - self.trader[-1]["t"] > 1800):
@@ -264,10 +258,9 @@ def player_page(login, h, state, now, rank, paces, with_split, top100_gear, top1
             "board_rank": on_board,
             "split": {k: details.get(login, {}).get(k) for k in ("atk", "def", "sup", "silver", "quests")},
             "peers": split,
-            "series": {"gear": h.gear[login], "donated": h.donated.get(login, []), "rank": h.rank.get(login, []),
+            "series": {"gear": h.gear[login], "rank": h.rank.get(login, []),
                        "silver": [[t, d.get("silver")] for t, d in h.details.get(login, [])
-                                  if d.get("silver") is not None],
-                       "market": h.market.get(login, [])},
+                                  if d.get("silver") is not None]},
             "watch": watch or None}
 
 

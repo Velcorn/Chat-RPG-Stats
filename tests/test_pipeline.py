@@ -190,7 +190,7 @@ class BuildEdgeTests(unittest.TestCase):
         self.assertEqual(chaser["forecast"]["top100_gap"], gap)
         self.assertEqual(chaser["forecast"]["top100_days"], round(gap / (5 - 1), 1))
 
-    def test_watch_data_market_series_and_trader(self):
+    def test_watch_data_and_trader(self):
         pipe = Pipeline()
         item = {"name": "Helm", "tier": 6, "attack": 1, "defense": 9, "support": 2, "damaged": True}
         watch = {"a": {"displayName": "A", "attack": 1, "defense": 2, "support": 3, "silver": 9, "survivalPercent": 70,
@@ -208,7 +208,6 @@ class BuildEdgeTests(unittest.TestCase):
         self.assertEqual(page["watch"]["survival"], 70)
         self.assertNotIn("quests", page["watch"])
         self.assertEqual(page["watch"]["slots"], {"HELMET": ["Helm", "Helm", 6, 1, 9, 2, True], "BOOTS": ["Stiefel"]})
-        self.assertEqual(page["series"]["market"], [[T0, 300]])
         self.assertEqual(len(summary["trader"]), 1)  # one visit, seen twice
         self.assertEqual(page["split"]["atk"], 1)
 

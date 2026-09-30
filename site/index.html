@@ -80,7 +80,7 @@
   .wide-table { overflow-x: auto; }
   .up { color: var(--good); } .down { color: var(--critical); }
   .tag { font-size: 11px; padding: 1px 6px; border-radius: 4px; background: var(--surface-2);
-         border: 1px solid var(--border); color: var(--text-secondary); white-space: nowrap; }
+         border: 1px solid var(--border); color: var(--text-secondary); white-space: nowrap; margin-left: 6px; }
   .chart { position: relative; }
   .chart svg { display: block; width: 100%; height: 220px; overflow: visible; }
   .chart .axis text { fill: var(--text-muted); font-size: 11px; }
@@ -341,13 +341,46 @@ function viewRanks(s, sub) {
 const draws = (st) => (st.drawsWon || 0) + (st.drawsLost || 0);
 const STAT_ROWS = [
   ["Quests", (st) => `${fmtInt(st.questsCompleted)} geschafft, ${fmtInt(st.questsFailed)} gescheitert`],
-  ["Abenteuer", (st) => `${fmtInt(st.adventuresWon)} von ${fmtInt(st.adventures)} gewonnen (${pct(st.adventuresWon, st.adventures)})`],
-  ["Überfälle", (st) => `${fmtInt(st.raidsWon)} von ${fmtInt(st.raids)} gewonnen (${pct(st.raidsWon, st.raids)})`],
-  ["Bosse", (st) => `${fmtInt(st.bossesWon)} von ${fmtInt(st.bosses)} gewonnen (${pct(st.bossesWon, st.bosses)}), höchste Stufe ${fmtInt(st.highestBossLevel)}`],
   ["Im Kampf", (st) => `${fmtInt(st.damage)} Schaden, ${fmtInt(st.healing)} Heilung, ${count(st.fallen, "Mal", "Mal")} gefallen`],
   ["Markt", (st) => `${count(st.marketItemsBought, "Kauf", "Käufe")} für ${fmtSilver(st.marketSilverSpent)}, ${count(st.marketItemsSold, "Verkauf", "Verkäufe")} für ${fmtSilver(st.marketSilverEarned)}`],
   ["Verlosungen", (st) => `${fmtInt(st.drawsWon)} von ${fmtInt(draws(st))} gewonnen (${pct(st.drawsWon, draws(st))})`],
 ];
+const FIGHT_KINDS = [["ADVENTURE", "Abenteuer", "adventures", "adventuresWon"], ["RAID", "Überfälle", "raids", "raidsWon"],
+                     ["BOSS", "Bosse", "bosses", "bossesWon"]];
+
+function gearCard(slots) {
+  const rows = Object.entries(slots).map(([slot, v]) => ({ slot, label: v[0], name: v[1], tier: v[2], sum: v[1] ? v[3] + v[4] + v[5] : -1, v }));
+  const worn = rows.filter((r) => r.name);
+  const low = Math.min(...worn.map((r) => r.tier));
+  const weakest = worn.filter((r) => r.tier === low);
+  const lowSum = Math.min(...weakest.map((r) => r.sum));
+  return card("Ausrüstung", el("div", { class: "scroll" }, table([
+    { label: "Platz", get: (r) => r.label },
+    { label: "Stück", get: (r) => r.name ? el("span", {}, r.name, r.v[6] ? el("span", { class: "tag" }, "beschädigt") : null,
+        weakest.includes(r) && r.sum === lowSum ? el("span", { class: "tag" }, "schwächstes") : null) : el("span", { class: "muted" }, "leer") },
+    { label: "Stufe", num: true, get: (r) => r.name ? r.tier : "-" },
+    { label: "ATK / DEF / SUP", num: true, get: (r) => r.name ? `${fmtInt(r.v[3])} / ${fmtInt(r.v[4])} / ${fmtInt(r.v[5])}` : "-" },
+  ], rows)), el("p", { class: "note" }, "Schwächstes Stück: niedrigste Stufe, bei Gleichstand die kleinste Summe. Dort lohnt sich ein Upgrade am meisten; ein leerer Platz geht vor."));
+}
+
+function fightCard(st, groups) {
+  const game = (kind) => groups.filter((g) => g.kind === kind).reduce((a, g) => ({ n: a.n + g.n, wins: a.wins + g.wins }), { n: 0, wins: 0 });
+  const rate = (w, n) => n ? 100 * w / n : null;
+  const bars = el("div", { class: "bars" });
+  let compared = false;
+  for (const [kind, name, nKey, wKey] of FIGHT_KINDS) {
+    const mine = rate(st[wKey], st[nKey]), all = game(kind), theirs = all.n >= 5 ? rate(all.wins, all.n) : null;
+    compared = compared || theirs != null;
+    bars.append(el("div", { class: "bar", style: "grid-template-columns:150px 1fr 110px" },
+      el("span", {}, `${name} (${fmtInt(st[wKey])}/${fmtInt(st[nKey])})`),
+      el("div", { class: "track" }, mine == null ? null : el("div", { class: "fill", style: `width:${mine}%` }),
+        theirs == null ? null : el("div", { class: "peer", style: `width:${theirs}%` })),
+      el("span", { class: "val" }, theirs == null ? pct(st[wKey], st[nKey]) : `${pct(st[wKey], st[nKey])} / ${fmtDec(theirs, 0)} %`)));
+  }
+  bars.append(el("div", { class: "legend" }, el("span", {}, el("i", { style: "background:var(--series-1)" }), "Gewonnene Kämpfe, an denen du teilgenommen hast"),
+    compared ? el("span", {}, el("i", { style: "background:var(--series-2)" }), "Alle Kämpfe der Art (letzte 30 Tage, seit Beginn der Erfassung)") : null));
+  return card("Kämpfe", bars, el("p", { class: "note" }, `Gefallen in ${pct(st.fallen, st.fights)} der Kämpfe, ${fmtInt(st.damage / Math.max(1, st.fights))} Schaden pro Kampf, höchste Bossstufe ${fmtInt(st.highestBossLevel)}.`));
+}
 
 async function viewPlayer(s, login) {
   let p;
@@ -404,25 +437,20 @@ async function viewPlayer(s, login) {
   ];
   const charts = [];
   if (p.series.rank.length) charts.push(chartCard("Rang (Top 100)", p.series.rank, { invert: true, until: s.generated }));
+  if (p.series.silver.length) charts.push(chartCard("Silber", p.series.silver, { fmt: fmtSilver, until: s.generated }));
   if (g) charts.push(chartCard("Gildenspende", p.series.donated, { fmt: fmtSilver, until: s.generated }));
-  if (charts.length) out.push(el("div", { class: "grid two" }, ...charts));
+  if (p.series.market.length) charts.push(chartCard("Markt: Einnahmen minus Ausgaben", p.series.market, { fmt: fmtSilver, until: s.generated }));
+  for (let i = 0; i < charts.length; i += 2) out.push(el("div", { class: "grid two" }, ...charts.slice(i, i + 2)));
 
   if (p.watch) {
-    const st = p.watch.stats || {}, quests = p.watch.quests;
-    const earned = quests.filter((q) => !q.failed).map((q) => q.silver);
-    out.push(el("div", { class: "grid two" },
+    const st = p.watch.stats || {};
+    out.push(el("div", { class: "grid two" }, fightCard(st, s.fights.groups),
       card("Statistik (Beobachtungsliste)", el("dl", { class: "facts" },
         el("dt", {}, "Überleben"), el("dd", {}, `${fmtInt(p.watch.survival)} %, Leben ${fmtInt(p.watch.life)}`),
-        STAT_ROWS.flatMap(([name, fn]) => [el("dt", {}, name), el("dd", {}, fn(st))]))),
-      card("Letzte Quests", quests.length ? el("div", {},
-        el("p", { class: "note" }, `${count(quests.length, "Quest", "Quests")} erfasst, im Schnitt ${fmtSilver(earned.length ? earned.reduce((a, b) => a + b, 0) / earned.length : null)}`),
-        el("div", { class: "scroll" }, table([
-          { label: "Zeit", get: (q) => fmtTime(iso(q.at)) },
-          { label: "Kanal", get: (q) => "#" + q.channel },
-          { label: "Silber", num: true, get: (q) => q.failed ? el("span", { class: "down" }, "gescheitert") : fmtSilver(q.silver) },
-        ], quests))) : el("p", { class: "note" }, "Noch keine Quests erfasst."))));
+        STAT_ROWS.flatMap(([name, fn]) => [el("dt", {}, name), el("dd", {}, fn(st))])))));
+    if (p.watch.slots && Object.keys(p.watch.slots).length) out.push(gearCard(p.watch.slots));
   } else {
-    out.push(card("Mehr Statistik", el("p", { class: "note" }, "Kampfquoten, Markt, Verlosungen und die eigenen Quests gibt es für Spieler auf der ",
+    out.push(card("Mehr Statistik", el("p", { class: "note" }, "Ausrüstung je Platz, Kampfquoten, Markt und Verlosungen gibt es für Spieler auf der ",
       el("a", { href: WATCH_FORM }, "Beobachtungsliste"), ". Eintragen geht über ein kurzes Formular auf GitHub, nur für den eigenen Namen.")));
   }
   return out;

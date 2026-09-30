@@ -30,7 +30,8 @@ Von Hand gestartet (`workflow_dispatch`) sammelt er immer.
 Das Issue-Formular legt ein Issue mit dem Label `beobachtungsliste` an. Die Action `Beobachtungsliste` liest den
 Issue-Text (untrusted: nur ein gültiger Twitch-Name, `^[a-z0-9_]{3,25}$`, und nur wenn es den Spieler im Spiel gibt),
 ändert `watchlist.txt`, antwortet und schließt das Issue. Höchstens 150 Einträge, weil jeder eine Anfrage pro Lauf
-kostet. Für diese Spieler kommen Überleben, Leben, Erfolge, Statistiken und die Quest-Historie dazu.
+kostet. Für diese Spieler kommen Überleben, Leben, Erfolge, Statistiken und die Ausrüstung je Platz dazu. Einzelne Quests
+und Kämpfe eines Spielers werden nicht gespeichert, nur Werte und ihre Änderungen.
 
 ## Aufbau der Seite
 
@@ -60,6 +61,13 @@ Drei Bereiche mit einer zweiten Tab-Zeile, damit keine Seite überladen ist (Adr
   Gildenwert.
 - **Ranglisten Silber, Errungenschaften, Quests:** Rang und Wert wie in der Rangliste des Spiels; "24 h" ist die
   Änderung dieses Werts seit gestern (beim Silber kann sie auch negativ sein, wenn jemand etwas ausgibt).
+- **Ausrüstung je Platz** (nur Beobachtungsliste): Stück, Stufe und ATK/DEF/SUP je Platz. Als schwächstes Stück gilt
+  die niedrigste Stufe, bei Gleichstand die kleinste Summe aus ATK, DEF und SUP; ein leerer Platz wird extra genannt.
+- **Kampfquote** (nur Beobachtungsliste): gewonnene von den Kämpfen, an denen der Spieler teilgenommen hat, je Art
+  (Abenteuer, Überfälle, Bosse), daneben die Siegquote aller Kämpfe der Art aus dem Archiv der letzten 30 Tage (ab
+  5 Kämpfen). Dazu Fallquote und Schaden pro Kampf aus den Gesamtwerten.
+- **Silber und Markt:** Silber über die Zeit (Top 100 und Beobachtungsliste); beim Markt Einnahmen minus Ausgaben aus
+  den Gesamtwerten des Spielers, zu jedem Lauf, in dem sie sich änderten.
 - **Aufsteiger:** größter Zuwachs in 24 Stunden bzw. 7 Tagen.
 - **Kämpfe:** Siegquote pro Kampfart der letzten 30 Tage, Bosse nach Name und Stufe, sonst nach Art und Schwierigkeit.
   Das Kampfarchiv des Spiels hält nur die letzten 20 Kämpfe, deshalb sammelt der Sammler sie fortlaufend.

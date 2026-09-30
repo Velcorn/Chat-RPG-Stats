@@ -1,5 +1,5 @@
 name: Auf die Beobachtungsliste
-description: Mehr Statistik für deinen Spieler (Kampfquoten, Markt, Verlosungen, deine Quests).
+description: Mehr Statistik für deinen Spieler (Ausrüstung je Platz, Kampfquoten, Markt, Verlosungen).
 title: "Beobachtungsliste: "
 labels: ["beobachtungsliste"]
 body:

@@ -8,7 +8,6 @@ from __future__ import annotations
 import argparse
 import bisect
 import json
-import re
 import shutil
 import statistics
 import time
@@ -37,7 +36,7 @@ class History:
         self.rank: dict[str, list] = defaultdict(list)       # login -> [[t, rank on the gear board or None], ...]
         self.guilds: dict[str, list] = defaultdict(list)     # guild -> [[t, treasury, members, active, gear], ...]
         self.fights: list[dict] = []
-        self.quests: dict[str, list] = defaultdict(list)
+        self.market: dict[str, list] = defaultdict(list)     # login -> [[t, silver earned - spent on the market], ...]
         self.trader: list[dict] = []
         self.first = self.last = None
         self.runs = 0
@@ -64,8 +63,10 @@ class History:
                 full = guild_now[g] = {**guild_now.get(g, {}), **v}
                 self.guilds[g].append([t, *(full.get(k) for k in ("treasury", "members", "active", "gear"))])
             self.fights += rec.get("fights", [])
-            for login, qs in rec.get("quests", {}).items():
-                self.quests[login] += qs
+            for login, w in rec.get("watch", {}).items():
+                st = w.get("stats") or {}
+                if "marketSilverEarned" in st or "marketSilverSpent" in st:
+                    put(self.market[login], t, (st.get("marketSilverEarned") or 0) - (st.get("marketSilverSpent") or 0))
             if tr := rec.get("trader"):
                 if tr.get("channel") and (not self.trader or self.trader[-1]["channel"] != tr["channel"]
                                           or t - self.trader[-1]["t"] > 1800):
@@ -103,14 +104,6 @@ def pace(series: list, now: float, span: float = 7 * DAY) -> float | None:
 
 def rounded(x, n=2):
     return None if x is None else round(x, n)
-
-
-QUEST_SILVER = re.compile(r"erhält (?:(\d+) Gold)?\s*(?:(\d+) Silber)?")
-
-
-def quest_silver(line: str) -> int:
-    m = QUEST_SILVER.search(line or "")
-    return int(m.group(1) or 0) * 100 + int(m.group(2) or 0) if m and (m.group(1) or m.group(2)) else 0
 
 
 def fight_groups(fights: list[dict], now: float, days: int = 30) -> list[dict]:
@@ -265,7 +258,6 @@ def player_page(login, h, state, now, rank, paces, with_split, top100_gear, top1
                  "gear_share": rounded(100 * g / info["gear"], 3) if info.get("gear") else None}
 
     watch = state.get("watch", {}).get(login)
-    quests = h.quests.get(login, [])
     return {"login": login, "name": p.get("name") or login, "gear": g, "guild": guild, "active": p.get("active"),
             "pace": rounded(my_pace), "day": change(h.gear[login], now, DAY),
             "week": change(h.gear[login], now, 7 * DAY), "forecast": forecast,
@@ -274,9 +266,9 @@ def player_page(login, h, state, now, rank, paces, with_split, top100_gear, top1
             "peers": split,
             "series": {"gear": h.gear[login], "donated": h.donated.get(login, []), "rank": h.rank.get(login, []),
                        "silver": [[t, d.get("silver")] for t, d in h.details.get(login, [])
-                                  if d.get("silver") is not None]},
-            "watch": None if not watch else {**watch, "quests": [{**q, "silver": quest_silver(q.get("line"))}
-                                                                 for q in quests[-100:][::-1]]}}
+                                  if d.get("silver") is not None],
+                       "market": h.market.get(login, [])},
+            "watch": watch or None}
 
 
 def write(path: Path, data) -> None:

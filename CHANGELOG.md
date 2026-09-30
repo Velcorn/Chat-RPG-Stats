@@ -2,6 +2,15 @@
 
 Versionen nach [SemVer](https://semver.org/lang/de/). Solange die Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.3.0 (30.09.2026)
+
+**Neu**
+- Spielerseite (Beobachtungsliste): Ausrüstung je Platz mit dem schwächsten Stück, Kampfquoten je Art im Vergleich zu allen Kämpfen, Silber über die Zeit und Markt (Einnahmen minus Ausgaben).
+
+**Geändert**
+- Die Quests eines Spielers werden nicht mehr gespeichert und nicht mehr angezeigt (Zeit, Kanal und Text je Quest). Die Gesamtzahlen (geschafft, gescheitert) und die Quest-Rangliste bleiben.
+- README: Wünsche und Fehler als Issue melden.
+
 ## 0.2.0 (30.09.2026)
 
 **Neu**

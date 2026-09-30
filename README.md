@@ -41,10 +41,14 @@ Wie gerechnet wird (Rang, Tempo, Prognose, Vergleich) und wie die Daten liegen: 
 
 ## Beobachtungsliste
 
-Kampfquoten, Überleben und die eigenen Quests gibt es für Spieler auf der Beobachtungsliste. Eintragen oder austragen
+Ausrüstung je Platz, Kampfquoten im Vergleich, Überleben, Markt und Verlosungen gibt es für Spieler auf der Beobachtungsliste. Eintragen oder austragen
 geht über das Issue-Formular ["Auf die Beobachtungsliste"](https://github.com/Velcorn/chat-rpg-stats/issues/new?template=watchlist.yml);
 eine Action prüft den Namen, trägt ihn ein und schließt das Issue. Bitte nur den eigenen Namen. Die Liste ist auf 150
 Spieler begrenzt, weil jeder Eintrag eine Anfrage pro Lauf kostet.
+
+## Wünsche und Fehler
+
+Ideen, Wünsche oder Fehler bitte als [Issue](https://github.com/Velcorn/chat-rpg-stats/issues/new) melden.
 
 ## Entwicklung
 

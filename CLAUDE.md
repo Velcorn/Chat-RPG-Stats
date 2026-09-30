@@ -8,6 +8,8 @@ Public, read-only stats dashboard for the Twitch chat RPG at rpg.sola.rip. A Git
 - **Read-only, public data only.** No login, no cookies, never anything but GETs. Nothing automated in the game or chat.
 - **Keep requests low.** One collector for everyone; visitors only read the published files. Don't add endpoints or
   per-player requests without need; the watchlist is opt-in and capped. The site's operator can ask us to stop at any time.
+- **No activity logs per player.** Store values and their changes (gear, silver, stat totals), never a player's
+  individual quests or fights with times and channels: that would show when and where someone plays.
 - The README's request table must match what `collect.snapshot` actually does.
 
 ## How to work (Karpathy's guidelines)
@@ -35,7 +37,7 @@ keep it.
 
 ## Project map
 
-- `collect.py`: one run: `snapshot` (the requests), `state_from` (flat current state), `record` (only the changes).
+- `collect.py`: one run: `snapshot` (the requests), `state_from` (flat current state, incl. the watchlist's gear per slot), `record` (only the changes).
   Writes `data/days/YYYY-MM-DD.jsonl` (one line per run) and `data/state.json` on the `data` branch.
 - `build.py`: replays the day files (`History`), computes pace, forecasts, peers, guild standing, fight odds; writes
   `_site/data/summary.json`, `players.json` (search index) and `p/<login>.json`.

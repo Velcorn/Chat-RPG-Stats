@@ -97,8 +97,11 @@ def state_from(snap: dict, prev: dict) -> dict:
                                   "active": None, "guild": None}
     watch: dict[str, dict] = {}
     for login, p in snap["watch"].items():
+        slots = {s["slot"]: [s.get("label"), i.get("name"), i.get("tier"), i.get("attack"), i.get("defense"),
+                             i.get("support"), bool(i.get("damaged"))] if (i := s.get("item")) else [s.get("label")]
+                 for s in p.get("slots") or []}
         watch[login] = {"survival": p.get("survivalPercent"), "life": p.get("life"),
-                        "ach": p.get("achievementsUnlocked"), "stats": p.get("stats") or {}}
+                        "ach": p.get("achievementsUnlocked"), "stats": p.get("stats") or {}, "slots": slots}
         details[login] = {**details.get(login, {}), "atk": p.get("attack"), "def": p.get("defense"),
                           "sup": p.get("support"), "silver": p.get("silver")}
         if login not in players:
@@ -114,10 +117,7 @@ def state_from(snap: dict, prev: dict) -> dict:
             "channels": {c["login"]: bool(c.get("live")) for c in snap["channels"] if c.get("enabled")},
             "trader": {"channel": trader.get("channel") if trader.get("visiting") else None,
                        "last": trader.get("lastVisit")},
-            "fight_last": max([prev.get("fight_last", 0), *(f.get("id", 0) for f in snap["fights"])]),
-            "quest_last": {login: max([prev.get("quest_last", {}).get(login, ""),
-                                       *(q.get("at", "") for q in (snap["watch"][login].get("questHistory") or []))])
-                           for login in snap["watch"]}}
+            "fight_last": max([prev.get("fight_last", 0), *(f.get("id", 0) for f in snap["fights"])])}
 
 
 def changed(old: dict, new: dict) -> dict:
@@ -134,7 +134,7 @@ def changed(old: dict, new: dict) -> dict:
 
 
 def record(snap: dict, prev: dict, cur: dict, t: int) -> dict:
-    """One line of history: only what changed since `prev`, plus new fights and quests."""
+    """One line of history: only what changed since `prev`, plus new fights."""
     rec: dict = {"t": t}
     for key in ("players", "details", "guilds", "channels", "watch"):
         if diff := changed(prev.get(key, {}), cur[key]):
@@ -148,15 +148,6 @@ def record(snap: dict, prev: dict, cur: dict, t: int) -> dict:
                                       "fighters", "endedAt")} for f in snap["fights"] if f.get("id", 0) > last]
     if fights:
         rec["fights"] = sorted(fights, key=lambda f: f["id"])
-    quests = {}
-    for login, p in snap["watch"].items():
-        since = prev.get("quest_last", {}).get(login, "")
-        new = [{k: q.get(k) for k in ("at", "channel", "failed", "line")} for q in p.get("questHistory") or []
-               if q.get("at", "") > since]
-        if new:
-            quests[login] = sorted(new, key=lambda q: q["at"])
-    if quests:
-        rec["quests"] = quests
     return rec
 
 

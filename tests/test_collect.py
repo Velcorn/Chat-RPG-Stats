@@ -92,7 +92,8 @@ class StateTests(unittest.TestCase):
         s = snap({"karni": [member("a", 100)]}, watch=watch)
         prev = {"players": {"sola": {"gear": 50, "name": "Sola", "guild": None}}}
         state = collect.state_from(s, prev)
-        self.assertEqual(state["watch"]["sola"], {"survival": 80, "life": 3, "ach": 2, "stats": {"fights": 4}})
+        self.assertEqual(state["watch"]["sola"], {"survival": 80, "life": 3, "ach": 2, "stats": {"fights": 4},
+                                                  "slots": {}})
         self.assertEqual(state["details"]["sola"]["atk"], 5)
         self.assertEqual(state["players"]["sola"]["gear"], 50)  # the last known gear stays
         self.assertEqual(state["players"]["sola"]["guild"], "karni")

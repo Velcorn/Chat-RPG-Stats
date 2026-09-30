@@ -76,17 +76,16 @@ class CollectTests(unittest.TestCase):
         self.assertEqual(rec["players"]["b"], {"active": None, "guild": None})
         self.assertEqual(pipe.prev["players"]["b"]["gear"], 90)
 
-    def test_fights_and_quests_are_new_ones_only(self):
+    def test_fights_are_new_ones_only_and_quests_are_not_kept(self):
         pipe = Pipeline()
         fight = {"id": 5, "kind": "RAID", "difficulty": 2, "outcome": "VICTORY", "fighters": 30}
         quest = {"at": "2026-09-30T10:00:00Z", "channel": "sola", "failed": False, "line": "erhält 2 Gold 17 Silber"}
         watch = {"a": {"displayName": "a", "attack": 1, "defense": 2, "support": 3, "questHistory": [quest]}}
         first = pipe.run(snap({"karni": [member("a", 100)]}, fights=[fight], watch=watch), T0)
         self.assertEqual([f["id"] for f in first["fights"]], [5])
-        self.assertEqual(len(first["quests"]["a"]), 1)
+        self.assertNotIn("quests", first)  # a player's quest lines are read but never stored
         again = pipe.run(snap({"karni": [member("a", 100)]}, fights=[fight], watch=watch), T0 + 900)
         self.assertNotIn("fights", again)
-        self.assertNotIn("quests", again)
 
     def test_play_window(self):
         self.assertTrue(collect.in_play_window(datetime(2026, 9, 30, 7, 0)))
@@ -191,12 +190,14 @@ class BuildEdgeTests(unittest.TestCase):
         self.assertEqual(chaser["forecast"]["top100_gap"], gap)
         self.assertEqual(chaser["forecast"]["top100_days"], round(gap / (5 - 1), 1))
 
-    def test_watch_data_quests_and_trader(self):
+    def test_watch_data_market_series_and_trader(self):
         pipe = Pipeline()
-        quests = [{"at": f"2026-09-30T1{i}:00:00Z", "channel": "sola", "failed": False,
-                   "line": f"erhält {i} Gold 5 Silber"} for i in range(3)]
+        item = {"name": "Helm", "tier": 6, "attack": 1, "defense": 9, "support": 2, "damaged": True}
         watch = {"a": {"displayName": "A", "attack": 1, "defense": 2, "support": 3, "silver": 9, "survivalPercent": 70,
-                       "life": 1, "achievementsUnlocked": 4, "stats": {"fights": 2}, "questHistory": quests}}
+                       "life": 1, "achievementsUnlocked": 4, "questHistory": [{"at": "x", "line": "y"}],
+                       "stats": {"fights": 2, "marketSilverEarned": 500, "marketSilverSpent": 200},
+                       "slots": [{"slot": "HELMET", "label": "Helm", "item": item},
+                                 {"slot": "BOOTS", "label": "Stiefel", "item": None}]}}
         s = snap({"karni": [member("a", 100)]}, watch=watch)
         s["trader"] = {"visiting": True, "channel": "sola", "lastVisit": None}
         pipe.run(s, T0)
@@ -205,7 +206,9 @@ class BuildEdgeTests(unittest.TestCase):
         summary, out = pipe.build(T0 + 900)
         page = json.loads((out / "p" / "a.json").read_text())
         self.assertEqual(page["watch"]["survival"], 70)
-        self.assertEqual([q["silver"] for q in page["watch"]["quests"]], [205, 105, 5])  # newest first
+        self.assertNotIn("quests", page["watch"])
+        self.assertEqual(page["watch"]["slots"], {"HELMET": ["Helm", "Helm", 6, 1, 9, 2, True], "BOOTS": ["Stiefel"]})
+        self.assertEqual(page["series"]["market"], [[T0, 300]])
         self.assertEqual(len(summary["trader"]), 1)  # one visit, seen twice
         self.assertEqual(page["split"]["atk"], 1)
 
@@ -254,11 +257,6 @@ class HelperTests(unittest.TestCase):
         self.assertEqual(build.value_at(series, DAY - 1), 10)
         self.assertEqual(build.pace(series, 2 * DAY), 5.0)
         self.assertIsNone(build.pace([[0, 10]], 3600))  # under 12 h of data
-
-    def test_quest_silver(self):
-        self.assertEqual(build.quest_silver("X erhält 2 Gold 17 Silber. Nächste"), 217)
-        self.assertEqual(build.quest_silver("X erhält 90 Silber."), 90)
-        self.assertEqual(build.quest_silver("X scheitert."), 0)
 
 
 if __name__ == "__main__":

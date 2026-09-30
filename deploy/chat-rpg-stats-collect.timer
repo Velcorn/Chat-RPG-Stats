@@ -1,0 +1,10 @@
+# Alle 15 Minuten von 7 bis 24 Uhr Ortszeit (Berlin, die Spielzeit des Spiels), siehe chat-rpg-stats-collect.service.
+[Unit]
+Description=Statistik-Sammler alle 15 Minuten während der Spielzeit
+
+[Timer]
+OnCalendar=*-*-* 07..23:07,22,37,52:00
+RandomizedDelaySec=60
+
+[Install]
+WantedBy=timers.target

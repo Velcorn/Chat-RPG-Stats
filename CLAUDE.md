@@ -48,6 +48,8 @@ keep it.
 - `.pre-commit-config.yaml` (prek: ruff, tests, hygiene, plain punctuation), `.github/workflows/ci.yml` (hooks + coverage; writes
   the coverage badge with `.github/badge.py` to the `badges` branch, don't commit there), `.github/dependabot.yml`.
 - `.github/workflows/collect.yml`: schedule (4-22 UTC, collect.py skips outside 7-24 Berlin), data branch, Pages deploy.
+  GitHub's schedule fired once a day on 30.09.2026, so `deploy/chat-rpg-stats-collect.{service,timer}` (systemd user timer
+  on the operator's machine) dispatches the workflow every 15 minutes, 7-24 Berlin time.
 
 ## Game API facts
 

@@ -2,6 +2,11 @@
 
 Versionen nach [SemVer](https://semver.org/lang/de/). Solange die Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.4.3 (01.10.2026)
+
+**Behoben**
+- Die Daten waren seit dem Abend veraltet: GitHubs eigener Zeitplan löste bei diesem Repo nur einmal am Tag aus. Ein Timer auf dem Rechner des Betreibers (`deploy/chat-rpg-stats-collect.*`) startet den Sammler deshalb zusätzlich alle 15 Minuten von 7 bis 24 Uhr; der Zeitplan auf GitHub bleibt als Rückfall bestehen.
+
 ## 0.4.2 (30.09.2026)
 
 **Geändert**

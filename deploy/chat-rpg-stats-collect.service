@@ -1,0 +1,11 @@
+# Startet den Sammler auf GitHub von diesem Rechner aus, weil GitHubs eigener Zeitplan bei diesem Repo nur selten
+# auslöst (am 30.09.2026 ein Lauf statt vier pro Stunde). Läuft als systemd-User-Dienst, angemeldet über `gh auth login`:
+#   mkdir -p ~/.config/systemd/user && cp deploy/chat-rpg-stats-collect.* ~/.config/systemd/user/
+#   systemctl --user daemon-reload && systemctl --user enable --now chat-rpg-stats-collect.timer
+#   loginctl enable-linger $USER    (damit der Timer auch ohne angemeldete Sitzung läuft)
+[Unit]
+Description=Statistik-Sammler von Chat-RPG-Stats auf GitHub starten
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/gh workflow run collect.yml --repo Velcorn/Chat-RPG-Stats

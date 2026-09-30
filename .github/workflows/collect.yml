@@ -1,0 +1,64 @@
+name: Sammeln und veröffentlichen
+
+on:
+  schedule:
+    # Every 15 minutes, 4-22 UTC: covers 7-24 Uhr Berlin in summer and winter time; collect.py skips the rest.
+    # Off the full hour, when GitHub's scheduler is least busy.
+    - cron: "7,22,37,52 4-22 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["site/**", "build.py", ".github/workflows/collect.yml"]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: collect
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Datenzweig holen
+        env:
+          REMOTE: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}
+        run: |
+          if git ls-remote --exit-code --heads "$REMOTE" data >/dev/null; then
+            git clone --quiet --branch data --single-branch --depth 1 "$REMOTE" data
+          else
+            git init --quiet -b data data && git -C data remote add origin "$REMOTE"
+          fi
+      - name: Sammeln
+        id: collect
+        if: github.event_name != 'push'
+        run: uv run --no-dev python collect.py --data data ${{ github.event_name == 'workflow_dispatch' && '--force' || '' }}
+      - name: Daten sichern
+        if: steps.collect.outputs.collected == 'true'
+        working-directory: data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit --quiet -m "Daten $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push --quiet origin data
+      - name: Seite bauen
+        id: build
+        if: (steps.collect.outputs.collected == 'true' || github.event_name == 'push') && hashFiles('data/state.json') != ''
+        run: uv run --no-dev python build.py --data data --out _site
+      - uses: actions/upload-pages-artifact@v3
+        if: steps.build.outcome == 'success'
+        with:
+          path: _site
+      - id: deploy
+        if: steps.build.outcome == 'success'
+        uses: actions/deploy-pages@v4

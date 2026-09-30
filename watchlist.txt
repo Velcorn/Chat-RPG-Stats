@@ -1,0 +1,2 @@
+# Twitch-Namen, einer pro Zeile. Eintragen über das Issue-Formular "Auf die Beobachtungsliste".
+velcorn

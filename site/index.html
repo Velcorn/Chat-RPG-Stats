@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chat-RPG Statistik</title>
+<meta name="description" content="Ranglisten, Verlauf und Prognosen für das Twitch-Chat-RPG rpg.sola.rip">
+<style>
+  :root {
+    color-scheme: dark;
+    --page: #131312;
+    --surface-1: #1a1a19;
+    --surface-2: #262624;
+    --border: #383835;
+    --grid: #2c2c2a;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #8f8e86;
+    --series-1: #3987e5;
+    --series-2: #d99a1c;
+    --accent: #3987e5;
+    --good: #2fae6d;
+    --warning: #d99a1c;
+    --critical: #e5534b;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--page); color: var(--text-primary);
+         font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 1440px; margin: 0 auto; padding: 12px clamp(12px, 3vw, 20px); display: grid; gap: 12px; }
+  header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+  header .tabs { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+  .tabs a { color: var(--text-secondary); text-decoration: none; padding: 5px 12px; border-radius: 6px;
+            border: 1px solid var(--border); background: var(--surface-2); }
+  .tabs a:hover { border-color: var(--text-muted); }
+  .tabs a[aria-current] { background: var(--accent); border-color: var(--accent); color: var(--text-primary); }
+  h1 { font-size: 18px; margin: 0; font-weight: 600; }
+  h1 a { color: inherit; text-decoration: none; }
+  h2 { font-size: 13px; margin: 0 0 10px; font-weight: 600; color: var(--text-secondary);
+       text-transform: uppercase; letter-spacing: .06em; }
+  a { color: var(--accent); }
+  .muted { color: var(--text-muted); }
+  .secondary { color: var(--text-secondary); }
+  .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px; padding: 12px; min-width: 0; }
+  .grid { display: grid; gap: 12px; min-width: 0; }
+  .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  @media (max-width: 900px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .two { grid-template-columns: repeat(auto-fit, minmax(min(460px, 100%), 1fr)); }
+  .tile { padding: 10px 12px; }
+  .tile .label { color: var(--text-secondary); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+  .tile .value { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; margin: 2px 0; white-space: nowrap;
+                 overflow: hidden; text-overflow: ellipsis; }
+  .tile .sub { color: var(--text-muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+  @media (max-width: 600px) { .tile .value { font-size: 20px; } }
+  input, button { font: inherit; color: var(--text-primary); background: var(--surface-2);
+                  border: 1px solid var(--border); border-radius: 6px; padding: 6px 12px; }
+  button { cursor: pointer; } button:hover { border-color: var(--text-muted); }
+  .seg { display: inline-flex; gap: 4px; }
+  .seg button { padding: 2px 10px; font-size: 12px; }
+  .seg button[aria-pressed=true] { background: var(--accent); border-color: var(--accent); }
+  .head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .card > .head { margin-bottom: 8px; }
+  .head h2 { margin: 0; }
+  .search { position: relative; flex: 1; min-width: 200px; max-width: 360px; }
+  .search input { width: 100%; }
+  .suggest { position: absolute; left: 0; right: 0; top: 100%; margin-top: 4px; z-index: 5; background: var(--surface-2);
+             border: 1px solid var(--border); border-radius: 6px; max-height: 320px; overflow: auto; }
+  .suggest a { display: flex; justify-content: space-between; gap: 8px; padding: 6px 10px; color: var(--text-primary);
+               text-decoration: none; }
+  .suggest a:hover, .suggest a.on { background: var(--surface-1); }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+  th { color: var(--text-secondary); font-weight: 600; font-size: 12px; position: sticky; top: 0; background: var(--surface-1); }
+  td.num, th.num { text-align: right; white-space: nowrap; }
+  td a { color: var(--text-primary); text-decoration: none; } td a:hover { text-decoration: underline; }
+  .scroll { max-height: 520px; overflow: auto; }
+  .wide-table { overflow-x: auto; }
+  .up { color: var(--good); } .down { color: var(--critical); }
+  .tag { font-size: 11px; padding: 1px 6px; border-radius: 4px; background: var(--surface-2);
+         border: 1px solid var(--border); color: var(--text-secondary); white-space: nowrap; }
+  .chart { position: relative; }
+  .chart svg { display: block; width: 100%; height: 220px; overflow: visible; }
+  .chart .axis text { fill: var(--text-muted); font-size: 11px; }
+  .chart .gridline { stroke: var(--grid); stroke-width: 1; }
+  .chart .line { fill: none; stroke: var(--series-1); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .chart .end { fill: var(--series-1); stroke: var(--surface-1); stroke-width: 2; }
+  .chart .endlabel { fill: var(--text-primary); font-size: 12px; font-weight: 600; }
+  .chart .hair { stroke: var(--text-muted); stroke-width: 1; }
+  .chart .empty { fill: var(--text-muted); font-size: 13px; }
+  .tip { position: absolute; pointer-events: none; background: var(--surface-2); border: 1px solid var(--border);
+         border-radius: 6px; padding: 6px 9px; font-size: 12px; white-space: nowrap; display: none; z-index: 2; }
+  .tip strong { display: block; font-size: 14px; }
+  .tip .key { display: inline-block; width: 12px; height: 2px; background: var(--series-1); vertical-align: middle; margin-right: 6px; }
+  .facts { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0; }
+  .facts dt { color: var(--text-secondary); } .facts dd { margin: 0; font-variant-numeric: tabular-nums; }
+  .bars { display: grid; gap: 8px; }
+  .bar { display: grid; grid-template-columns: 100px 1fr 80px; gap: 8px; align-items: center; font-size: 13px; }
+  .bar .track { position: relative; height: 18px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+  .bar .fill { position: absolute; left: 0; top: 0; height: 9px; background: var(--series-1); }
+  .bar .peer { position: absolute; left: 0; bottom: 0; height: 9px; background: var(--series-2); }
+  .bar .val { text-align: right; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+  .note { color: var(--text-secondary); font-size: 13px; margin: 6px 0 0; }
+  footer { color: var(--text-muted); font-size: 12px; padding: 8px 0 20px; }
+  footer a { color: var(--text-secondary); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1><a href="#/">Chat-RPG Statistik</a></h1>
+    <div class="search">
+      <input id="q" type="search" placeholder="Spieler suchen (Twitch-Name)" autocomplete="off" aria-label="Spieler suchen">
+      <div id="suggest" class="suggest" hidden></div>
+    </div>
+    <nav class="tabs">
+      <a href="#/" data-view="home">Ranglisten</a>
+      <a href="#/gilden" data-view="guilds">Gilden</a>
+      <a href="#/kaempfe" data-view="fights">Kämpfe</a>
+    </nav>
+  </header>
+  <div id="view" class="grid"></div>
+  <footer id="footer"></footer>
+</main>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+function el(tag, props = {}, ...children) {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (v == null) continue;
+    if (k === "class") node.className = v;
+    else if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
+    else node.setAttribute(k, v);
+  }
+  for (const c of children.flat()) if (c != null) node.append(c instanceof Node ? c : document.createTextNode(String(c)));
+  return node;
+}
+const fmtInt = (n) => n == null ? "-" : Math.round(n).toLocaleString("de-DE");
+const fmtDec = (n, d = 1) => n == null ? "-" : n.toLocaleString("de-DE", { maximumFractionDigits: d });
+const count = (n, one, many) => `${fmtInt(n)} ${n == 1 ? one : many}`;  // count(1, "Punkt", "Punkte") -> "1 Punkt"
+// Every amount in silver (never gold), with the German thousands separator: 1234 -> "1.234 Silber".
+const fmtSilver = (s) => s == null ? "-" : `${fmtInt(s)} Silber`;
+const signed = (n, d = 0) => n == null ? "-" : (n > 0 ? "+" : "") + (d ? fmtDec(n, d) : fmtInt(n));
+const TZ = "Europe/Berlin";  // the game runs on Berlin time, whatever device views the page
+const fmtTime = (t) => new Date(t * 1000).toLocaleString("de-DE", { timeZone: TZ, weekday: "short", day: "2-digit",
+  month: "2-digit", hour: "2-digit", minute: "2-digit" });
+const fmtClock = (t) => new Date(t * 1000).toLocaleTimeString("de-DE", { timeZone: TZ, hour: "2-digit", minute: "2-digit" });
+const iso = (s) => s ? Date.parse(s) / 1000 : null;
+const pct = (a, b) => b ? `${fmtDec(100 * a / b, 0)} %` : "-";
+// "in weniger als einem Tag" / "in etwa 3 Tagen"
+const inDays = (d) => d < 1 ? "in weniger als einem Tag" : `in etwa ${count(Math.ceil(d), "Tag", "Tagen")}`;
+const KINDS = { BOSS: "Boss", ADVENTURE: "Abenteuer", RAID: "Überfall" };
+const fightLabel = (f) => f.kind === "BOSS" ? `Boss ${f.name || ""}, Stufe ${f.level ?? f.bossLevel ?? "?"}`
+  : `${KINDS[f.kind] || f.kind} Schwierigkeit ${f.level ?? f.difficulty ?? "?"}`;
+// The repo behind the page (user.github.io/repo), for the watchlist form and the footer.
+const REPO = location.hostname.endsWith(".github.io")
+  ? `${location.hostname.split(".")[0]}/${location.pathname.split("/")[1]}` : "Velcorn/chat-rpg-stats";
+const WATCH_FORM = `https://github.com/${REPO}/issues/new?template=watchlist.yml`;
+
+const cache = {};
+function load(path) {
+  if (!cache[path]) {
+    cache[path] = fetch("data/" + path).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); });
+    cache[path].catch(() => delete cache[path]);
+  }
+  return cache[path];
+}
+
+function tile(label, value, sub) {
+  return el("div", { class: "card tile" }, el("div", { class: "label" }, label), el("div", { class: "value", title: value }, value),
+    el("div", { class: "sub" }, sub ?? ""));
+}
+function card(title, ...body) { return el("section", { class: "card" }, title ? el("h2", {}, title) : null, ...body); }
+function delta(n, d = 0) { return el("span", { class: n > 0 ? "up" : n < 0 ? "down" : "muted" }, signed(n, d)); }
+function playerLink(r) { return el("a", { href: `#/spieler/${r.login}` }, r.name || r.login); }
+function table(cols, rows) {
+  return el("div", { class: "wide-table" }, el("table", {},
+    el("thead", {}, el("tr", {}, cols.map((c) => el("th", { class: c.num ? "num" : null, title: c.title }, c.label)))),
+    el("tbody", {}, rows.map((r) => el("tr", {}, cols.map((c) => el("td", { class: c.num ? "num" : null }, c.get(r))))))));
+}
+function seg(options, current, onPick) {
+  const box = el("div", { class: "seg" });
+  for (const [key, label] of options) {
+    const b = el("button", { "aria-pressed": String(key === current) }, label);
+    b.addEventListener("click", () => {
+      for (const o of box.children) o.setAttribute("aria-pressed", String(o === b));
+      onPick(key);
+    });
+    box.append(b);
+  }
+  return box;
+}
+
+// ---- chart (a line chart drawn as steps: a value holds until the next change) ----
+function niceTicks(lo, hi, n = 4) {
+  if (lo === hi) { lo -= 1; hi += 1; }
+  const raw = (hi - lo) / n, mag = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw) || raw;
+  const ticks = [];
+  for (let v = Math.floor(lo / step) * step; v < hi + step - step * 1e-9; v += step) ticks.push(Math.round(v * 1e6) / 1e6);
+  return ticks;
+}
+const SVGNS = "http://www.w3.org/2000/svg";
+function sv(tag, attrs = {}, text) {
+  const n = document.createElementNS(SVGNS, tag);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  if (text != null) n.textContent = text;
+  return n;
+}
+function lineChart(box, points, { label, fmt = fmtInt, invert = false, until, empty = "noch keine Daten",
+  missing = invert ? "nicht in den Top 100" : "-" }) {
+  box.replaceChildren();
+  if (until && points.length && until > points[points.length - 1].t) points = [...points, { t: until, v: points[points.length - 1].v }];
+  const lastPt = points.filter((p) => p.v != null).pop();
+  const endText = lastPt ? (invert ? "#" + lastPt.v : fmt(lastPt.v)) : "";
+  const W = Math.max(220, box.clientWidth), H = 220, m = { l: 60, r: 16 + endText.length * 7.5, t: 10, b: 22 };
+  const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": label });
+  box.append(svg);
+  const pts = points.filter((p) => p.v != null);
+  if (pts.length === 0) {
+    svg.append(sv("text", { x: W / 2, y: H / 2, "text-anchor": "middle", class: "empty" }, empty));
+    return;
+  }
+  const t0 = Math.min(...points.map((p) => p.t)), t1 = Math.max(...points.map((p) => p.t));
+  let lo = Math.min(...pts.map((p) => p.v)), hi = Math.max(...pts.map((p) => p.v));
+  let ticks = niceTicks(lo, hi).filter((v) => Number.isInteger(v));
+  if (invert) ticks = [...new Set(ticks.map((v) => Math.max(1, v)))];
+  if (!ticks.length) ticks = [lo];
+  lo = Math.min(lo, ticks[0]); hi = Math.max(hi, ticks[ticks.length - 1]);
+  if (lo === hi) hi = lo + 1;
+  const x = (t) => m.l + (t1 === t0 ? 0.5 : (t - t0) / (t1 - t0)) * (W - m.l - m.r);
+  const y = (v) => { const f = (v - lo) / (hi - lo); return m.t + (invert ? f : 1 - f) * (H - m.t - m.b); };
+  const axis = sv("g", { class: "axis" });
+  for (const v of ticks) {
+    axis.append(sv("line", { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), class: "gridline" }));
+    axis.append(sv("text", { x: m.l - 8, y: y(v) + 4, "text-anchor": "end" }, invert ? "#" + v : fmtInt(v)));
+  }
+  const xt = t1 === t0 ? 0 : Math.max(1, Math.min(4, Math.floor((W - m.l - m.r) / 75)));
+  for (let i = 0; i <= xt; i++) {
+    const t = t0 + (t1 - t0) * i / xt;
+    axis.append(sv("text", { x: x(t), y: H - 4, "text-anchor": xt === 0 ? "middle" : i === 0 ? "start" : i === xt ? "end" : "middle" },
+      (t1 - t0) > 2 * 86400 ? new Date(t * 1000).toLocaleDateString("de-DE", { timeZone: TZ, day: "2-digit", month: "2-digit" }) : fmtClock(t)));
+  }
+  svg.append(axis);
+  let d = "", prev = null;
+  for (const p of points) {
+    if (p.v == null) { prev = null; continue; }
+    d += prev == null ? `M${x(p.t).toFixed(1)},${y(p.v).toFixed(1)}`
+      : `L${x(p.t).toFixed(1)},${y(prev).toFixed(1)}L${x(p.t).toFixed(1)},${y(p.v).toFixed(1)}`;
+    prev = p.v;
+  }
+  svg.append(sv("path", { d, class: "line" }));
+  const last = pts[pts.length - 1];
+  svg.append(sv("circle", { cx: x(last.t), cy: y(last.v), r: 4, class: "end" }));
+  svg.append(sv("text", { x: x(last.t) + 8, y: y(last.v) + 4, class: "endlabel" }, endText));
+  const hair = sv("line", { y1: m.t, y2: H - m.b, class: "hair", visibility: "hidden" });
+  const dot = sv("circle", { r: 4, class: "end", visibility: "hidden" });
+  const hit = sv("rect", { x: m.l, y: 0, width: W - m.l - m.r, height: H, fill: "transparent" });
+  svg.append(hair, dot, hit);
+  const tip = el("div", { class: "tip" });
+  box.append(tip);
+  hit.addEventListener("pointermove", (ev) => {
+    const r = svg.getBoundingClientRect(), px = (ev.clientX - r.left) * W / r.width;
+    let best = points[0];
+    for (const p of points) if (Math.abs(x(p.t) - px) < Math.abs(x(best.t) - px)) best = p;
+    const cx = x(best.t);
+    hair.setAttribute("x1", cx); hair.setAttribute("x2", cx); hair.setAttribute("visibility", "visible");
+    if (best.v != null) { dot.setAttribute("cx", cx); dot.setAttribute("cy", y(best.v)); dot.setAttribute("visibility", "visible"); }
+    else dot.setAttribute("visibility", "hidden");
+    tip.replaceChildren(el("strong", {}, best.v == null ? missing : (invert ? "#" + best.v : fmt(best.v))),
+      el("span", { class: "key" }), el("span", { class: "muted" }, `${label} | ${fmtTime(best.t)}`));
+    tip.style.display = "block";
+    const left = cx * r.width / W;
+    tip.style.left = Math.min(Math.max(0, left - tip.offsetWidth / 2), r.width - tip.offsetWidth) + "px";
+    tip.style.top = "-6px";
+  });
+  hit.addEventListener("pointerleave", () => { hair.setAttribute("visibility", "hidden"); dot.setAttribute("visibility", "hidden"); tip.style.display = "none"; });
+}
+function chartCard(title, series, opts) {
+  const box = el("div", { class: "chart" });
+  requestAnimationFrame(() => lineChart(box, series.map(([t, v]) => ({ t, v })), { label: title, ...opts }));
+  return card(title, box);
+}
+
+// ---- views ----
+function viewHome(s) {
+  let span = "day";
+  const riserBox = el("div");
+  const renderRisers = () => {
+    const rows = s.risers[span];
+    riserBox.replaceChildren(rows.length ? table([
+      { label: "Spieler", get: playerLink },
+      { label: "Gilde", get: (r) => r.guild || "-" },
+      { label: "Wert", num: true, get: (r) => fmtInt(r.gear) },
+      { label: span === "day" ? "24 Stunden" : "7 Tage", num: true, get: (r) => delta(r[span]) },
+    ], rows) : el("p", { class: "note" }, span === "day" ? "Aufsteiger gibt es nach einem Tag Datensammlung." : "Aufsteiger der Woche gibt es nach sieben Tagen Datensammlung."));
+  };
+  renderRisers();
+  const t = s.top100;
+  return [
+    el("div", { class: "grid tiles" },
+      tile("Spieler erfasst", fmtInt(s.players), `davon ${fmtInt(s.active)} laut Gilde aktiv`),
+      tile("Grenze Top 100", t.gear == null ? "-" : count(t.gear, "Punkt", "Punkte"), t.pace == null ? "Tempo dort: nach 12 Stunden Verlauf" : `Tempo dort: ${signed(t.pace, 1)} pro Tag`),
+      tile("Gilden", fmtInt(s.guilds.length), `${fmtInt(s.guilds.reduce((a, g) => a + (g.members || 0), 0))} Mitglieder`),
+      tile("Kämpfe erfasst", fmtInt(s.fights.total), s.since ? `seit ${fmtTime(s.since)}` : "")),
+    el("div", { class: "grid two" },
+      card("Rangliste Ausrüstung (Top 100)", el("div", { class: "scroll" }, table([
+        { label: "#", num: true, get: (r) => r.rank },
+        { label: "", num: true, title: "Plätze seit gestern", get: (r) => r.rank_change ? delta(r.rank_change) : "" },
+        { label: "Spieler", get: playerLink },
+        { label: "Gilde", get: (r) => r.guild || "-" },
+        { label: "Wert", num: true, title: "Wert laut Rangliste des Spiels (hinkt der Gildenseite ein paar Minuten nach)", get: (r) => fmtInt(r.board_gear) },
+        { label: "24 h", num: true, get: (r) => delta(r.day) },
+        { label: "Pro Tag", num: true, title: "Durchschnitt der letzten 7 Tage", get: (r) => r.pace == null ? "-" : fmtDec(r.pace) },
+        { label: "ATK / DEF / SUP", num: true, get: (r) => `${fmtInt(r.atk)} / ${fmtInt(r.def)} / ${fmtInt(r.sup)}` },
+      ], s.board))),
+      el("div", { class: "grid" },
+        el("section", { class: "card" }, el("div", { class: "head" }, el("h2", {}, "Aufsteiger"),
+          seg([["day", "24 Stunden"], ["week", "7 Tage"]], span, (k) => { span = k; renderRisers(); })), riserBox),
+        card("Rangliste Quests (Top 100)", el("div", { class: "scroll" }, table([
+          { label: "#", num: true, get: (r) => r.rank },
+          { label: "Spieler", get: playerLink },
+          { label: "Quests", num: true, get: (r) => fmtInt(r.quests) },
+          { label: "24 h", num: true, get: (r) => delta(r.quests_day) },
+        ], s.quests))))),
+  ];
+}
+
+const draws = (st) => (st.drawsWon || 0) + (st.drawsLost || 0);
+const STAT_ROWS = [
+  ["Quests", (st) => `${fmtInt(st.questsCompleted)} geschafft, ${fmtInt(st.questsFailed)} gescheitert`],
+  ["Abenteuer", (st) => `${fmtInt(st.adventuresWon)} von ${fmtInt(st.adventures)} gewonnen (${pct(st.adventuresWon, st.adventures)})`],
+  ["Überfälle", (st) => `${fmtInt(st.raidsWon)} von ${fmtInt(st.raids)} gewonnen (${pct(st.raidsWon, st.raids)})`],
+  ["Bosse", (st) => `${fmtInt(st.bossesWon)} von ${fmtInt(st.bosses)} gewonnen (${pct(st.bossesWon, st.bosses)}), höchste Stufe ${fmtInt(st.highestBossLevel)}`],
+  ["Im Kampf", (st) => `${fmtInt(st.damage)} Schaden, ${fmtInt(st.healing)} Heilung, ${count(st.fallen, "Mal", "Mal")} gefallen`],
+  ["Markt", (st) => `${count(st.marketItemsBought, "Kauf", "Käufe")} für ${fmtSilver(st.marketSilverSpent)}, ${count(st.marketItemsSold, "Verkauf", "Verkäufe")} für ${fmtSilver(st.marketSilverEarned)}`],
+  ["Verlosungen", (st) => `${fmtInt(st.drawsWon)} von ${fmtInt(draws(st))} gewonnen (${pct(st.drawsWon, draws(st))})`],
+];
+
+async function viewPlayer(s, login) {
+  let p;
+  try { p = await load(`p/${encodeURIComponent(login)}.json`); }
+  catch {
+    return [card("Nicht gefunden", el("p", { class: "note" }, `"${login}" ist nicht erfasst. Erfasst sind alle Gildenmitglieder und die Top 100; Spieler ohne Gilde kommen über die `,
+      el("a", { href: WATCH_FORM }, "Beobachtungsliste"), " dazu."))];
+  }
+  const f = p.forecast, g = p.guild;
+  const tiles = el("div", { class: "grid tiles" },
+    tile("Ausrüstungswert", fmtInt(p.gear), p.day == null ? "Änderung: nach einem Tag Verlauf" : `${signed(p.day)} in 24 Stunden`),
+    tile("Rang", f.exact ? `#${f.rank}` : `etwa #${fmtInt(f.rank)}`, f.exact ? "in der Rangliste des Spiels" : "unter allen erfassten Spielern"),
+    tile("Tempo", p.pace == null ? "-" : `${signed(p.pace, 1)} / Tag`, p.pace == null ? "nach 12 Stunden Verlauf" : "Durchschnitt der letzten 7 Tage"),
+    tile("Nächster Rang", f.next_gap == null ? "Platz 1" : count(f.next_gap, "Punkt", "Punkte"), f.next_days ? `bei deinem Tempo ${inDays(f.next_days)}` : ""));
+
+  let top100;
+  if (f.top100_gap == null) top100 = p.board_rank ? `drin, Platz ${p.board_rank}` : "-";
+  else top100 = `${count(f.top100_gap, "Punkt", "Punkte")} bis zur Grenze` + (f.top100_days ? `, bei deinem Tempo ${inDays(f.top100_days)} (die Grenze steigt mit)`
+    : p.pace == null ? "" : ", bei diesem Tempo holst du sie nicht ein (sie steigt mindestens so schnell)");
+  const forecast = el("dl", { class: "facts" },
+    el("dt", {}, "Nächster Rang"), el("dd", {}, f.next_gap == null ? "Du bist ganz vorn." :
+      `${count(f.next_gap, "Punkt", "Punkte")} fehlen` + (f.next_days ? `, bei deinem Tempo ${inDays(f.next_days)}` : "")),
+    el("dt", {}, "Top 100"), el("dd", {}, top100),
+    el("dt", {}, "Tempo"), el("dd", {}, p.peers && p.peers.pace != null && p.pace != null
+      ? `Spieler mit ähnlichem Wert legen im Mittel ${signed(p.peers.pace, 1)} pro Tag zu, du ${signed(p.pace, 1)}.`
+      : "Der Vergleich kommt nach 12 Stunden Verlauf."));
+
+  const split = el("div", { class: "bars" });
+  if (p.peers) {
+    const mine = p.split.atk != null ? p.split : null;
+    const max = Math.max(1, ...["atk", "def", "sup"].flatMap((k) => [p.peers[k], mine ? mine[k] : 0]));
+    for (const [k, name] of [["atk", "Angriff"], ["def", "Verteidigung"], ["sup", "Unterstützung"]]) {
+      split.append(el("div", { class: "bar" }, el("span", {}, name),
+        el("div", { class: "track" }, mine ? el("div", { class: "fill", style: `width:${100 * mine[k] / max}%` }) : null,
+          el("div", { class: "peer", style: `width:${100 * p.peers[k] / max}%` })),
+        el("span", { class: "val" }, mine ? `${fmtInt(mine[k])} / ${fmtInt(p.peers[k])}` : fmtInt(p.peers[k]))));
+    }
+    split.append(el("div", { class: "legend" }, mine ? el("span", {}, el("i", { style: "background:var(--series-1)" }), p.name) : null,
+      el("span", {}, el("i", { style: "background:var(--series-2)" }), `Mittel von ${p.peers.n} Spielern um ${fmtInt(p.peers.gear)} Punkte`)));
+    if (!mine) split.append(el("p", { class: "note" }, "Die eigene Verteilung ist nur für die Top 100 und die Beobachtungsliste bekannt."));
+  } else split.append(el("p", { class: "note" }, "Noch keine vergleichbaren Spieler."));
+
+  const guild = g ? el("dl", { class: "facts" },
+    el("dt", {}, "Gilde"), el("dd", {}, `${g.name} (${count(g.members, "Mitglied", "Mitglieder")})`),
+    el("dt", {}, "Spendenrang"), el("dd", {}, `#${fmtInt(g.donation_rank)} mit ${fmtSilver(g.donated)}` + (g.donation_gap ? `, bis zum nächsten Platz fehlen ${fmtSilver(g.donation_gap)}` : "")),
+    el("dt", {}, "Ausrüstung"), el("dd", {}, `#${fmtInt(g.gear_rank)} in der Gilde, ${fmtDec(g.gear_share, 2)} % ihres Gesamtwerts`))
+    : el("p", { class: "note" }, "In keiner Gilde.");
+
+  const out = [
+    el("div", { class: "head" }, el("h1", {}, p.name), p.active === false ? el("span", { class: "tag" }, "laut Gilde inaktiv") : null),
+    tiles,
+    el("div", { class: "grid two" }, card("Prognose", forecast), card("Verteilung gegenüber ähnlichen Spielern", split)),
+    el("div", { class: "grid two" }, chartCard("Ausrüstungswert", p.series.gear, { until: s.generated }), card("Gilde", guild)),
+  ];
+  const charts = [];
+  if (p.series.rank.length) charts.push(chartCard("Rang (Top 100)", p.series.rank, { invert: true, until: s.generated }));
+  if (g) charts.push(chartCard("Gildenspende", p.series.donated, { fmt: fmtSilver, until: s.generated }));
+  if (charts.length) out.push(el("div", { class: "grid two" }, ...charts));
+
+  if (p.watch) {
+    const st = p.watch.stats || {}, quests = p.watch.quests;
+    const earned = quests.filter((q) => !q.failed).map((q) => q.silver);
+    out.push(el("div", { class: "grid two" },
+      card("Statistik (Beobachtungsliste)", el("dl", { class: "facts" },
+        el("dt", {}, "Überleben"), el("dd", {}, `${fmtInt(p.watch.survival)} %, Leben ${fmtInt(p.watch.life)}`),
+        STAT_ROWS.flatMap(([name, fn]) => [el("dt", {}, name), el("dd", {}, fn(st))]))),
+      card("Letzte Quests", quests.length ? el("div", {},
+        el("p", { class: "note" }, `${count(quests.length, "Quest", "Quests")} erfasst, im Schnitt ${fmtSilver(earned.length ? earned.reduce((a, b) => a + b, 0) / earned.length : null)}`),
+        el("div", { class: "scroll" }, table([
+          { label: "Zeit", get: (q) => fmtTime(iso(q.at)) },
+          { label: "Kanal", get: (q) => "#" + q.channel },
+          { label: "Silber", num: true, get: (q) => q.failed ? el("span", { class: "down" }, "gescheitert") : fmtSilver(q.silver) },
+        ], quests))) : el("p", { class: "note" }, "Noch keine Quests erfasst."))));
+  } else {
+    out.push(card("Mehr Statistik", el("p", { class: "note" }, "Kampfquoten, Markt, Verlosungen und die eigenen Quests gibt es für Spieler auf der ",
+      el("a", { href: WATCH_FORM }, "Beobachtungsliste"), ". Eintragen geht über ein kurzes Formular auf GitHub, nur für den eigenen Namen.")));
+  }
+  return out;
+}
+
+function viewGuilds(s) {
+  return s.guilds.map((g) => el("section", { class: "grid" },
+    el("div", { class: "head" }, el("h1", {}, g.name), el("span", { class: "muted" }, g.login)),
+    el("div", { class: "grid tiles" },
+      tile("Kasse", fmtSilver(g.treasury), `gespendet insgesamt: ${fmtSilver(g.donated)}`),
+      tile("Mitglieder", fmtInt(g.members), `${fmtInt(g.active)} aktiv (${pct(g.active, g.members)})`),
+      tile("Ausrüstung", fmtInt(g.gear), g.day ? `${signed(g.day)} in 24 Stunden` : "Summe aller Mitglieder"),
+      tile("Bosse", `${fmtInt(g.boss_wins)} Siege`, `${count(g.boss_losses, "Niederlage", "Niederlagen")}, Überfallstufe ${fmtInt(g.raid)}`)),
+    el("div", { class: "grid two" },
+      chartCard("Kasse", g.series.map((r) => [r[0], r[1]]), { fmt: fmtSilver, until: s.generated }),
+      chartCard("Aktive Mitglieder", g.series.map((r) => [r[0], r[3]]), { until: s.generated })),
+    el("div", { class: "grid two" },
+      card("Beste Ausrüstung", table([
+        { label: "Spieler", get: playerLink }, { label: "Wert", num: true, get: (r) => fmtInt(r.gear) },
+        { label: "24 h", num: true, get: (r) => delta(r.day) }], g.top)),
+      card("Größte Spender", table([
+        { label: "Spieler", get: playerLink }, { label: "Gespendet", num: true, get: (r) => fmtSilver(r.donated) }], g.donors)))));
+}
+
+function viewFights(s) {
+  const groups = s.fights.groups;
+  return [
+    el("div", { class: "grid two" },
+      card("Siegquote nach Kampfart (30 Tage)", groups.length ? table([
+        { label: "Kampf", get: fightLabel },
+        { label: "Kämpfe", num: true, get: (g) => fmtInt(g.n) },
+        { label: "Siege", num: true, get: (g) => `${fmtInt(g.wins)} (${pct(g.wins, g.n)})` },
+        { label: "Ø Teilnehmer", num: true, get: (g) => fmtInt(g.fighters) },
+      ], groups) : el("p", { class: "note" }, "Noch keine Kämpfe erfasst."),
+      el("p", { class: "note" }, "Aus dem Kampfarchiv des Spiels (alle Kanäle). Wenige Kämpfe einer Art sagen noch wenig.")),
+      card("Fahrender Händler", s.trader.length ? el("div", { class: "scroll" }, table([
+        { label: "Gesehen", get: (v) => fmtTime(v.t) }, { label: "Kanal", get: (v) => "#" + v.channel }], s.trader))
+        : el("p", { class: "note" }, "Noch kein Besuch gesehen. Erfasst werden nur Besuche, die beim Sammeln gerade laufen."))),
+    card("Letzte Kämpfe", el("div", { class: "scroll" }, table([
+      { label: "Ende", get: (f) => fmtTime(iso(f.endedAt)) },
+      { label: "Kanal", get: (f) => "#" + f.channel },
+      { label: "Kampf", get: (f) => f.kind === "BOSS" ? fightLabel(f) : `${f.name} (${fightLabel(f)})` },
+      { label: "Teilnehmer", num: true, get: (f) => fmtInt(f.fighters) },
+      { label: "Ausgang", get: (f) => f.outcome === "VICTORY" ? el("span", { class: "up" }, "gewonnen") : el("span", { class: "down" }, "verloren") },
+    ], s.fights.recent))),
+  ];
+}
+
+// ---- search ----
+let players = null, picked = 0;
+async function suggest() {
+  const q = $("q").value.trim().toLowerCase(), box = $("suggest");
+  if (!q) { box.hidden = true; return; }
+  try { players = players || await load("players.json"); } catch { return; }
+  const hits = players.filter((p) => p[0].includes(q) || p[1].toLowerCase().includes(q))
+    .sort((a, b) => (b[0].startsWith(q) - a[0].startsWith(q)) || b[2] - a[2]).slice(0, 12);
+  picked = 0;
+  box.replaceChildren(...hits.map((p, i) => el("a", { href: `#/spieler/${p[0]}`, class: i === 0 ? "on" : null },
+    el("span", {}, p[1]), el("span", { class: "muted" }, `${fmtInt(p[2])} | ${p[3] || "keine Gilde"}`))));
+  if (!hits.length) box.append(el("div", { class: "note", style: "padding:6px 10px;margin:0" }, "Nicht erfasst"));
+  box.hidden = false;
+}
+$("q").addEventListener("input", suggest);
+$("q").addEventListener("keydown", (ev) => {
+  const links = [...$("suggest").querySelectorAll("a")];
+  if (ev.key === "ArrowDown" || ev.key === "ArrowUp") {
+    ev.preventDefault();
+    picked = (picked + (ev.key === "ArrowDown" ? 1 : links.length - 1)) % Math.max(1, links.length);
+    links.forEach((a, i) => a.classList.toggle("on", i === picked));
+  } else if (ev.key === "Enter" && links[picked]) location.hash = links[picked].getAttribute("href");
+  else if (ev.key === "Escape") $("suggest").hidden = true;
+});
+document.addEventListener("click", (ev) => { if (!ev.target.closest(".search")) $("suggest").hidden = true; });
+
+// ---- routing ----
+async function route() {
+  $("suggest").hidden = true; $("q").value = "";
+  const [, name, arg] = location.hash.split("/");
+  const view = { spieler: "player", gilden: "guilds", kaempfe: "fights" }[name] || "home";
+  for (const a of document.querySelectorAll(".tabs a")) a.toggleAttribute("aria-current", a.dataset.view === view);
+  let s;
+  try { s = await load("summary.json"); }
+  catch { $("view").replaceChildren(card("Keine Daten", el("p", { class: "note" }, "Die Daten konnten nicht geladen werden."))); return; }
+  const login = decodeURIComponent(arg || "").toLowerCase();
+  const parts = await ({ home: viewHome, player: (x) => viewPlayer(x, login), guilds: viewGuilds, fights: viewFights })[view](s);
+  $("view").replaceChildren(...parts);
+  document.title = view === "player" ? `${login} | Chat-RPG Statistik` : "Chat-RPG Statistik";
+  $("footer").replaceChildren(`Stand ${fmtTime(s.generated)}. Liest nur öffentliche Daten von `,
+    el("a", { href: "https://rpg.sola.rip" }, "rpg.sola.rip"),
+    " (etwa alle 15 Minuten von 7 bis 24 Uhr, ohne Anmeldung). Kein offizielles Angebot des Spiels. ",
+    el("a", { href: `https://github.com/${REPO}` }, "Quellcode und Beobachtungsliste"), ".");
+  window.scrollTo(0, 0);
+}
+window.addEventListener("hashchange", route);
+route();
+</script>
+</body>
+</html>

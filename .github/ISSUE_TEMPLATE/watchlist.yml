@@ -1,0 +1,27 @@
+name: Auf die Beobachtungsliste
+description: Mehr Statistik für deinen Spieler (Kampfquoten, Markt, Verlosungen, deine Quests).
+title: "Beobachtungsliste: "
+labels: ["beobachtungsliste"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Für Spieler auf der Liste fragt der Sammler bei jedem Lauf zusätzlich die öffentliche Spielerseite ab
+        (eine Anfrage pro Spieler). Bitte nur den eigenen Namen eintragen. Das Eintragen passiert automatisch
+        innerhalb weniger Minuten, die ersten Daten kommen mit dem nächsten Lauf.
+  - type: dropdown
+    id: action
+    attributes:
+      label: Was soll passieren?
+      options:
+        - Hinzufügen
+        - Entfernen
+    validations:
+      required: true
+  - type: input
+    id: login
+    attributes:
+      label: Twitch-Name
+      description: So wie er im Spiel steht, z. B. velcorn
+    validations:
+      required: true

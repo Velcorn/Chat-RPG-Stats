@@ -1,6 +1,6 @@
 [project]
 name = "chat-rpg-stats"
-version = "0.5.0"
+version = "0.6.0"
 description = "Öffentliches Statistik-Dashboard für das Twitch-Chat-RPG rpg.sola.rip"
 requires-python = ">=3.13"
 dependencies = []

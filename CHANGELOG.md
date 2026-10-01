@@ -3,6 +3,15 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.6.0 (01.10.2026)
+
+**Oberfläche**
+- Spielerseite aufgeräumt: der Gildenname steht unter dem Namen, die Karten folgen von oben nach unten (Verlauf und Verteilung, Gilde und Prognose, Rang und Silber, dann die Beobachtungsliste mit eigener Überschrift). Die doppelte Zeile "Nächster Rang" in der Prognose entfällt, sie steht schon in der Kachel.
+- Gildenkarte: Kampfkraft steht jetzt vor dem Spendenrang.
+
+**Neu**
+- Gildenkarte: "Mitglied seit" und der Anteil an allen Spenden der Gilde.
+
 ## 0.5.0 (01.10.2026)
 
 **Neu**

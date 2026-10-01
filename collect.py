@@ -82,7 +82,7 @@ def state_from(snap: dict, prev: dict) -> dict:
         for m in page.get("members") or []:
             players[m["login"].lower()] = {"name": m.get("displayName"), "gear": m.get("gearScore"),
                                            "donated": m.get("donatedSilver"), "active": m.get("active"),
-                                           "guild": glogin}
+                                           "guild": glogin, "joined": m.get("joinedAt")}
     details: dict[str, dict] = {}
     # The board lags a few minutes behind the guild pages; its own value is kept, so its order makes sense.
     boards: dict[str, list] = {}

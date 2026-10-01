@@ -16,7 +16,7 @@ DAY = 86400
 
 def member(login, gear, donated=0, active=True):
     return {"login": login, "displayName": login.capitalize(), "gearScore": gear, "donatedSilver": donated,
-            "active": active}
+            "active": active, "joinedAt": "2026-09-27T09:44:24.158Z"}
 
 
 def snap(members: dict, board=None, fights=(), watch=None, treasury=1000) -> dict:
@@ -129,6 +129,8 @@ class BuildTests(unittest.TestCase):
     def test_guild_standing_and_series(self):
         fast = json.loads((self.out / "p" / "fast.json").read_text())
         self.assertEqual((fast["guild"]["donation_rank"], fast["guild"]["donation_gap"]), (2, 1000 - 350 + 1))
+        self.assertEqual((fast["guild"]["joined"], fast["guild"]["donation_share"]),
+                         ("2026-09-27T09:44:24.158Z", 25.93))
         self.assertEqual(len(fast["series"]["gear"]), 8)
         top = json.loads((self.out / "p" / "top.json").read_text())
         self.assertEqual((top["board_rank"], top["forecast"]["exact"]), (1, True))

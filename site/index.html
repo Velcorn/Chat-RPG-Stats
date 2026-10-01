@@ -61,7 +61,9 @@
   .seg { display: inline-flex; gap: 4px; }
   .seg button { padding: 2px 10px; font-size: 12px; }
   .seg button[aria-pressed=true] { background: var(--accent); border-color: var(--accent); }
+  h2.divider { margin: 6px 0 -4px; }
   .head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .head.start { justify-content: flex-start; gap: 12px; }
   .card > .head { margin-bottom: 8px; }
   .head h2 { margin: 0; }
   .streams { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
@@ -440,8 +442,6 @@ async function viewPlayer(s, login) {
   else top100 = `${count(f.top100_gap, "Punkt", "Punkte")} bis zur Grenze` + (f.top100_days ? `, bei deinem Tempo ${inDays(f.top100_days)} (die Grenze steigt mit)`
     : p.pace == null ? "" : ", bei diesem Tempo holst du sie nicht ein (sie steigt mindestens so schnell)");
   const forecast = el("dl", { class: "facts" },
-    el("dt", {}, "Nächster Rang"), el("dd", {}, f.next_gap == null ? "Du bist ganz vorn." :
-      `${count(f.next_gap, "Punkt", "Punkte")} fehlen` + (f.next_days ? `, bei deinem Tempo ${inDays(f.next_days)}` : "")),
     el("dt", {}, "Top 100"), el("dd", {}, top100),
     el("dt", {}, "Tempo"), el("dd", {}, p.peers && p.peers.pace != null && p.pace != null
       ? `Spieler mit ähnlichem Wert legen im Mittel ${signed(p.peers.pace, 1)} pro Tag zu, du ${signed(p.pace, 1)}.`
@@ -463,26 +463,31 @@ async function viewPlayer(s, login) {
   } else split.append(el("p", { class: "note" }, "Noch keine vergleichbaren Spieler."));
 
   const guild = g ? el("dl", { class: "facts" },
-    el("dt", {}, "Gilde"), el("dd", {}, `${g.name} (${count(g.members, "Mitglied", "Mitglieder")})`),
+    el("dt", {}, "Name"), el("dd", {}, el("a", { href: `#/gilden/${g.login}` }, g.name), ` (${count(g.members, "Mitglied", "Mitglieder")})`),
+    g.joined ? [el("dt", {}, "Mitglied seit"), el("dd", {}, new Date(g.joined).toLocaleDateString("de-DE", { timeZone: TZ }))] : null,
+    el("dt", {}, "Kampfkraft"), el("dd", {}, `#${fmtInt(g.gear_rank)} von ${fmtInt(g.members)}, ${fmtDec(g.gear_share, 2)} % des Gesamtwerts der Gilde`),
     el("dt", {}, "Spendenrang"), el("dd", {}, `#${fmtInt(g.donation_rank)} mit ${fmtSilver(g.donated)}` + (g.donation_gap ? `, bis zum nächsten Platz fehlen ${fmtSilver(g.donation_gap)}` : "")),
-    el("dt", {}, "Kampfkraft"), el("dd", {}, `#${fmtInt(g.gear_rank)} in der Gilde, ${fmtDec(g.gear_share, 2)} % ihres Gesamtwerts`))
+    g.donation_share != null ? [el("dt", {}, "Anteil an den Spenden"), el("dd", {}, `${fmtDec(g.donation_share, 2)} % aller Spenden der Gilde`)] : null)
     : el("p", { class: "note" }, "In keiner Gilde.");
 
   const out = [
-    el("div", { class: "head" }, el("h1", {}, p.name), p.active === false ? el("span", { class: "tag" }, "laut Gilde inaktiv") : null),
+    el("div", { class: "head start" }, el("h1", {}, p.name), g ? el("a", { href: `#/gilden/${g.login}` }, g.name) : null,
+      p.active === false ? el("span", { class: "tag" }, "laut Gilde inaktiv") : null),
     tiles,
-    el("div", { class: "grid two" }, card("Prognose", forecast), card("Verteilung gegenüber ähnlichen Spielern", split)),
-    el("div", { class: "grid two" }, chartCard("Kampfkraft", p.series.gear, { until: s.generated }), card("Gilde", guild)),
+    el("div", { class: "grid two" }, chartCard("Kampfkraft", p.series.gear, { until: s.generated }),
+      card("Verteilung gegenüber ähnlichen Spielern", split)),
+    el("div", { class: "grid two" }, card("Gilde", guild), card("Prognose", forecast)),
   ];
   const charts = [];
   if (p.series.rank.length) charts.push(chartCard("Rang (Top 100)", p.series.rank, { invert: true, until: s.generated }));
   if (p.series.silver.length) charts.push(chartCard("Silber", p.series.silver, { fmt: fmtSilver, until: s.generated }));
-  for (let i = 0; i < charts.length; i += 2) out.push(el("div", { class: "grid two" }, ...charts.slice(i, i + 2)));
+  if (charts.length) out.push(el("div", { class: "grid two" }, ...charts));
 
   if (p.watch) {
     const st = p.watch.stats || {};
+    out.push(el("h2", { class: "divider" }, "Beobachtungsliste"));
     out.push(el("div", { class: "grid two" }, fightCard(st),
-      card("Statistik (Beobachtungsliste)", el("dl", { class: "facts" },
+      card("Statistik", el("dl", { class: "facts" },
         el("dt", {}, "Überleben"), el("dd", {}, `${fmtInt(p.watch.survival)} %, Leben ${fmtInt(p.watch.life)}`),
         STAT_ROWS.flatMap(([name, fn]) => [el("dt", {}, name), el("dd", {}, fn(st))])))));
     if (p.watch.slots && Object.keys(p.watch.slots).length) out.push(gearCard(p.watch.slots));

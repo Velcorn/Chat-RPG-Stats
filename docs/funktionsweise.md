@@ -47,7 +47,7 @@ Eine Startseite und drei Bereiche mit einer zweiten Tab-Zeile, damit keine Seite
   `aufsteiger`, `formel`. Die vier Ranglisten sind die des Spiels (Parameter `by=gear|gold|errungenschaften|quests`; `gear` ist seit dem 30.09.2026 die Kampfkraft, je Top 100).
 - **Gilden** (`#/gilden/<Gilde>`): eine Unterseite pro Gilde, der Tab trägt den Namen des Streamers, die Überschrift den vollen Gildennamen.
 - **Kämpfe** (`#/kaempfe/...`): `arten`, `letzte`, `haendler`.
-- **Spieler** (`#/spieler/<Name>`): eine Seite pro Spieler, erreichbar über die Suche.
+- **Spieler** (`#/spieler/<Name>`): eine Seite pro Spieler, erreichbar über die Suche. Von oben nach unten: Kennzahlen, Verlauf der Kampfkraft und Verteilung der Werte, Gilde und Prognose, Rang und Silber, bei Spielern der Beobachtungsliste zuletzt Kämpfe, Statistik und Ausrüstung.
 
 ## So rechnet die Seite
 
@@ -63,8 +63,8 @@ Eine Startseite und drei Bereiche mit einer zweiten Tab-Zeile, damit keine Seite
 - **Vergleich mit ähnlichen Spielern:** Mittel von ATK/DEF/SUP der Spieler mit bekannter Verteilung (Top 100 und
   Beobachtungsliste), deren Wert höchstens 5 % (mindestens 10 Punkte) von deinem abweicht; sind das weniger als 8, die
   8 nächsten.
-- **Gilde:** Platz bei Spenden und Kampfkraft innerhalb der Gilde, Abstand zur nächsten Spende, Anteil am
-  Gildenwert.
+- **Gilde:** Mitglied seit (Beitrittsdatum aus der Gildenliste), Platz bei Kampfkraft und Spenden innerhalb der Gilde,
+  Anteil am Gildenwert, Abstand zur nächsten Spende und Anteil an allen Spenden der Gilde.
 - **Kampfkraft und Bonus:** Kampfkraft = ATK + DEF + SUP + Talentbonus (das Spiel nennt nur die Summe). Die Spalte "Bonus" der
   Rangliste ist Kampfkraft minus ATK, DEF und SUP. Die Seite "Bonus-Formel" hält die geschätzte Formel fest, von Hand aus
   166 Spielern der Ranglisten Kampfkraft und Quests (30.09.2026) angepasst: Verteidiger mit vollem Bollwerk-Baum

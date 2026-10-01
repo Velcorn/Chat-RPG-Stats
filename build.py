@@ -245,8 +245,10 @@ def player_page(login, h, state, now, rank, paces, with_split, top100_gear, top1
         above = players[members[pos - 1]].get("donated") or 0 if pos else None
         by_gear = sorted(guild_members[p["guild"]], key=lambda m: -(players[m].get("gear") or 0))
         info = state["guilds"].get(p["guild"], {})
-        guild = {"login": p["guild"], "name": info.get("name"), "members": len(members),
+        total = sum(players[m].get("donated") or 0 for m in members)
+        guild = {"login": p["guild"], "name": info.get("name"), "members": len(members), "joined": p.get("joined"),
                  "donated": p.get("donated"), "donation_rank": pos + 1,
+                 "donation_share": rounded(100 * (p.get("donated") or 0) / total, 2) if total else None,
                  "donation_gap": above - (p.get("donated") or 0) + 1 if above is not None else None,
                  "gear_rank": by_gear.index(login) + 1,
                  "gear_share": rounded(100 * g / info["gear"], 3) if info.get("gear") else None}

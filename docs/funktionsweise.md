@@ -23,6 +23,10 @@ Läuft der Sammler außerhalb der Spielzeit (Zeitplan deckt 4 bis 22 Uhr UTC ab,
 nichts. Ist die Seite nicht erreichbar, fällt der Lauf aus; die nächste Zeitplan-Ausführung versucht es wieder.
 Von Hand gestartet (`workflow_dispatch`) sammelt er immer.
 
+GitHubs eigener Zeitplan löst bei kleinen Repos unzuverlässig aus (am 30.09.2026 nur einmal am Tag). Darum startet zusätzlich
+ein systemd-Timer (`deploy/chat-rpg-stats-collect.timer`, Einrichtung im Kopf der Service-Datei) die Action alle 15 Minuten
+von 7 bis 24 Uhr per `gh workflow run`. Der Zeitplan auf GitHub bleibt als Rückfall.
+
 Änderungen an `site/` oder `build.py` lösen nur Bauen und Veröffentlichen aus, ohne neue Anfragen.
 
 ## Beobachtungsliste

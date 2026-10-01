@@ -1,21 +1,17 @@
 # Changelog
 
-Versionen nach [SemVer](https://semver.org/lang/de/). Solange die Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
+Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
+Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
 ## 0.4.4 (01.10.2026)
 
-**Oberfläche**
-- Die Badges im README sind jetzt englisch beschriftet (`coverage`, `collect`).
-
-## 0.4.3 (01.10.2026)
-
 **Behoben**
-- Die Daten waren seit dem Abend veraltet: GitHubs eigener Zeitplan löste bei diesem Repo nur einmal am Tag aus. Ein Timer auf dem Rechner des Betreibers (`deploy/chat-rpg-stats-collect.*`) startet den Sammler deshalb zusätzlich alle 15 Minuten von 7 bis 24 Uhr; der Zeitplan auf GitHub bleibt als Rückfall bestehen.
+- Die Daten wurden zeitweise nur einmal am Tag aktualisiert. Jetzt sind sie wieder etwa alle 15 Minuten von 7 bis 24 Uhr frisch.
 
 ## 0.4.2 (30.09.2026)
 
 **Geändert**
-- Das Repository heißt jetzt `Chat-RPG-Stats`, die Seite liegt unter `https://velcorn.github.io/Chat-RPG-Stats/`. Die alten Adressen leiten weiter. Der Sammler meldet sich mit dem neuen Namen.
+- Das Repository heißt jetzt `Chat-RPG-Stats`, die Seite liegt unter `https://velcorn.github.io/Chat-RPG-Stats/`. Die alten Adressen leiten weiter.
 
 ## 0.4.1 (30.09.2026)
 
@@ -43,12 +39,11 @@ Versionen nach [SemVer](https://semver.org/lang/de/). Solange die Version mit 0 
 
 **Geändert**
 - Die Quests eines Spielers werden nicht mehr gespeichert und nicht mehr angezeigt (Zeit, Kanal und Text je Quest). Die Gesamtzahlen (geschafft, gescheitert) und die Quest-Rangliste bleiben.
-- README: Wünsche und Fehler als Issue melden.
 
 ## 0.2.0 (30.09.2026)
 
 **Neu**
-- Ranglisten nach Silber und Errungenschaften (zusätzlich zu Ausrüstung und Quests), also alle vier des Spiels. Der Sammler macht dafür 2 Anfragen mehr pro Lauf (jetzt etwa 12).
+- Ranglisten nach Silber und Errungenschaften (zusätzlich zu Ausrüstung und Quests), also alle vier des Spiels.
 
 **Oberfläche**
 - Jeder Bereich hat eine zweite Tab-Zeile mit Unterseiten: Ranglisten (Ausrüstung, Silber, Errungenschaften, Quests, Aufsteiger), Gilden (eine Seite pro Gilde), Kämpfe (Kampfarten, letzte Kämpfe, fahrender Händler). Die Gilden-Tabs tragen den Namen des Streamers, der volle Gildenname steht als Überschrift. Die Seiten sind kürzer, die Adressen (`#/gilden/karni`) lassen sich teilen.
@@ -58,13 +53,8 @@ Versionen nach [SemVer](https://semver.org/lang/de/). Solange die Version mit 0 
 **Oberfläche**
 - Hinweis im Fuß der Seite: fast komplett vibe-coded, Zahlen sind Schätzungen.
 
-**Verbessert**
-- Dokumentation: kurze README mit Badges, Details zu Ablauf und Berechnung in `docs/funktionsweise.md`.
-- Tests für Sammler, Bau und Beobachtungsliste (Abdeckung von 76 % auf 99 %), CI mit denselben Hooks wie lokal, Abdeckungs-Badge, Dependabot.
-
 ## 0.1.0 (30.09.2026)
 
 **Neu**
-- Sammler als GitHub Action: alle 15 Minuten von 7 bis 24 Uhr, etwa 10 Anfragen, gespeichert werden nur Änderungen.
-- Dashboard auf GitHub Pages: Ranglisten mit Trends, Aufsteiger, Spielerseite mit Tempo, Prognose, Vergleich mit ähnlichen Spielern und Gildenstand, Gilden, Kämpfe und fahrender Händler.
+- Dashboard auf GitHub Pages: Ranglisten mit Trends, Aufsteiger, Spielerseite mit Tempo, Prognose, Vergleich mit ähnlichen Spielern und Gildenstand, Gilden, Kämpfe und fahrender Händler. Die Daten werden alle 15 Minuten von 7 bis 24 Uhr aktualisiert.
 - Beobachtungsliste über ein Issue-Formular: Kampfquoten, Markt, Verlosungen und Quests für eingetragene Spieler.

@@ -11,6 +11,8 @@ Public, read-only stats dashboard for the Twitch chat RPG at rpg.sola.rip. A Git
 - **No activity logs per player.** Store values and their changes (gear, silver, stat totals), never a player's
   individual quests or fights with times and channels: that would show when and where someone plays.
 - The README's request table must match what `collect.snapshot` actually does.
+- **Never mention the operator's other projects or accounts** anywhere (README, docs, page, changelog, comments, commit
+  messages). This project stands on its own.
 
 ## How to work (Karpathy's guidelines)
 
@@ -23,16 +25,21 @@ Public, read-only stats dashboard for the Twitch chat RPG at rpg.sola.rip. A Git
 
 ## Language
 
-Everything users see is German (README, page, issue form, Action names and replies); code, comments and commits stay
-English. Amounts in silver with the German thousands separator (`fmtSilver`), numbers with nouns via `count`. Plain
+Everything users see is German (README, page, issue form, Action replies); code, comments and commits stay
+English. Exception: badge labels and the names of workflows that show up in a badge are English (`coverage`, `collect`). Amounts in silver with the German thousands separator (`fmtSilver`), numbers with nouns via `count`. Plain
 punctuation: `-` instead of dashes, `...` instead of the ellipsis character, `->` instead of arrows, straight quotes. The README and the page footer carry the vibe-coding notice (mostly AI-written, spot-checked);
 keep it.
 
 ## After every change
 
 1. `uv run python -m unittest discover tests` and `uv run ruff check` (the commit hook runs both; CI runs the same hooks plus coverage).
-2. Update README.md (short), docs/funktionsweise.md (data flow and every calculation) and this file's map where the change touches them.
-3. If users notice it: bump the version in `pyproject.toml`, `uv lock`, add a German `CHANGELOG.md` entry. No git tags.
+2. Keep the docs current in the same commit, so they never lag the code: README.md (short; what it shows, the request
+   table, schedule, setup and commands must be true today), docs/funktionsweise.md (data flow and every calculation)
+   and this file's map and facts. Grep them for every number, name and behaviour the change touches, removed things
+   included. Operator details (timers, workflow plumbing) belong in docs/funktionsweise.md and this file, not the README.
+3. If visitors of the page notice it: bump the version in `pyproject.toml`, `uv lock`, add a German `CHANGELOG.md` entry.
+   The changelog lists only what affects users (page, data, addresses); no CI, tests, docs, badges, refactors or
+   infrastructure. Changes nobody sees get no entry and no version bump. No git tags.
 4. Commit, push: `SSH_AUTH_SOCK=$XDG_RUNTIME_DIR/ssh-agent.socket git push`.
 
 ## Project map
@@ -44,10 +51,11 @@ keep it.
 - `site/index.html`: the whole dashboard (no build step; hash routes `#/<section>/<sub>` with sections `rangliste`, `gilden`, `kaempfe` (see `SECTIONS`: each sub
   page is a tab in the second row) and `#/spieler/<login>`).
 - `watchlist.py` + `watchlist.txt`: the opt-in list, changed by the issue form via `.github/workflows/watchlist.yml`.
+- `tests/`: `test_collect.py`, `test_pipeline.py` (build), `test_watchlist.py`.
 - `docs/funktionsweise.md`: German detail: data flow, storage, watchlist, every calculation. README stays short.
 - `.pre-commit-config.yaml` (prek: ruff, tests, hygiene, plain punctuation), `.github/workflows/ci.yml` (hooks + coverage; writes
   the coverage badge with `.github/badge.py` to the `badges` branch, don't commit there), `.github/dependabot.yml`.
-- `.github/workflows/collect.yml`: schedule (4-22 UTC, collect.py skips outside 7-24 Berlin), data branch, Pages deploy.
+- `.github/workflows/collect.yml` (name `collect`): schedule (4-22 UTC, collect.py skips outside 7-24 Berlin), data branch, Pages deploy.
   GitHub's schedule fired once a day on 30.09.2026, so `deploy/chat-rpg-stats-collect.{service,timer}` (systemd user timer
   on the operator's machine) dispatches the workflow every 15 minutes, 7-24 Berlin time.
 

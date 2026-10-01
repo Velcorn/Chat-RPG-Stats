@@ -21,7 +21,7 @@ nichts in den Chat. Kein offizielles Angebot des Spiels.
 
 ## Was erfasst wird
 
-Ein Sammler läuft alle 15 Minuten von 7 bis 24 Uhr (Berliner Zeit, die Spielzeit des Spiels; nachts ändert sich nichts; GitHubs Zeitplan löst bei kleinen Repos unzuverlässig aus, darum startet ihn zusätzlich ein Timer, siehe `deploy/`)
+Ein Sammler läuft etwa alle 15 Minuten von 7 bis 24 Uhr (Berliner Zeit, die Spielzeit des Spiels; nachts ändert sich nichts)
 als GitHub Action und fragt die öffentlichen Schnittstellen der Seite ab, dieselben, die sie selbst ohne Anmeldung
 zeigt:
 

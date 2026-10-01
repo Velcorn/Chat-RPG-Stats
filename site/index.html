@@ -488,7 +488,7 @@ async function viewPlayer(s, login) {
 function viewGuild(s, login) {
   const g = s.guilds.find((x) => x.login === login);
   return [el("section", { class: "grid" },
-    el("div", { class: "head" }, el("h1", {}, g.name), el("span", { class: "muted" }, g.login)),
+    el("div", { class: "head" }, el("h1", {}, g.name)),
     el("div", { class: "grid tiles" },
       tile("Kasse", fmtSilver(g.treasury), `gespendet insgesamt: ${fmtSilver(g.donated)}`),
       tile("Mitglieder", fmtInt(g.members), `${fmtInt(g.active)} aktiv (${pct(g.active, g.members)})`),

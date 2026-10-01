@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.4.5 (01.10.2026)
+
+**Oberfläche**
+- Gildenseite: der Streamername neben dem Gildennamen entfällt, er steht schon im Tab und in der Adresse.
+
 ## 0.4.4 (01.10.2026)
 
 **Behoben**

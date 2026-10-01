@@ -2,6 +2,11 @@
 
 Versionen nach [SemVer](https://semver.org/lang/de/). Solange die Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.4.4 (01.10.2026)
+
+**Oberfläche**
+- Die Badges im README sind jetzt englisch beschriftet (`coverage`, `collect`).
+
 ## 0.4.3 (01.10.2026)
 
 **Behoben**

@@ -1,9 +1,9 @@
 # Chat-RPG Statistik
 
 [![CI](https://github.com/Velcorn/Chat-RPG-Stats/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Velcorn/Chat-RPG-Stats/actions/workflows/ci.yml)
-[![Abdeckung](https://raw.githubusercontent.com/Velcorn/Chat-RPG-Stats/badges/coverage.svg)](https://github.com/Velcorn/Chat-RPG-Stats/actions/workflows/ci.yml)
-[![Sammler](https://github.com/Velcorn/Chat-RPG-Stats/actions/workflows/collect.yml/badge.svg)](https://github.com/Velcorn/Chat-RPG-Stats/actions/workflows/collect.yml)
-[![Lizenz: MIT](https://img.shields.io/github/license/Velcorn/Chat-RPG-Stats)](LICENSE)
+[![coverage](https://raw.githubusercontent.com/Velcorn/Chat-RPG-Stats/badges/coverage.svg)](https://github.com/Velcorn/Chat-RPG-Stats/actions/workflows/ci.yml)
+[![collect](https://github.com/Velcorn/Chat-RPG-Stats/actions/workflows/collect.yml/badge.svg)](https://github.com/Velcorn/Chat-RPG-Stats/actions/workflows/collect.yml)
+[![license: MIT](https://img.shields.io/github/license/Velcorn/Chat-RPG-Stats)](LICENSE)
 
 Ranglisten, Verlauf und Prognosen für das Twitch-Chat-RPG [rpg.sola.rip](https://rpg.sola.rip): Wie schnell wächst
 deine Kampfkraft, wann erreichst du den nächsten Rang oder die Top 100, wie verteilen ähnlich starke Spieler ihre
@@ -64,8 +64,8 @@ uv run ruff check
 uv run prek install                              # Git-Hooks: ruff, Tests, Dateihygiene, einfache Satzzeichen
 ```
 
-Eigene Kopie (Fork): unter Settings -> Pages als Quelle "GitHub Actions" wählen, die Action "Sammeln und
-veröffentlichen" einmal von Hand starten. Danach läuft sie nach Zeitplan.
+Eigene Kopie (Fork): unter Settings -> Pages als Quelle "GitHub Actions" wählen, die Action "collect"
+einmal von Hand starten. Danach läuft sie nach Zeitplan.
 
 Die Action `CI` prüft jeden Push und jeden Pull Request (dieselben Hooks wie lokal, dazu die Testabdeckung, aus der das
 Badge oben entsteht). Neue Fassungen der Actions und Abhängigkeiten schlägt Dependabot vor.

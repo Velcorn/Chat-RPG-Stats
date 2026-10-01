@@ -38,7 +38,7 @@ jobs:
         run: |
           color=$([ "$PERCENT" -ge 80 ] && echo "#4c1" || ([ "$PERCENT" -ge 60 ] && echo "#dfb317" || echo "#e05d44"))
           mkdir -p /tmp/badges
-          uv run python .github/badge.py Abdeckung "$PERCENT %" "$color" /tmp/badges/coverage.svg
+          uv run python .github/badge.py coverage "$PERCENT %" "$color" /tmp/badges/coverage.svg
           cd /tmp/badges
           git init -q -b badges
           git config user.name "github-actions[bot]"

@@ -1,4 +1,4 @@
-name: Sammeln und veröffentlichen
+name: collect
 
 on:
   schedule:

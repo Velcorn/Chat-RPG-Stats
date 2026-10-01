@@ -35,7 +35,7 @@ def answers(**extra):
     return {"/api/guilds": [{"login": "karni", "members": 2}, {"login": "leer", "members": 0}],
             "/api/guilds/karni": {"guild": {"name": "Karni"}, "members": [member("a", 100)]},
             **{f"/api/leaderboard?by={b}&limit=100": board for b in collect.BOARD_FIELDS},
-            "/api/combat/history": [], "/api/trader": {"visiting": False}, "/api/channels": [], **extra}
+            "/api/combat/history": [], "/api/channels": [], **extra}
 
 
 class SnapshotTests(unittest.TestCase):
@@ -43,14 +43,14 @@ class SnapshotTests(unittest.TestCase):
         site = FakeSite(answers())
         s = collect.snapshot(site, [])
         self.assertEqual(list(s["guilds"]), ["karni"])  # a guild without members costs no request
-        self.assertEqual(site.requests, 9)
+        self.assertEqual(site.requests, 8)
         self.assertEqual(s["watch"], {})
 
     def test_watchlist_costs_one_request_each_and_skips_unknown_players(self):
         site = FakeSite(answers(**{"/api/players/sola": {"displayName": "Sola"}, "/api/players/weg": 404}))
         s = collect.snapshot(site, ["sola", "weg"])
         self.assertEqual(list(s["watch"]), ["sola"])
-        self.assertEqual(site.requests, 11)
+        self.assertEqual(site.requests, 10)
 
     def test_other_http_errors_are_raised(self):
         with self.assertRaises(urllib.error.HTTPError):
@@ -111,13 +111,6 @@ class StateTests(unittest.TestCase):
         self.assertEqual(state["players"]["solo"]["guild"], None)
         self.assertEqual(state["players"]["solo"]["gear"], 80)
         self.assertEqual(state["boards"]["gear"], [["solo", 80]])
-
-    def test_trader_only_named_while_visiting(self):
-        s = snap({"karni": [member("a", 100)]})
-        s["trader"] = {"visiting": True, "channel": "sola", "lastVisit": "2026-09-30T10:00:00Z"}
-        self.assertEqual(collect.state_from(s, {})["trader"], {"channel": "sola", "last": "2026-09-30T10:00:00Z"})
-        s["trader"]["visiting"] = False
-        self.assertIsNone(collect.state_from(s, {})["trader"]["channel"])
 
     def test_changed_ignores_equal_entries_and_keeps_new_ones_whole(self):
         old = {"a": {"x": 1, "y": 2}, "b": {"x": 1}}

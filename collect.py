@@ -1,7 +1,7 @@
 """Collector: one snapshot of the game's public data, stored as the changes since the last one.
 
 Runs every 15 minutes in GitHub Actions during the game's play window. Reads only public endpoints (no login,
-no cookies) and never sends anything but GETs. One run is about sixteen requests, two seconds apart.
+no cookies) and never sends anything but GETs. One run is about fifteen requests, two seconds apart.
 """
 from __future__ import annotations
 
@@ -58,7 +58,6 @@ def snapshot(site: Site, watchlist: list[str]) -> dict:
             snap["guilds"][g["login"]] = site.get(f"/api/guilds/{quote(g['login'])}")
     snap["boards"] = {b: site.get(f"/api/leaderboard?by={b}&limit=100") for b in BOARD_FIELDS}
     snap["fights"] = site.get("/api/combat/history")
-    snap["trader"] = site.get("/api/trader")
     snap["channels"] = site.get("/api/channels")
     for login in watchlist:
         try:
@@ -111,12 +110,9 @@ def state_from(snap: dict, prev: dict) -> dict:
     for login, old in prev.get("players", {}).items():
         if login not in players:
             players[login] = {**old, "guild": None, "active": None}
-    trader = snap["trader"] or {}
     return {"players": players, "details": {**prev.get("details", {}), **details}, "boards": boards,
             "guilds": guilds, "watch": watch,
             "channels": {c["login"]: bool(c.get("live")) for c in snap["channels"] if c.get("enabled")},
-            "trader": {"channel": trader.get("channel") if trader.get("visiting") else None,
-                       "last": trader.get("lastVisit")},
             "fight_last": max([prev.get("fight_last", 0), *(f.get("id", 0) for f in snap["fights"])])}
 
 
@@ -141,8 +137,6 @@ def record(snap: dict, prev: dict, cur: dict, t: int) -> dict:
             rec[key] = diff
     if boards := changed(prev.get("boards", {}), cur["boards"]):
         rec["boards"] = boards
-    if cur["trader"] != prev.get("trader"):
-        rec["trader"] = cur["trader"]
     last = prev.get("fight_last", 0)
     fights = [{k: f.get(k) for k in ("id", "channel", "kind", "name", "difficulty", "bossLevel", "outcome",
                                       "fighters", "endedAt")} for f in snap["fights"] if f.get("id", 0) > last]

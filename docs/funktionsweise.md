@@ -41,7 +41,7 @@ und Kämpfe eines Spielers werden nicht gespeichert, nur Werte und ihre Änderun
 
 Eine Startseite und drei Bereiche mit einer zweiten Tab-Zeile, damit keine Seite überladen ist (Adresse `#/<Bereich>/<Unterseite>`):
 
-- **Start** (`#/start`, Standard): eine Karte je Streamer (Kanal der Liste `channels`): Live-Status aus `/api/channels`, Link zum Twitch-Kanal, Gildenname, Mitglieder, Kasse, durchschnittliche Kampfkraft der aktiven Mitglieder (die Karten sind nach dem Durchschnitt sortiert, Live zuerst) mit Link zur Gildenseite und zur Spielerseite des Streamers. Dazu die zehn letzten Kämpfe und die Spielersuche. Den fahrenden Händler und laufende Kämpfe zeigt die Startseite nicht, denn bei einem Abruf alle 15 Minuten wären sie fast immer schon vorbei; der Händler steht unter Kämpfe. Zuschauerzahl und Titel des Streams gibt das Spiel nicht her, sie stehen nicht da.
+- **Start** (`#/start`, Standard): eine Karte je Streamer (Kanal der Liste `channels`): Live-Status aus `/api/channels`, Link zum Twitch-Kanal, Gildenname, Mitglieder, Kasse, durchschnittliche Kampfkraft der aktiven Mitglieder (die Karten sind nach dem Durchschnitt sortiert, Live zuerst) mit Link zur Gildenseite und zur Spielerseite des Streamers. Dazu die zehn letzten Kämpfe und die Spielersuche. Laufende Kämpfe zeigt die Startseite nicht, denn bei einem Abruf alle 15 Minuten wären sie fast immer schon vorbei. Zuschauerzahl und Titel des Streams gibt das Spiel nicht her, sie stehen nicht da.
 
 - **Ranglisten** (`#/rangliste/...`): `kampfkraft` (Standard, mit ATK, DEF, SUP und Bonus je Spieler), `silber`, `errungenschaften`, `quests`,
   `aufsteiger`, `formel`. Die vier Ranglisten sind die des Spiels (Parameter `by=gear|gold|errungenschaften|quests`; `gear` ist seit dem 30.09.2026 die Kampfkraft, je Top 100).
@@ -86,7 +86,6 @@ Eine Startseite und drei Bereiche mit einer zweiten Tab-Zeile, damit keine Seite
 - **Aufsteiger:** größter Zuwachs in 24 Stunden bzw. 7 Tagen.
 - **Kämpfe:** Siegquote pro Kampfart der letzten 30 Tage, Bosse nach Name und Stufe, sonst nach Art und Schwierigkeit.
   Das Kampfarchiv des Spiels hält nur die letzten 20 Kämpfe, deshalb sammelt der Sammler sie fortlaufend.
-- **Fahrender Händler:** Besuche, die bei einem Lauf gerade liefen (ein Besuch dauert 5 Minuten, also längst nicht alle).
 
 Alle Werte sind Schätzungen aus dem, was seit Beginn der Aufzeichnung gesammelt wurde. Am Anfang und bei neuen
 Spielern fehlen Tempo und Prognose.

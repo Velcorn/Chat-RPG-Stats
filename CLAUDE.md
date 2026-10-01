@@ -63,7 +63,7 @@ keep it.
 
 - Public without login: `/api/rules`, `/api/leaderboard?by=gear|quests&limit=100` (max 100; `silver` and `level` return
   the gear board), `/api/players/{login}`, `/api/guilds`, `/api/guilds/{login}` (all members with gear score and
-  donations), `/api/combat/history` (last 20 fights, about a day), `/api/trader`, `/api/channels`.
+  donations), `/api/combat/history` (last 20 fights, about a day), `/api/channels` (the trader endpoint is not used).
   `/api/market/board` needs a login (not used).
 - The leaderboard lags the guild pages by a few minutes.
 - Since 30.09.2026 `gearScore` (boards, guild pages, guild total) is Kampfkraft: gear (ATK+DEF+SUP) plus a talent bonus the API

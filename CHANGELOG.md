@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.8.5 (01.10.2026)
+
+**Behoben**
+- Die Seite zeigte nur "Keine Daten": die Zeile mit den täglichen Anfragen im Fuß (0.8.4) überdeckte die Funktion zum Laden der Daten. Behoben.
+
 ## 0.8.4 (01.10.2026)
 
 **Neu**

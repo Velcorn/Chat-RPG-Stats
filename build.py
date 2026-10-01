@@ -116,12 +116,6 @@ def fight_groups(fights: list[dict], now: float, days: int = 30) -> list[dict]:
     return sorted(out, key=lambda g: (g["kind"], g["name"] or "", g["level"] or 0))
 
 
-def fights_since(fights: list[dict], since: float) -> dict:
-    """Number of fights that ended after `since` and how many of them were won."""
-    recent = [f for f in fights if (iso_ts(f.get("endedAt")) or 0) > since]
-    return {"n": len(recent), "wins": sum(1 for f in recent if f.get("outcome") == "VICTORY")}
-
-
 def iso_ts(s: str | None) -> float | None:
     if not s:
         return None
@@ -201,8 +195,9 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
                "top100": {"gear": top100_gear, "pace": rounded(top100_pace)},
                "guilds": sorted(guild_rows, key=lambda g: -(g.get("gear") or 0)),
                "fights": {"groups": fight_groups(h.fights, now), "recent": h.fights[-50:][::-1],
-                          "total": len(h.fights), "day": fights_since(h.fights, now - DAY)},
-               "trader": h.trader[-50:][::-1], "channels": state.get("channels", {})}
+                          "total": len(h.fights)},
+               "trader": h.trader[-50:][::-1], "live_fights": state.get("live_fights", []),
+               "channels": state.get("channels", {})}
 
     target = out / "data"
     if target.exists():

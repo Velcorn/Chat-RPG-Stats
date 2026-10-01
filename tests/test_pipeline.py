@@ -223,7 +223,6 @@ class BuildEdgeTests(unittest.TestCase):
         groups = build.fight_groups([old, new], now)
         self.assertEqual([(g["n"], g["wins"], g["fighters"]) for g in groups], [(1, 0, 15)])
         self.assertIsNone(build.iso_ts(None))
-        self.assertEqual(build.fights_since([old, new], now - DAY), {"n": 1, "wins": 0})
 
     def test_guild_average_counts_active_members_only(self):
         pipe = Pipeline()

@@ -1,7 +1,7 @@
 """Collector: one snapshot of the game's public data, stored as the changes since the last one.
 
 Runs every 15 minutes in GitHub Actions during the game's play window. Reads only public endpoints (no login,
-no cookies) and never sends anything but GETs. One run is about sixteen requests, two seconds apart.
+no cookies) and never sends anything but GETs. One run is about seventeen requests, two seconds apart.
 """
 from __future__ import annotations
 
@@ -59,6 +59,11 @@ def snapshot(site: Site, watchlist: list[str]) -> dict:
     snap["boards"] = {b: site.get(f"/api/leaderboard?by={b}&limit=100") for b in BOARD_FIELDS}
     snap["fights"] = site.get("/api/combat/history")
     snap["trader"] = site.get("/api/trader")
+    try:
+        snap["encounters"] = site.get("/api/combat?kompakt=true")
+    except urllib.error.HTTPError as exc:  # a nice-to-have: the stats work without it
+        exc.close()
+        snap["encounters"] = []
     snap["channels"] = site.get("/api/channels")
     for login in watchlist:
         try:
@@ -115,6 +120,11 @@ def state_from(snap: dict, prev: dict) -> dict:
     return {"players": players, "details": {**prev.get("details", {}), **details}, "boards": boards,
             "guilds": guilds, "watch": watch,
             "channels": {c["login"]: bool(c.get("live")) for c in snap["channels"] if c.get("enabled")},
+            "live_fights": [{"id": e.get("id"), "channel": e.get("channel"), "kind": e.get("kind"),
+                             "name": e.get("name"),
+                             "level": e.get("bossLevel") if e.get("kind") == "BOSS" else e.get("difficulty"),
+                             "phase": e.get("phaseLabel") or e.get("phase"), "fighters": e.get("fighterCount")}
+                            for e in snap.get("encounters") or [] if e.get("phase") not in ("VICTORY", "DEFEAT")],
             "trader": {"channel": trader.get("channel") if trader.get("visiting") else None,
                        "last": trader.get("lastVisit")},
             "fight_last": max([prev.get("fight_last", 0), *(f.get("id", 0) for f in snap["fights"])])}

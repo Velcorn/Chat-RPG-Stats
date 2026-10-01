@@ -504,7 +504,7 @@ function viewGuild(s, login) {
     el("div", { class: "grid tiles" },
       tile("Kasse", fmtSilver(g.treasury), `gespendet insgesamt: ${fmtSilver(g.donated)}`),
       tile("Mitglieder", fmtInt(g.members), `${fmtInt(g.active)} aktiv (${pct(g.active, g.members)})`),
-      tile("Ø Kampfkraft", fmtDec(g.avg_gear, 1), `aktive Mitglieder | Summe ${fmtInt(g.gear)}${g.day ? `, ${signed(g.day)} in 24 h` : ""}`),
+      tile("Ø Kampfkraft", fmtDec(g.avg_gear, 1), "aktive Mitglieder"),
       tile("Bosse", `${fmtInt(g.boss_wins)} Siege`, `${count(g.boss_losses, "Niederlage", "Niederlagen")}, Überfallstufe ${fmtInt(g.raid)}`)),
     el("div", { class: "grid two" },
       chartCard("Kasse", g.series.map((r) => [r[0], r[1]]), { fmt: fmtSilver, until: s.generated }),
@@ -528,8 +528,7 @@ function viewStart(s) {
     g ? el("div", { class: "lines" },
       el("div", {}, el("span", { class: "muted" }, "Mitglieder"), `${fmtInt(g.members)} (${fmtInt(g.active)} aktiv)`),
       el("div", {}, el("span", { class: "muted" }, "Kasse"), fmtSilver(g.treasury)),
-      el("div", {}, el("span", { class: "muted" }, "Ø Kampfkraft (aktive)"), fmtDec(g.avg_gear, 1)),
-      el("div", {}, el("span", { class: "muted" }, "Kampfkraft gesamt"), el("span", {}, fmtInt(g.gear), " ", g.day ? delta(g.day) : ""))) : null,
+      el("div", {}, el("span", { class: "muted" }, "Ø Kampfkraft (aktive)"), fmtDec(g.avg_gear, 1)),) : null,
     el("div", { class: "head" }, el("a", { href: `#/spieler/${login}` }, "Spielerseite"),
       el("a", { href: `https://www.twitch.tv/${login}`, target: "_blank", rel: "noopener" }, "Zum Stream auf Twitch"))));
   const visit = s.trader[0];
@@ -539,33 +538,43 @@ function viewStart(s) {
   return [
     card("Spieler suchen", el("div", { id: "hero-search" }), el("p", { class: "note" }, "Erfasst sind alle Gildenmitglieder und die Top 100.")),
     el("div", { class: "grid streams" }, streams.map(streamCard)),
-    el("div", { class: "grid tiles" },
-      tile("Kämpfe (24 h)", fmtInt(s.fights.day.n), s.fights.day.n ? `${fmtInt(s.fights.day.wins)} gewonnen (${pct(s.fights.day.wins, s.fights.day.n)})` : "noch keine"),
-      tile("Kämpfe erfasst", fmtInt(s.fights.total), s.since ? `seit ${fmtTime(s.since)}` : ""),
-      tile("Spieler erfasst", fmtInt(s.players), `davon ${fmtInt(s.active)} laut Gilde aktiv`),
-      tile("Grenze Top 100", s.top100.gear == null ? "-" : count(s.top100.gear, "Punkt", "Punkte"),
-        s.top100.pace == null ? "Tempo dort: nach 12 Stunden Verlauf" : `Tempo dort: ${signed(s.top100.pace, 1)} pro Tag`)),
     el("div", { class: "grid two" },
       card("Fahrender Händler", el("p", { class: "note" }, traderText)),
-      card("Letzte Kämpfe", s.fights.recent.length ? [table([
-        { label: "Ende", get: (f) => fmtTime(iso(f.endedAt)) },
-        { label: "Kanal", get: (f) => "#" + f.channel },
-        { label: "Kampf", get: (f) => f.kind === "BOSS" ? fightLabel(f) : `${f.name} (${fightLabel(f)})` },
-        { label: "Ausgang", get: (f) => f.outcome === "VICTORY" ? el("span", { class: "up" }, "gewonnen") : el("span", { class: "down" }, "verloren") },
-      ], s.fights.recent.slice(0, 5)), el("p", { class: "note" }, el("a", { href: "#/kaempfe/letzte" }, "Alle letzten Kämpfe"))]
-        : el("p", { class: "note" }, "Noch keine Kämpfe erfasst.")))];
+      card("Laufende Kämpfe", liveFights(s))),
+    card("Letzte Kämpfe", s.fights.recent.length ? [el("div", { class: "scroll" }, table(RECENT_COLS(s), s.fights.recent.slice(0, 10))),
+      el("p", { class: "note" }, "Der Kampfbericht öffnet sich im Spiel, das Spiel hält ihn eine Woche vor. ", el("a", { href: "#/kaempfe/letzte" }, "Alle letzten Kämpfe"))]
+      : el("p", { class: "note" }, "Noch keine Kämpfe erfasst."))];
 }
+
+// Fights running at the last collection (a fight is over in minutes, so this is a snapshot, like the trader).
+function liveFights(s) {
+  const at = fmtTime(s.generated);
+  if (!s.live_fights.length) return el("p", { class: "note" }, `Beim letzten Abruf (${at}) lief in keinem Kanal ein Kampf.`);
+  return [el("ul", { class: "note" }, s.live_fights.map((f) => el("li", {},
+    el("a", { href: `https://www.twitch.tv/${f.channel}`, target: "_blank", rel: "noopener" }, "#" + f.channel),
+    `: ${f.kind === "BOSS" ? fightLabel(f) : `${f.name} (${fightLabel(f)})`}, ${f.phase}` + (f.fighters ? `, ${count(f.fighters, "Kämpfer", "Kämpfer")}` : "")))),
+    el("p", { class: "note" }, `Stand ${at}.`)];
+}
+
+const REPORT_AGE = 7 * 86400;
+const fightCell = (s) => (f) => {
+  const text = f.kind === "BOSS" ? fightLabel(f) : `${f.name} (${fightLabel(f)})`;
+  return s.generated - iso(f.endedAt) < REPORT_AGE
+    ? el("a", { href: `https://rpg.sola.rip/kampfbericht/${f.id}`, target: "_blank", rel: "noopener" }, text) : text;
+};
+const RECENT_COLS = (s) => [
+  { label: "Ende", get: (f) => fmtTime(iso(f.endedAt)) },
+  { label: "Kanal", get: (f) => "#" + f.channel },
+  { label: "Kampf", get: fightCell(s) },
+  { label: "Teilnehmer", num: true, get: (f) => fmtInt(f.fighters) },
+  { label: "Ausgang", get: (f) => f.outcome === "VICTORY" ? el("span", { class: "up" }, "gewonnen") : el("span", { class: "down" }, "verloren") },
+];
 
 function viewFights(s, sub) {
   const groups = s.fights.groups;
   if (sub === "letzte") return [
-    card("Letzte Kämpfe", el("div", { class: "scroll" }, table([
-      { label: "Ende", get: (f) => fmtTime(iso(f.endedAt)) },
-      { label: "Kanal", get: (f) => "#" + f.channel },
-      { label: "Kampf", get: (f) => f.kind === "BOSS" ? fightLabel(f) : `${f.name} (${fightLabel(f)})` },
-      { label: "Teilnehmer", num: true, get: (f) => fmtInt(f.fighters) },
-      { label: "Ausgang", get: (f) => f.outcome === "VICTORY" ? el("span", { class: "up" }, "gewonnen") : el("span", { class: "down" }, "verloren") },
-    ], s.fights.recent)))];
+    card("Letzte Kämpfe", el("div", { class: "scroll" }, table(RECENT_COLS(s), s.fights.recent)),
+      el("p", { class: "note" }, "Der Kampfbericht öffnet sich im Spiel, das Spiel hält ihn eine Woche vor."))];
   if (sub === "haendler") return [
     card("Fahrender Händler", s.trader.length ? el("div", { class: "scroll" }, table([
       { label: "Gesehen", get: (v) => fmtTime(v.t) }, { label: "Kanal", get: (v) => "#" + v.channel }], s.trader))

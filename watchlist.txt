@@ -6,4 +6,3 @@ tolkin
 wafebreaker
 # Eigene Einträge:
 velcorn
-sc11ssor

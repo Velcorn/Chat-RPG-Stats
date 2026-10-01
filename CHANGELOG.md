@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.8.4 (01.10.2026)
+
+**Neu**
+- Der Fuß der Seite nennt, wie viele Anfragen die Seite täglich an das Spiel schickt (Anfragen des letzten Laufs mal 68 Läufe am Tag). Der Sammler hält die Zahl pro Lauf fest; sie erscheint nach dem nächsten Lauf.
+
 ## 0.8.3 (01.10.2026)
 
 **Oberfläche**

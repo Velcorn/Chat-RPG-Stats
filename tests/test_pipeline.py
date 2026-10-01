@@ -44,6 +44,7 @@ class Pipeline:
     def run(self, s: dict, t: int) -> dict:
         cur = collect.state_from(s, self.prev)
         rec = collect.record(s, self.prev, cur, t)
+        rec["req"] = 15
         day = datetime.fromtimestamp(t).strftime("%Y-%m-%d")
         with (self.data / "days" / f"{day}.jsonl").open("a") as fh:
             fh.write(json.dumps(rec) + "\n")
@@ -68,6 +69,12 @@ class CollectTests(unittest.TestCase):
         self.assertEqual(again["players"], {"b": {"gear": 95}})  # only the field that changed
         self.assertEqual(again["guilds"], {"karni": {"gear": 195}})
         self.assertNotIn("channels", again)  # unchanged
+
+    def test_summary_names_the_daily_load_on_the_game(self):
+        pipe = Pipeline()
+        pipe.run(snap({"karni": [member("a", 100)]}), T0)
+        summary, _ = pipe.build(T0)
+        self.assertEqual(summary["load"], {"per_run": 15, "runs_per_day": 68})
 
     def test_player_leaving_every_guild_keeps_the_last_gear(self):
         pipe = Pipeline()

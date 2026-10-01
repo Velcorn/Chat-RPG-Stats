@@ -14,6 +14,8 @@ import time
 from collections import defaultdict
 from pathlib import Path
 
+import collect
+
 DAY = 86400
 PEERS_MIN = 8
 
@@ -37,12 +39,14 @@ class History:
         self.fights: list[dict] = []
         self.first = self.last = None
         self.runs = 0
+        self.requests = None  # requests of the latest run (recorded since 0.8.4)
         board: list[str] = []
         guild_now: dict[str, dict] = {}
         for rec in records:
             t = rec["t"]
             self.first = self.first or t
             self.last, self.runs = t, self.runs + 1
+            self.requests = rec.get("req", self.requests)
             for login, p in rec.get("players", {}).items():
                 for series, key in ((self.gear, "gear"), (self.guild, "guild")):
                     if key in p and (p[key] is not None or key == "guild"):  # a record only has changed fields
@@ -182,7 +186,9 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
                                       for m in sorted(members, key=lambda m: -(players[m].get("donated") or 0))[:10]],
                            "series": h.guilds.get(g, [])})
 
-    summary = {"generated": int(now), "since": h.first, "runs": h.runs, "players": len(gear),
+    summary = {"generated": int(now), "since": h.first, "runs": h.runs,
+               "load": {"per_run": h.requests, "runs_per_day": (collect.PLAY_TO - collect.PLAY_FROM) * 4},
+               "players": len(gear),
                "active": sum(1 for p in players.values() if p.get("active")),
                "board": board_rows, "quests": quest_rows, "silver": silver_rows,
                "achievements": achievement_rows,

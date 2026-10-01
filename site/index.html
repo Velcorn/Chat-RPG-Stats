@@ -389,6 +389,7 @@ function viewRanks(s, sub) {
 const draws = (st) => (st.drawsWon || 0) + (st.drawsLost || 0);
 const STAT_ROWS = [
   ["Quests", (st) => `${fmtInt(st.questsCompleted)} geschafft, ${fmtInt(st.questsFailed)} gescheitert`],
+  ["Quest-Fehlerquote", (st) => { const n = st.questsCompleted + st.questsFailed; return n ? `${fmtDec(100 * st.questsFailed / n, 1)} % (${fmtInt(st.questsFailed)} von ${fmtInt(n)})` : "-"; }],
   ["Im Kampf", (st) => `${fmtInt(st.damage)} Schaden, ${fmtInt(st.healing)} Heilung, ${count(st.fallen, "Mal", "Mal")} gefallen`],
   ["Markt", (st) => `${count(st.marketItemsBought, "Kauf", "Käufe")} für ${fmtSilver(st.marketSilverSpent)}, ${count(st.marketItemsSold, "Verkauf", "Verkäufe")} für ${fmtSilver(st.marketSilverEarned)}`],
   ["Verlosungen", (st) => `${fmtInt(st.drawsWon)} von ${fmtInt(draws(st))} gewonnen (${pct(st.drawsWon, draws(st))})`],

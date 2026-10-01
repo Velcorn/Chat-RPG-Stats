@@ -65,6 +65,8 @@ Eine Startseite und drei Bereiche mit einer zweiten Tab-Zeile, damit keine Seite
   8 nächsten.
 - **Gilde:** Mitglied seit (Beitrittsdatum aus der Gildenliste), Platz bei Kampfkraft und Spenden innerhalb der Gilde,
   Anteil am Gildenwert, Abstand zur nächsten Spende und Anteil an allen Spenden der Gilde.
+- **Quest-Fehlerquote (Beobachtungsliste):** gescheiterte Quests geteilt durch alle Quests (geschafft plus gescheitert),
+  aus den Gesamtzahlen der Spielerseite des Spiels.
 - **Kampfkraft und Bonus:** Kampfkraft = ATK + DEF + SUP + Talentbonus (das Spiel nennt nur die Summe). Die Spalte "Bonus" der
   Rangliste ist Kampfkraft minus ATK, DEF und SUP. Die Seite "Bonus-Formel" hält die geschätzte Formel fest, von Hand aus
   166 Spielern der Ranglisten Kampfkraft und Quests (30.09.2026) angepasst: Verteidiger mit vollem Bollwerk-Baum

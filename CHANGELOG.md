@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.7.0 (01.10.2026)
+
+**Neu**
+- Spielerseite (Beobachtungsliste): Fehlerquote der Quests, also der Anteil gescheiterter Quests.
+
 ## 0.6.0 (01.10.2026)
 
 **Oberfläche**

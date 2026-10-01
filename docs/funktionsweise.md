@@ -34,7 +34,7 @@ von 7 bis 24 Uhr per `gh workflow run`. Der Zeitplan auf GitHub bleibt als Rück
 Das Issue-Formular legt ein Issue mit dem Label `beobachtungsliste` an. Die Action `Beobachtungsliste` liest den
 Issue-Text (untrusted: nur ein gültiger Twitch-Name, `^[a-z0-9_]{3,25}$`, und nur wenn es den Spieler im Spiel gibt),
 ändert `watchlist.txt`, antwortet und schließt das Issue. Höchstens 150 Einträge, weil jeder eine Anfrage pro Lauf
-kostet. Für diese Spieler kommen Überleben, Leben, Erfolge, Statistiken und die Ausrüstung je Platz dazu. Einzelne Quests
+kostet. Für diese Spieler kommen Schadensminderung, Leben, Erfolge, Statistiken und die Ausrüstung je Platz dazu. Einzelne Quests
 und Kämpfe eines Spielers werden nicht gespeichert, nur Werte und ihre Änderungen.
 
 ## Aufbau der Seite
@@ -66,7 +66,9 @@ Eine Startseite und drei Bereiche mit einer zweiten Tab-Zeile, damit keine Seite
 - **Gilde:** Mitglied seit (Beitrittsdatum aus der Gildenliste), Platz bei Kampfkraft und Spenden innerhalb der Gilde,
   Anteil am Gildenwert, Abstand zur nächsten Spende und Anteil an allen Spenden der Gilde.
 - **Quest-Fehlerquote (Beobachtungsliste):** gescheiterte Quests geteilt durch alle Quests (geschafft plus gescheitert),
-  aus den Gesamtzahlen der Spielerseite des Spiels.
+  in Klammern hinter der Zeile "Quests".
+- **Schadensminderung (Beobachtungsliste):** der Wert "Mindert Schaden" der Spielerseite im Spiel (`survivalPercent`), also
+  der Anteil des eingehenden Schadens, den die Verteidigung abfängt.
 - **Kampfkraft und Bonus:** Kampfkraft = ATK + DEF + SUP + Talentbonus (das Spiel nennt nur die Summe). Die Spalte "Bonus" der
   Rangliste ist Kampfkraft minus ATK, DEF und SUP. Die Seite "Bonus-Formel" hält die geschätzte Formel fest, von Hand aus
   166 Spielern der Ranglisten Kampfkraft und Quests (30.09.2026) angepasst: Verteidiger mit vollem Bollwerk-Baum

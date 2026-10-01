@@ -388,8 +388,10 @@ function viewRanks(s, sub) {
 
 const draws = (st) => (st.drawsWon || 0) + (st.drawsLost || 0);
 const STAT_ROWS = [
-  ["Quests", (st) => `${fmtInt(st.questsCompleted)} geschafft, ${fmtInt(st.questsFailed)} gescheitert`],
-  ["Quest-Fehlerquote", (st) => { const n = st.questsCompleted + st.questsFailed; return n ? `${fmtDec(100 * st.questsFailed / n, 1)} % (${fmtInt(st.questsFailed)} von ${fmtInt(n)})` : "-"; }],
+  ["Quests", (st) => {
+    const n = st.questsCompleted + st.questsFailed;
+    return `${fmtInt(st.questsCompleted)} geschafft, ${fmtInt(st.questsFailed)} gescheitert` + (n ? ` (${fmtDec(100 * st.questsFailed / n, 1)} % Fehlerquote)` : "");
+  }],
   ["Im Kampf", (st) => `${fmtInt(st.damage)} Schaden, ${fmtInt(st.healing)} Heilung, ${count(st.fallen, "Mal", "Mal")} gefallen`],
   ["Markt", (st) => `${count(st.marketItemsBought, "Kauf", "Käufe")} für ${fmtSilver(st.marketSilverSpent)}, ${count(st.marketItemsSold, "Verkauf", "Verkäufe")} für ${fmtSilver(st.marketSilverEarned)}`],
   ["Verlosungen", (st) => `${fmtInt(st.drawsWon)} von ${fmtInt(draws(st))} gewonnen (${pct(st.drawsWon, draws(st))})`],
@@ -489,7 +491,7 @@ async function viewPlayer(s, login) {
     out.push(el("h2", { class: "divider" }, "Beobachtungsliste"));
     out.push(el("div", { class: "grid two" }, fightCard(st),
       card("Statistik", el("dl", { class: "facts" },
-        el("dt", {}, "Überleben"), el("dd", {}, `${fmtInt(p.watch.survival)} %, Leben ${fmtInt(p.watch.life)}`),
+        el("dt", {}, "Schadensminderung"), el("dd", {}, `${fmtInt(p.watch.survival)} %, Leben ${fmtInt(p.watch.life)}`),
         STAT_ROWS.flatMap(([name, fn]) => [el("dt", {}, name), el("dd", {}, fn(st))])))));
     if (p.watch.slots && Object.keys(p.watch.slots).length) out.push(gearCard(p.watch.slots));
   } else {

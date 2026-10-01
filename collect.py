@@ -170,6 +170,7 @@ def main() -> int:
     prev = json.loads(state_file.read_text("utf-8")) if state_file.exists() else {}
     cur = state_from(snap, prev)
     rec = record(snap, prev, cur, int(now.timestamp()))
+    rec["req"] = site.requests  # the site shows the load it puts on the game
     days = args.data / "days"
     days.mkdir(parents=True, exist_ok=True)
     with (days / f"{now:%Y-%m-%d}.jsonl").open("a", encoding="utf-8") as fh:

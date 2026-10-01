@@ -35,7 +35,8 @@ zeigt:
 | Spieler auf der Beobachtungsliste | Spielerseite | 1 pro Spieler |
 
 Ein Lauf macht also etwa 15 Anfragen, im Abstand von 2 Sekunden. Bei 4 Läufen pro Stunde und 17 Stunden Spielzeit sind das
-rund 1.000 Anfragen am Tag, egal wie viele Leute die Seite ansehen: Besucher lesen nur fertige Dateien. Jede Anfrage nennt
+rund 1.000 Anfragen am Tag, egal wie viele Leute die Seite ansehen: Besucher lesen nur fertige Dateien. Die Seite nennt diese Zahl
+im Fuß (gemessen am letzten Lauf, mal 68 Läufe am Tag). Jede Anfrage nennt
 das Projekt im User-Agent. Ist die Seite nicht erreichbar, fällt der Lauf aus. Gespeichert wird nur, was sich geändert hat.
 
 Wie gerechnet wird (Rang, Tempo, Prognose, Vergleich) und wie die Daten liegen: [docs/funktionsweise.md](docs/funktionsweise.md).

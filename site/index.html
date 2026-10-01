@@ -592,7 +592,7 @@ const SECTIONS = {
   rangliste: { subs: () => [["kampfkraft", "Kampfkraft"], ["silber", "Silber"], ["errungenschaften", "Errungenschaften"],
                             ["quests", "Quests"], ["aufsteiger", "Aufsteiger"], ["formel", "Bonus-Formel"]], render: viewRanks },
   gilden: { subs: (s) => s.guilds.map((g) => [g.login, g.login]), render: viewGuild },
-  kaempfe: { subs: () => [["arten", "Kampfarten"], ["letzte", "Letzte Kämpfe"]]],
+  kaempfe: { subs: () => [["arten", "Kampfarten"], ["letzte", "Letzte Kämpfe"]],
              render: viewFights },
 };
 async function route() {
@@ -626,7 +626,7 @@ async function route() {
   const load = ld && ld.per_run ? `, zusammen etwa ${fmtInt(ld.per_run * ld.runs_per_day)} Anfragen am Tag: ${fmtInt(ld.per_run)} pro Lauf, ${fmtInt(ld.runs_per_day)} Läufe` : "";
   $("footer").replaceChildren(`Stand ${fmtTime(s.generated)}. Liest nur öffentliche Daten von `,
     el("a", { href: "https://rpg.sola.rip" }, "rpg.sola.rip"),
-    ` (etwa alle 15 Minuten von 7 bis 24 Uhr, ohne Anmeldung${load}). Kein offizielles Angebot des Spiels. Fast komplett vibe-coded (von einer KI geschrieben, nur stichprobenartig geprüft), die Zahlen sind Schätzungen. ",
+    ` (etwa alle 15 Minuten von 7 bis 24 Uhr, ohne Anmeldung${load}). Kein offizielles Angebot des Spiels. Fast komplett vibe-coded (von einer KI geschrieben, nur stichprobenartig geprüft), die Zahlen sind Schätzungen. `,
     el("a", { href: `https://github.com/${REPO}` }, "Quellcode und Beobachtungsliste"), ".");
   window.scrollTo(0, 0);
 }

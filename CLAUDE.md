@@ -7,7 +7,7 @@ Public, read-only stats dashboard for the Twitch chat RPG at rpg.sola.rip. A Git
 
 - **Read-only, public data only.** No login, no cookies, never anything but GETs. Nothing automated in the game or chat.
 - **Keep requests low.** One collector for everyone; visitors only read the published files. Don't add endpoints or
-  per-player requests without need; the watchlist is opt-in and capped. The site's operator can ask us to stop at any time.
+  per-player requests without need; the watchlist is capped (opt-in for players; the channel owners are on it by default). The site's operator can ask us to stop at any time.
 - **No activity logs per player.** Store values and their changes (gear, silver, stat totals), never a player's
   individual quests or fights with times and channels: that would show when and where someone plays.
 - The README's request table must match what `collect.snapshot` actually does.
@@ -48,9 +48,9 @@ keep it.
   Writes `data/days/YYYY-MM-DD.jsonl` (one line per run) and `data/state.json` on the `data` branch.
 - `build.py`: replays the day files (`History`), computes pace, forecasts, peers, guild standing, fight odds; writes
   `_site/data/summary.json`, `players.json` (search index) and `p/<login>.json`.
-- `site/index.html`: the whole dashboard (no build step; hash routes `#/<section>/<sub>` with sections `rangliste`, `gilden`, `kaempfe` (see `SECTIONS`: each sub
+- `site/index.html`: the whole dashboard (no build step; hash routes `#/<section>/<sub>` with sections `start` (default), `rangliste`, `gilden`, `kaempfe` (see `SECTIONS`: each sub
   page is a tab in the second row) and `#/spieler/<login>`).
-- `watchlist.py` + `watchlist.txt`: the opt-in list, changed by the issue form via `.github/workflows/watchlist.yml`.
+- `watchlist.py` + `watchlist.txt`: the list (channel owners by default, others opt-in), changed by the issue form via `.github/workflows/watchlist.yml`.
 - `tests/`: `test_collect.py`, `test_pipeline.py` (build), `test_watchlist.py`.
 - `docs/funktionsweise.md`: German detail: data flow, storage, watchlist, every calculation. README stays short.
 - `.pre-commit-config.yaml` (prek: ruff, tests, hygiene, plain punctuation), `.github/workflows/ci.yml` (hooks + coverage; writes

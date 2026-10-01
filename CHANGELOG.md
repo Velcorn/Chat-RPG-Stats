@@ -3,6 +3,12 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.5.0 (01.10.2026)
+
+**Neu**
+- Startseite: eine Karte je Streamer mit Live-Status, Link zum Stream, Gildenstand und Link zur Spielerseite, dazu der fahrende Händler, die letzten Kämpfe und die Spielersuche. Sie ist jetzt die Standardseite; Ranglisten, Gilden und Kämpfe sind wie gehabt über die Tabs erreichbar. Zuschauerzahl und Titel des Streams gibt das Spiel nicht her.
+- Die Streamer stehen standardmäßig auf der Beobachtungsliste und haben damit eine ausführliche Spielerseite.
+
 ## 0.4.5 (01.10.2026)
 
 **Oberfläche**

@@ -1,2 +1,8 @@
 # Twitch-Namen, einer pro Zeile. Eintragen über das Issue-Formular "Auf die Beobachtungsliste".
+# Die Streamer der Kanäle sind standardmäßig dabei.
+karni
+sola
+tolkin
+wafebreaker
+# Eigene Einträge:
 velcorn

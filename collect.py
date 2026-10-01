@@ -1,7 +1,7 @@
 """Collector: one snapshot of the game's public data, stored as the changes since the last one.
 
 Runs every 15 minutes in GitHub Actions during the game's play window. Reads only public endpoints (no login,
-no cookies) and never sends anything but GETs. One run is about twelve requests, two seconds apart.
+no cookies) and never sends anything but GETs. One run is about sixteen requests, two seconds apart.
 """
 from __future__ import annotations
 

@@ -64,8 +64,15 @@
   .head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
   .card > .head { margin-bottom: 8px; }
   .head h2 { margin: 0; }
+  .streams { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+  .stream .head { margin-bottom: 4px; }
+  .stream .lines { display: grid; gap: 2px; margin: 8px 0; }
+  .stream .lines div { display: flex; justify-content: space-between; gap: 8px; }
+  .pill { padding: 1px 9px; border-radius: 10px; font-size: 12px; border: 1px solid var(--border); color: var(--text-muted); }
+  .pill.on { background: var(--good); border-color: var(--good); color: #fff; }
   .search { position: relative; flex: 1; min-width: 200px; max-width: 360px; }
   .search input { width: 100%; }
+  .card .search { max-width: none; }
   .suggest { position: absolute; left: 0; right: 0; top: 100%; margin-top: 4px; z-index: 5; background: var(--surface-2);
              border: 1px solid var(--border); border-radius: 6px; max-height: 320px; overflow: auto; }
   .suggest a { display: flex; justify-content: space-between; gap: 8px; padding: 6px 10px; color: var(--text-primary);
@@ -120,6 +127,7 @@
       <div id="suggest" class="suggest" hidden></div>
     </div>
     <nav class="tabs">
+      <a href="#/start" data-view="start">Start</a>
       <a href="#/rangliste" data-view="rangliste">Ranglisten</a>
       <a href="#/gilden" data-view="gilden">Gilden</a>
       <a href="#/kaempfe" data-view="kaempfe">Kämpfe</a>
@@ -505,6 +513,38 @@ function viewGuild(s, login) {
         { label: "Spieler", get: playerLink }, { label: "Gespendet", num: true, get: (r) => fmtSilver(r.donated) }], g.donors))))];
 }
 
+// ---- start page: the streamers, what is going on now, search ----
+function viewStart(s) {
+  const now = Date.now() / 1000;
+  const streams = Object.entries(s.channels).map(([login, live]) => ({ login, live, guild: s.guilds.find((g) => g.login === login) }))
+    .sort((a, b) => (b.live - a.live) || ((b.guild?.gear || 0) - (a.guild?.gear || 0)));
+  const streamCard = ({ login, live, guild: g }) => card(null, el("div", { class: "stream" },
+    el("div", { class: "head" }, el("h2", {}, login), el("span", { class: live ? "pill on" : "pill" }, live ? "Live" : "Offline")),
+    g ? el("div", {}, el("a", { href: `#/gilden/${login}` }, g.name)) : el("div", { class: "muted" }, "Keine Gilde erfasst"),
+    g ? el("div", { class: "lines" },
+      el("div", {}, el("span", { class: "muted" }, "Mitglieder"), `${fmtInt(g.members)} (${fmtInt(g.active)} aktiv)`),
+      el("div", {}, el("span", { class: "muted" }, "Kasse"), fmtSilver(g.treasury)),
+      el("div", {}, el("span", { class: "muted" }, "Kampfkraft"), el("span", {}, fmtInt(g.gear), " ", g.day ? delta(g.day) : ""))) : null,
+    el("div", { class: "head" }, el("a", { href: `#/spieler/${login}` }, "Spielerseite"),
+      el("a", { href: `https://www.twitch.tv/${login}`, target: "_blank", rel: "noopener" }, "Zum Stream auf Twitch"))));
+  const visit = s.trader[0];
+  const traderText = !visit ? "Noch kein Besuch gesehen."
+    : now - visit.t < 300 ? ["Gerade in ", el("a", { href: `https://www.twitch.tv/${visit.channel}`, target: "_blank", rel: "noopener" }, "#" + visit.channel), "."]
+    : `Zuletzt gesehen in #${visit.channel}, ${fmtTime(visit.t)}.`;
+  return [
+    card("Spieler suchen", el("div", { id: "hero-search" }), el("p", { class: "note" }, "Erfasst sind alle Gildenmitglieder und die Top 100.")),
+    el("div", { class: "grid streams" }, streams.map(streamCard)),
+    el("div", { class: "grid two" },
+      card("Fahrender Händler", el("p", { class: "note" }, traderText)),
+      card("Letzte Kämpfe", s.fights.recent.length ? [table([
+        { label: "Ende", get: (f) => fmtTime(iso(f.endedAt)) },
+        { label: "Kanal", get: (f) => "#" + f.channel },
+        { label: "Kampf", get: (f) => f.kind === "BOSS" ? fightLabel(f) : `${f.name} (${fightLabel(f)})` },
+        { label: "Ausgang", get: (f) => f.outcome === "VICTORY" ? el("span", { class: "up" }, "gewonnen") : el("span", { class: "down" }, "verloren") },
+      ], s.fights.recent.slice(0, 5)), el("p", { class: "note" }, el("a", { href: "#/kaempfe/letzte" }, "Alle letzten Kämpfe"))]
+        : el("p", { class: "note" }, "Noch keine Kämpfe erfasst.")))];
+}
+
 function viewFights(s, sub) {
   const groups = s.fights.groups;
   if (sub === "letzte") return [
@@ -559,6 +599,7 @@ document.addEventListener("click", (ev) => { if (!ev.target.closest(".search")) 
 // ---- routing ----
 // Each section has sub pages (one per ranking, guild or fight table), shown as a second tab row.
 const SECTIONS = {
+  start: { subs: () => [], render: viewStart },
   rangliste: { subs: () => [["kampfkraft", "Kampfkraft"], ["silber", "Silber"], ["errungenschaften", "Errungenschaften"],
                             ["quests", "Quests"], ["aufsteiger", "Aufsteiger"], ["formel", "Bonus-Formel"]], render: viewRanks },
   gilden: { subs: (s) => s.guilds.map((g) => [g.login, g.login]), render: viewGuild },
@@ -568,7 +609,7 @@ const SECTIONS = {
 async function route() {
   $("suggest").hidden = true; $("q").value = "";
   const [, name, arg] = location.hash.split("/");
-  const view = name === "spieler" ? "player" : SECTIONS[name] ? name : "rangliste";
+  const view = name === "spieler" ? "player" : SECTIONS[name] ? name : "start";
   for (const a of document.querySelectorAll("header .tabs a")) a.toggleAttribute("aria-current", a.dataset.view === view);
   let s;
   try { s = await load("summary.json"); }
@@ -586,7 +627,11 @@ async function route() {
     $("subtabs").hidden = subs.length < 2;
     parts = await SECTIONS[view].render(s, sub);
   }
+  // The search box lives in the header, on the start page it moves into the page.
+  const search = document.querySelector(".search"), header = document.querySelector("header");
+  if (view !== "start" && search.parentNode !== header) header.insertBefore(search, header.querySelector(".tabs"));
   $("view").replaceChildren(...parts);
+  if (view === "start") $("hero-search").replaceWith(search);
   document.title = view === "player" ? `${login} | Chat-RPG Statistik` : "Chat-RPG Statistik";
   $("footer").replaceChildren(`Stand ${fmtTime(s.generated)}. Liest nur öffentliche Daten von `,
     el("a", { href: "https://rpg.sola.rip" }, "rpg.sola.rip"),

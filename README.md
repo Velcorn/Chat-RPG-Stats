@@ -9,7 +9,8 @@ Ranglisten, Verlauf und Prognosen für das Twitch-Chat-RPG [rpg.sola.rip](https:
 deine Kampfkraft, wann erreichst du den nächsten Rang oder die Top 100, wie verteilen ähnlich starke Spieler ihre
 Werte, wo stehst du in deiner Gilde, welche Kämpfe gewinnt man meistens. Die Seite hat drei Bereiche mit
 Unterseiten: Ranglisten (Kampfkraft, Silber, Errungenschaften, Quests, Aufsteiger, Bonus-Formel), Gilden (eine Seite pro Gilde) und
-Kämpfe (Kampfarten, letzte Kämpfe, fahrender Händler), dazu eine Seite pro Spieler.
+Kämpfe (Kampfarten, letzte Kämpfe, fahrender Händler), dazu eine Seite pro Spieler. Die Startseite zeigt die Streamer
+mit Live-Status, Link zum Stream und Gildenstand, den fahrenden Händler, die letzten Kämpfe und die Spielersuche.
 
 **Zur Seite: <https://velcorn.github.io/Chat-RPG-Stats/>**
 
@@ -33,15 +34,15 @@ zeigt:
 | Fahrender Händler, Kanäle | Händler, Kanalliste | 2 |
 | Spieler auf der Beobachtungsliste | Spielerseite | 1 pro Spieler |
 
-Ein Lauf macht also etwa 12 Anfragen, im Abstand von 2 Sekunden. Bei 4 Läufen pro Stunde und 17 Stunden Spielzeit sind das
-rund 800 Anfragen am Tag, egal wie viele Leute die Seite ansehen: Besucher lesen nur fertige Dateien. Jede Anfrage nennt
+Ein Lauf macht also etwa 16 Anfragen, im Abstand von 2 Sekunden. Bei 4 Läufen pro Stunde und 17 Stunden Spielzeit sind das
+rund 1.100 Anfragen am Tag, egal wie viele Leute die Seite ansehen: Besucher lesen nur fertige Dateien. Jede Anfrage nennt
 das Projekt im User-Agent. Ist die Seite nicht erreichbar, fällt der Lauf aus. Gespeichert wird nur, was sich geändert hat.
 
 Wie gerechnet wird (Rang, Tempo, Prognose, Vergleich) und wie die Daten liegen: [docs/funktionsweise.md](docs/funktionsweise.md).
 
 ## Beobachtungsliste
 
-Ausrüstung je Platz, Siegquoten, Überleben, Markt und Verlosungen gibt es für Spieler auf der Beobachtungsliste. Eintragen oder austragen
+Ausrüstung je Platz, Siegquoten, Überleben, Markt und Verlosungen gibt es für Spieler auf der Beobachtungsliste. Die Streamer der Kanäle stehen standardmäßig auf der Liste. Eintragen oder austragen
 geht über das Issue-Formular ["Auf die Beobachtungsliste"](https://github.com/Velcorn/Chat-RPG-Stats/issues/new?template=watchlist.yml);
 eine Action prüft den Namen, trägt ihn ein und schließt das Issue. Bitte nur den eigenen Namen. Die Liste ist auf 150
 Spieler begrenzt, weil jeder Eintrag eine Anfrage pro Lauf kostet.

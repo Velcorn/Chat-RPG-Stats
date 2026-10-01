@@ -68,5 +68,5 @@ keep it.
 - The leaderboard lags the guild pages by a few minutes.
 - Since 30.09.2026 `gearScore` (boards, guild pages, guild total) is Kampfkraft: gear (ATK+DEF+SUP) plus a talent bonus the API
   doesn't show. The page calls it Kampfkraft; the estimated bonus formula on `#/rangliste/formel` is hand-written text (update it
-  when the fit changes).
+  when the fit changes; a fit on the top-100 boards is useless, they are selected by Kampfkraft).
 - Play window 7-24 Berlin time; nothing changes at night.

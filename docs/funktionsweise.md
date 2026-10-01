@@ -70,10 +70,11 @@ Eine Startseite und drei Bereiche mit einer zweiten Tab-Zeile, damit keine Seite
 - **Schadensminderung (Beobachtungsliste):** der Wert "Mindert Schaden" der Spielerseite im Spiel (`survivalPercent`), also
   der Anteil des eingehenden Schadens, den die Verteidigung abfängt.
 - **Kampfkraft und Bonus:** Kampfkraft = ATK + DEF + SUP + Talentbonus (das Spiel nennt nur die Summe). Die Spalte "Bonus" der
-  Rangliste ist Kampfkraft minus ATK, DEF und SUP. Die Seite "Bonus-Formel" hält die geschätzte Formel fest, von Hand aus
-  166 Spielern der Ranglisten Kampfkraft und Quests (30.09.2026) angepasst: Verteidiger mit vollem Bollwerk-Baum
-  (Bonus ab 135): Bonus etwa 225 + 0,32 ATK - 0,63 DEF + 0,28 SUP (Abweichung um 9); Angreifer: etwa 0,36 ATK. Sie ist
-  eine Schätzung im beobachteten Bereich und wird nicht automatisch neu angepasst; die Kennzahlen (kleinster, mittlerer, größter
+  Rangliste ist Kampfkraft minus ATK, DEF und SUP. Die Seite "Bonus-Formel" hält die geschätzte Formel fest, von Hand
+  aus einer Messung am eigenen Verteidiger (14 Ausrüstungszustände, 01.10.2026, nach dem Kampf-Umbau): Bonus etwa
+  1,7 ATK + 0,6 SUP, Kampfkraft etwa 2,7 ATK + 0,9 DEF + 1,6 SUP (Abweichung um 15). Eine Anpassung an den Ranglisten
+  geht nicht, weil die Top 100 nach Kampfkraft ausgewählt sind (die Gewichte kämen um null heraus). Die Schätzung
+  wird nicht automatisch neu angepasst; die Kennzahlen (kleinster, mittlerer, größter
   Bonus) auf der Seite kommen dagegen live aus den aktuellen Top 100.
 - **Ranglisten Silber, Errungenschaften, Quests:** Rang und Wert wie in der Rangliste des Spiels; "24 h" ist die
   Änderung dieses Werts seit gestern (beim Silber kann sie auch negativ sein, wenn jemand etwas ausgibt).

@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.8.3 (01.10.2026)
+
+**Verbessert**
+- Bonus-Formel: die Formel von vor dem Kampf-Umbau ist ersetzt durch die Messung danach (Kampfkraft etwa 2,7 x ATK + 0,9 x DEF + 1,6 x SUP, nur an einem Spieler gemessen), mit dem Hinweis, warum sich aus den Ranglisten keine Formel anpassen lässt. Alte Talentzahlen sind als "vor dem Umbau" gekennzeichnet.
+
 ## 0.8.2 (01.10.2026)
 
 **Behoben**

@@ -8,6 +8,9 @@ Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 **Neu**
 - Der Fuß der Seite nennt, wie viele Anfragen die Seite täglich an das Spiel schickt (Anfragen des letzten Laufs mal 68 Läufe am Tag). Der Sammler hält die Zahl pro Lauf fest; sie erscheint nach dem nächsten Lauf.
 
+**Behoben**
+- Ein Tippfehler in der Menüliste der Kämpfe (beim Entfernen der Händlerseite) ließ das Skript der Seite nicht laufen; behoben, ein Test prüft das Skript jetzt auf Syntaxfehler.
+
 ## 0.8.3 (01.10.2026)
 
 **Oberfläche**

@@ -539,20 +539,14 @@ function viewStart(s) {
     card("Spieler suchen", el("div", { id: "hero-search" }), el("p", { class: "note" }, "Erfasst sind alle Gildenmitglieder und die Top 100.")),
     el("div", { class: "grid streams" }, streams.map(streamCard)),
     card("Letzte Kämpfe", s.fights.recent.length ? [el("div", { class: "scroll" }, table(RECENT_COLS(s), s.fights.recent.slice(0, 10))),
-      el("p", { class: "note" }, "Der Kampfbericht öffnet sich im Spiel, das Spiel hält ihn eine Woche vor. ", el("a", { href: "#/kaempfe/letzte" }, "Alle letzten Kämpfe"))]
+      el("p", { class: "note" }, el("a", { href: "#/kaempfe/letzte" }, "Alle letzten Kämpfe"))]
       : el("p", { class: "note" }, "Noch keine Kämpfe erfasst."))];
 }
 
-const REPORT_AGE = 7 * 86400;
-const fightCell = (s) => (f) => {
-  const text = f.kind === "BOSS" ? fightLabel(f) : `${f.name} (${fightLabel(f)})`;
-  return s.generated - iso(f.endedAt) < REPORT_AGE
-    ? el("a", { href: `https://rpg.sola.rip/kampfbericht/${f.id}`, target: "_blank", rel: "noopener" }, text) : text;
-};
 const RECENT_COLS = (s) => [
   { label: "Ende", get: (f) => fmtTime(iso(f.endedAt)) },
   { label: "Kanal", get: (f) => "#" + f.channel },
-  { label: "Kampf", get: fightCell(s) },
+  { label: "Kampf", get: (f) => f.kind === "BOSS" ? fightLabel(f) : `${f.name} (${fightLabel(f)})` },
   { label: "Teilnehmer", num: true, get: (f) => fmtInt(f.fighters) },
   { label: "Ausgang", get: (f) => f.outcome === "VICTORY" ? el("span", { class: "up" }, "gewonnen") : el("span", { class: "down" }, "verloren") },
 ];
@@ -560,8 +554,7 @@ const RECENT_COLS = (s) => [
 function viewFights(s, sub) {
   const groups = s.fights.groups;
   if (sub === "letzte") return [
-    card("Letzte Kämpfe", el("div", { class: "scroll" }, table(RECENT_COLS(s), s.fights.recent)),
-      el("p", { class: "note" }, "Der Kampfbericht öffnet sich im Spiel, das Spiel hält ihn eine Woche vor."))];
+    card("Letzte Kämpfe", el("div", { class: "scroll" }, table(RECENT_COLS(s), s.fights.recent)))];
   if (sub === "haendler") return [
     card("Fahrender Händler", s.trader.length ? el("div", { class: "scroll" }, table([
       { label: "Gesehen", get: (v) => fmtTime(v.t) }, { label: "Kanal", get: (v) => "#" + v.channel }], s.trader))

@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.8.2 (01.10.2026)
+
+**Behoben**
+- Die Links der letzten Kämpfe zum Kampfbericht im Spiel funktionierten nicht und sind entfernt.
+
 ## 0.8.1 (01.10.2026)
 
 **Oberfläche**

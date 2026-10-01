@@ -3,8 +3,8 @@
 Description=Statistik-Sammler alle 15 Minuten während der Spielzeit
 
 [Timer]
-OnCalendar=*-*-* 07..23:07,22,37,52:00
-RandomizedDelaySec=60
+OnCalendar=*-*-* 07..23:00,15,30,45:00
+RandomizedDelaySec=0
 
 [Install]
 WantedBy=timers.target

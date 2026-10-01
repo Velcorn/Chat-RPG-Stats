@@ -35,7 +35,6 @@ class History:
         self.rank: dict[str, list] = defaultdict(list)       # login -> [[t, rank on the gear board or None], ...]
         self.guilds: dict[str, list] = defaultdict(list)     # guild -> [[t, treasury, members, active, gear], ...]
         self.fights: list[dict] = []
-        self.trader: list[dict] = []
         self.first = self.last = None
         self.runs = 0
         board: list[str] = []
@@ -61,10 +60,6 @@ class History:
                 full = guild_now[g] = {**guild_now.get(g, {}), **v}
                 self.guilds[g].append([t, *(full.get(k) for k in ("treasury", "members", "active", "gear"))])
             self.fights += rec.get("fights", [])
-            if tr := rec.get("trader"):
-                if tr.get("channel") and (not self.trader or self.trader[-1]["channel"] != tr["channel"]
-                                          or t - self.trader[-1]["t"] > 1800):
-                    self.trader.append({"t": t, "channel": tr["channel"]})
 
 
 def put(series: list, t: int, v) -> None:
@@ -196,7 +191,7 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
                "guilds": sorted(guild_rows, key=lambda g: -(g.get("gear") or 0)),
                "fights": {"groups": fight_groups(h.fights, now), "recent": h.fights[-50:][::-1],
                           "total": len(h.fights)},
-               "trader": h.trader[-50:][::-1], "channels": state.get("channels", {})}
+               "channels": state.get("channels", {})}
 
     target = out / "data"
     if target.exists():

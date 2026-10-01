@@ -28,7 +28,7 @@ def snap(members: dict, board=None, fights=(), watch=None, treasury=1000) -> dic
     rows = [{"login": lo, "displayName": lo, "gearScore": g, "attack": a, "defense": d, "support": s, "silver": 100,
              "quests": 10, "achievements": 5} for lo, g, a, d, s in board or []]
     return {"guilds": guilds, "boards": {b: rows for b in collect.BOARD_FIELDS}, "fights": list(fights),
-            "trader": {"visiting": False, "lastVisit": None}, "channels": [{"login": "sola", "live": True,
+            "channels": [{"login": "sola", "live": True,
                                                                           "enabled": True}],
             "watch": watch or {}}
 
@@ -193,7 +193,7 @@ class BuildEdgeTests(unittest.TestCase):
         self.assertEqual(chaser["forecast"]["top100_gap"], gap)
         self.assertEqual(chaser["forecast"]["top100_days"], round(gap / (5 - 1), 1))
 
-    def test_watch_data_and_trader(self):
+    def test_watch_data(self):
         pipe = Pipeline()
         item = {"name": "Helm", "tier": 6, "attack": 1, "defense": 9, "support": 2, "damaged": True}
         watch = {"a": {"displayName": "A", "attack": 1, "defense": 2, "support": 3, "silver": 9, "survivalPercent": 70,
@@ -202,16 +202,13 @@ class BuildEdgeTests(unittest.TestCase):
                        "slots": [{"slot": "HELMET", "label": "Helm", "item": item},
                                  {"slot": "BOOTS", "label": "Stiefel", "item": None}]}}
         s = snap({"karni": [member("a", 100)]}, watch=watch)
-        s["trader"] = {"visiting": True, "channel": "sola", "lastVisit": None}
         pipe.run(s, T0)
-        s["trader"] = {"visiting": True, "channel": "sola", "lastVisit": None}  # same visit, later run
         pipe.run(s, T0 + 900)
-        summary, out = pipe.build(T0 + 900)
+        _, out = pipe.build(T0 + 900)
         page = json.loads((out / "p" / "a.json").read_text())
         self.assertEqual(page["watch"]["survival"], 70)
         self.assertNotIn("quests", page["watch"])
         self.assertEqual(page["watch"]["slots"], {"HELMET": ["Helm", "Helm", 6, 1, 9, 2, True], "BOOTS": ["Stiefel"]})
-        self.assertEqual(len(summary["trader"]), 1)  # one visit, seen twice
         self.assertEqual(page["split"]["atk"], 1)
 
     def test_old_fights_leave_the_statistics_window(self):

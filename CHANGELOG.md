@@ -5,6 +5,9 @@ Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
 ## 0.8.3 (01.10.2026)
 
+**Oberfläche**
+- Die Unterseite "Fahrender Händler" ist weg (bei einem Abruf alle 15 Minuten kaum aussagekräftig); der Sammler fragt den Händler auch nicht mehr ab.
+
 **Verbessert**
 - Bonus-Formel: die Formel von vor dem Kampf-Umbau ist ersetzt durch die Messung danach (Kampfkraft etwa 2,7 x ATK + 0,9 x DEF + 1,6 x SUP, nur an einem Spieler gemessen), mit dem Hinweis, warum sich aus den Ranglisten keine Formel anpassen lässt. Alte Talentzahlen sind als "vor dem Umbau" gekennzeichnet.
 

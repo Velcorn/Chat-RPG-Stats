@@ -518,7 +518,6 @@ function viewGuild(s, login) {
 
 // ---- start page: the streamers, what is going on now, search ----
 function viewStart(s) {
-  const now = Date.now() / 1000;
   const streams = Object.entries(s.channels).map(([login, live]) => ({ login, live, guild: s.guilds.find((g) => g.login === login) }))
     .sort((a, b) => (b.live - a.live) || ((b.guild?.avg_gear || 0) - (a.guild?.avg_gear || 0)));
   const streamCard = ({ login, live, guild: g }) => card(null, el("div", { class: "stream" },
@@ -530,10 +529,6 @@ function viewStart(s) {
       el("div", {}, el("span", { class: "muted" }, "Ø Kampfkraft (aktive)"), fmtDec(g.avg_gear, 1)),) : null,
     el("div", { class: "head" }, el("a", { href: `#/spieler/${login}` }, "Spielerseite"),
       el("a", { href: `https://www.twitch.tv/${login}`, target: "_blank", rel: "noopener" }, "Zum Stream auf Twitch"))));
-  const visit = s.trader[0];
-  const traderText = !visit ? "Noch kein Besuch gesehen."
-    : now - visit.t < 300 ? ["Gerade in ", el("a", { href: `https://www.twitch.tv/${visit.channel}`, target: "_blank", rel: "noopener" }, "#" + visit.channel), "."]
-    : `Zuletzt gesehen in #${visit.channel}, ${fmtTime(visit.t)}.`;
   return [
     card("Spieler suchen", el("div", { id: "hero-search" }), el("p", { class: "note" }, "Erfasst sind alle Gildenmitglieder und die Top 100.")),
     el("div", { class: "grid streams" }, streams.map(streamCard)),
@@ -554,11 +549,6 @@ function viewFights(s, sub) {
   const groups = s.fights.groups;
   if (sub === "letzte") return [
     card("Letzte Kämpfe", el("div", { class: "scroll" }, table(RECENT_COLS(s), s.fights.recent)))];
-  if (sub === "haendler") return [
-    card("Fahrender Händler", s.trader.length ? el("div", { class: "scroll" }, table([
-      { label: "Gesehen", get: (v) => fmtTime(v.t) }, { label: "Kanal", get: (v) => "#" + v.channel }], s.trader))
-      : el("p", { class: "note" }, "Noch kein Besuch gesehen."),
-      el("p", { class: "note" }, "Erfasst werden nur Besuche, die beim Sammeln gerade laufen (ein Besuch dauert 5 Minuten)."))];
   return [
     card("Siegquote nach Kampfart (30 Tage)", groups.length ? table([
       { label: "Kampf", get: fightLabel },
@@ -602,7 +592,7 @@ const SECTIONS = {
   rangliste: { subs: () => [["kampfkraft", "Kampfkraft"], ["silber", "Silber"], ["errungenschaften", "Errungenschaften"],
                             ["quests", "Quests"], ["aufsteiger", "Aufsteiger"], ["formel", "Bonus-Formel"]], render: viewRanks },
   gilden: { subs: (s) => s.guilds.map((g) => [g.login, g.login]), render: viewGuild },
-  kaempfe: { subs: () => [["arten", "Kampfarten"], ["letzte", "Letzte Kämpfe"], ["haendler", "Fahrender Händler"]],
+  kaempfe: { subs: () => [["arten", "Kampfarten"], ["letzte", "Letzte Kämpfe"]]],
              render: viewFights },
 };
 async function route() {

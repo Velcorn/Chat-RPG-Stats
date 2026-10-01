@@ -33,9 +33,9 @@ zeigt:
 | Fahrender Händler, Kanäle | Händler, Kanalliste | 2 |
 | Spieler auf der Beobachtungsliste | Spielerseite | 1 pro Spieler |
 
-Das sind etwa 12 Anfragen pro Lauf im Abstand von 2 Sekunden, rund 800 am Tag, egal wie viele Leute die Seite ansehen:
-Besucher lesen nur fertige Dateien. Jede Anfrage nennt das Projekt im User-Agent. Ist die Seite nicht erreichbar, fällt
-der Lauf aus. Gespeichert wird nur, was sich geändert hat.
+Ein Lauf macht also etwa 12 Anfragen, im Abstand von 2 Sekunden. Bei 4 Läufen pro Stunde und 17 Stunden Spielzeit sind das
+rund 800 Anfragen am Tag, egal wie viele Leute die Seite ansehen: Besucher lesen nur fertige Dateien. Jede Anfrage nennt
+das Projekt im User-Agent. Ist die Seite nicht erreichbar, fällt der Lauf aus. Gespeichert wird nur, was sich geändert hat.
 
 Wie gerechnet wird (Rang, Tempo, Prognose, Vergleich) und wie die Daten liegen: [docs/funktionsweise.md](docs/funktionsweise.md).
 

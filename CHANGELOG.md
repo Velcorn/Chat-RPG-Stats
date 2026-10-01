@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.8.1 (01.10.2026)
+
+**Oberfläche**
+- Startseite: die Karten "Fahrender Händler" und "Laufende Kämpfe" sind wieder weg. Bei einem Abruf alle 15 Minuten sind beide fast immer schon vorbei, die Anzeige wäre irreführend. Der Händler bleibt unter Kämpfe, die letzten Kämpfe (mit Link zum Kampfbericht) bleiben auf der Startseite.
+
 ## 0.8.0 (01.10.2026)
 
 **Neu**

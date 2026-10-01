@@ -196,8 +196,7 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
                "guilds": sorted(guild_rows, key=lambda g: -(g.get("gear") or 0)),
                "fights": {"groups": fight_groups(h.fights, now), "recent": h.fights[-50:][::-1],
                           "total": len(h.fights)},
-               "trader": h.trader[-50:][::-1], "live_fights": state.get("live_fights", []),
-               "channels": state.get("channels", {})}
+               "trader": h.trader[-50:][::-1], "channels": state.get("channels", {})}
 
     target = out / "data"
     if target.exists():

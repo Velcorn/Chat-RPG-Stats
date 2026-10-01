@@ -10,7 +10,7 @@ deine Kampfkraft, wann erreichst du den nächsten Rang oder die Top 100, wie ver
 Werte, wo stehst du in deiner Gilde, welche Kämpfe gewinnt man meistens. Die Seite hat drei Bereiche mit
 Unterseiten: Ranglisten (Kampfkraft, Silber, Errungenschaften, Quests, Aufsteiger, Bonus-Formel), Gilden (eine Seite pro Gilde) und
 Kämpfe (Kampfarten, letzte Kämpfe, fahrender Händler), dazu eine Seite pro Spieler. Die Startseite zeigt die Streamer
-mit Live-Status, Link zum Stream und Gildenstand, den fahrenden Händler, laufende und letzte Kämpfe (mit Link zum Kampfbericht) und die Spielersuche.
+mit Live-Status, Link zum Stream und Gildenstand, die letzten Kämpfe (mit Link zum Kampfbericht) und die Spielersuche.
 
 **Zur Seite: <https://velcorn.github.io/Chat-RPG-Stats/>**
 
@@ -31,11 +31,11 @@ zeigt:
 | Kampfkraft, Spenden und Aktivität aller Gildenmitglieder | Gildenliste und Gildenseiten | 1 + 1 pro Gilde |
 | Top 100 nach Kampfkraft (mit ATK/DEF/SUP), Silber, Errungenschaften und Quests | Ranglisten | 4 |
 | Die letzten 20 Kämpfe aller Kanäle | Kampfarchiv | 1 |
-| Fahrender Händler, laufende Kämpfe, Kanäle | Händler, Kampfliste, Kanalliste | 3 |
+| Fahrender Händler, Kanäle | Händler, Kanalliste | 2 |
 | Spieler auf der Beobachtungsliste | Spielerseite | 1 pro Spieler |
 
-Ein Lauf macht also etwa 17 Anfragen, im Abstand von 2 Sekunden. Bei 4 Läufen pro Stunde und 17 Stunden Spielzeit sind das
-rund 1.150 Anfragen am Tag, egal wie viele Leute die Seite ansehen: Besucher lesen nur fertige Dateien. Jede Anfrage nennt
+Ein Lauf macht also etwa 16 Anfragen, im Abstand von 2 Sekunden. Bei 4 Läufen pro Stunde und 17 Stunden Spielzeit sind das
+rund 1.100 Anfragen am Tag, egal wie viele Leute die Seite ansehen: Besucher lesen nur fertige Dateien. Jede Anfrage nennt
 das Projekt im User-Agent. Ist die Seite nicht erreichbar, fällt der Lauf aus. Gespeichert wird nur, was sich geändert hat.
 
 Wie gerechnet wird (Rang, Tempo, Prognose, Vergleich) und wie die Daten liegen: [docs/funktionsweise.md](docs/funktionsweise.md).

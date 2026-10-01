@@ -148,6 +148,7 @@ class BuildTests(unittest.TestCase):
         series = self.summary["guilds"][0]["series"]
         self.assertTrue(all(None not in row for row in series))
         self.assertEqual(len(series), 8)
+        self.assertEqual(self.summary["guilds"][0]["avg_gear"], 180.3)  # fast 170, slow 164, top 207
 
     def test_value_boards_rank_by_their_own_value(self):
         self.assertEqual([(r["login"], r["rank"], r["value"]) for r in self.summary["quests"]],
@@ -222,6 +223,13 @@ class BuildEdgeTests(unittest.TestCase):
         groups = build.fight_groups([old, new], now)
         self.assertEqual([(g["n"], g["wins"], g["fighters"]) for g in groups], [(1, 0, 15)])
         self.assertIsNone(build.iso_ts(None))
+        self.assertEqual(build.fights_since([old, new], now - DAY), {"n": 1, "wins": 0})
+
+    def test_guild_average_counts_active_members_only(self):
+        pipe = Pipeline()
+        pipe.run(snap({"karni": [member("a", 100), member("b", 200), member("c", 900, active=False)]}), T0)
+        summary, _ = pipe.build(T0 + 60)
+        self.assertEqual(summary["guilds"][0]["avg_gear"], 150)
 
     def test_main_copies_the_page_and_writes_the_files(self):
         pipe = Pipeline()

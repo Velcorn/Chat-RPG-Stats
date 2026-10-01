@@ -116,6 +116,12 @@ def fight_groups(fights: list[dict], now: float, days: int = 30) -> list[dict]:
     return sorted(out, key=lambda g: (g["kind"], g["name"] or "", g["level"] or 0))
 
 
+def fights_since(fights: list[dict], since: float) -> dict:
+    """Number of fights that ended after `since` and how many of them were won."""
+    recent = [f for f in fights if (iso_ts(f.get("endedAt")) or 0) > since]
+    return {"n": len(recent), "wins": sum(1 for f in recent if f.get("outcome") == "VICTORY")}
+
+
 def iso_ts(s: str | None) -> float | None:
     if not s:
         return None
@@ -177,7 +183,10 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
     guild_rows = []
     for g, info in guilds.items():
         members = guild_members.get(g, [])
+        active_gear = [players[m]["gear"] for m in members
+                       if players[m].get("active") and players[m].get("gear") is not None]
         guild_rows.append({"login": g, **info, "day": sum(day.get(m) or 0 for m in members),
+                           "avg_gear": rounded(statistics.mean(active_gear), 1) if active_gear else None,
                            "donated": sum(players[m].get("donated") or 0 for m in members),
                            "top": [row(m) for m in sorted(members, key=lambda m: -(players[m].get("gear") or 0))[:10]],
                            "donors": [{**row(m), "donated": players[m].get("donated")}
@@ -192,7 +201,7 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
                "top100": {"gear": top100_gear, "pace": rounded(top100_pace)},
                "guilds": sorted(guild_rows, key=lambda g: -(g.get("gear") or 0)),
                "fights": {"groups": fight_groups(h.fights, now), "recent": h.fights[-50:][::-1],
-                          "total": len(h.fights)},
+                          "total": len(h.fights), "day": fights_since(h.fights, now - DAY)},
                "trader": h.trader[-50:][::-1], "channels": state.get("channels", {})}
 
     target = out / "data"

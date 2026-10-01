@@ -365,22 +365,18 @@ function viewRanks(s, sub) {
     return [el("section", { class: "card" }, el("div", { class: "head" }, el("h2", {}, "Aufsteiger (Kampfkraft)"),
       seg([["day", "24 Stunden"], ["week", "7 Tage"]], span, (k) => { span = k; renderRisers(); })), riserBox)];
   }
-  const t = s.top100;
   return [
-    el("div", { class: "grid tiles" },
-      tile("Spieler erfasst", fmtInt(s.players), `davon ${fmtInt(s.active)} laut Gilde aktiv`),
-      tile("Grenze Top 100", t.gear == null ? "-" : count(t.gear, "Punkt", "Punkte"), t.pace == null ? "Tempo dort: nach 12 Stunden Verlauf" : `Tempo dort: ${signed(t.pace, 1)} pro Tag`),
-      tile("Gilden", fmtInt(s.guilds.length), `${fmtInt(s.guilds.reduce((a, g) => a + (g.members || 0), 0))} Mitglieder`),
-      tile("Kämpfe erfasst", fmtInt(s.fights.total), s.since ? `seit ${fmtTime(s.since)}` : "")),
     ...scroll("Rangliste Kampfkraft (Top 100)", [
       { label: "#", num: true, get: (r) => r.rank },
-      { label: "", num: true, title: "Plätze seit gestern", get: (r) => r.rank_change ? delta(r.rank_change) : "" },
+      { label: "", title: "Plätze seit gestern", get: (r) => r.rank_change ? delta(r.rank_change) : "" },
       { label: "Spieler", get: playerLink },
       { label: "Gilde", get: (r) => r.guild || "-" },
       { label: "Kampfkraft", num: true, title: "Wert laut Rangliste des Spiels (hinkt der Gildenseite ein paar Minuten nach)", get: (r) => fmtInt(r.board_gear) },
       { label: "24 h", num: true, get: (r) => delta(r.day) },
       { label: "Pro Tag", num: true, title: "Durchschnitt der letzten 7 Tage", get: (r) => r.pace == null ? "-" : fmtDec(r.pace) },
-      { label: "ATK / DEF / SUP", num: true, get: (r) => `${fmtInt(r.atk)} / ${fmtInt(r.def)} / ${fmtInt(r.sup)}` },
+      { label: "ATK", num: true, get: (r) => fmtInt(r.atk) },
+      { label: "DEF", num: true, get: (r) => fmtInt(r.def) },
+      { label: "SUP", num: true, get: (r) => fmtInt(r.sup) },
       { label: "Bonus", num: true, title: "Kampfkraft minus ATK, DEF und SUP: der Talentbonus (siehe Bonus-Formel)", get: (r) => fmtInt(talentBonus(r)) },
     ], s.board),
   ];
@@ -508,7 +504,7 @@ function viewGuild(s, login) {
     el("div", { class: "grid tiles" },
       tile("Kasse", fmtSilver(g.treasury), `gespendet insgesamt: ${fmtSilver(g.donated)}`),
       tile("Mitglieder", fmtInt(g.members), `${fmtInt(g.active)} aktiv (${pct(g.active, g.members)})`),
-      tile("Kampfkraft", fmtInt(g.gear), g.day ? `${signed(g.day)} in 24 Stunden` : "Summe aller Mitglieder"),
+      tile("Ø Kampfkraft", fmtDec(g.avg_gear, 1), `aktive Mitglieder | Summe ${fmtInt(g.gear)}${g.day ? `, ${signed(g.day)} in 24 h` : ""}`),
       tile("Bosse", `${fmtInt(g.boss_wins)} Siege`, `${count(g.boss_losses, "Niederlage", "Niederlagen")}, Überfallstufe ${fmtInt(g.raid)}`)),
     el("div", { class: "grid two" },
       chartCard("Kasse", g.series.map((r) => [r[0], r[1]]), { fmt: fmtSilver, until: s.generated }),
@@ -525,14 +521,15 @@ function viewGuild(s, login) {
 function viewStart(s) {
   const now = Date.now() / 1000;
   const streams = Object.entries(s.channels).map(([login, live]) => ({ login, live, guild: s.guilds.find((g) => g.login === login) }))
-    .sort((a, b) => (b.live - a.live) || ((b.guild?.gear || 0) - (a.guild?.gear || 0)));
+    .sort((a, b) => (b.live - a.live) || ((b.guild?.avg_gear || 0) - (a.guild?.avg_gear || 0)));
   const streamCard = ({ login, live, guild: g }) => card(null, el("div", { class: "stream" },
     el("div", { class: "head" }, el("h2", {}, login), el("span", { class: live ? "pill on" : "pill" }, live ? "Live" : "Offline")),
     g ? el("div", {}, el("a", { href: `#/gilden/${login}` }, g.name)) : el("div", { class: "muted" }, "Keine Gilde erfasst"),
     g ? el("div", { class: "lines" },
       el("div", {}, el("span", { class: "muted" }, "Mitglieder"), `${fmtInt(g.members)} (${fmtInt(g.active)} aktiv)`),
       el("div", {}, el("span", { class: "muted" }, "Kasse"), fmtSilver(g.treasury)),
-      el("div", {}, el("span", { class: "muted" }, "Kampfkraft"), el("span", {}, fmtInt(g.gear), " ", g.day ? delta(g.day) : ""))) : null,
+      el("div", {}, el("span", { class: "muted" }, "Ø Kampfkraft (aktive)"), fmtDec(g.avg_gear, 1)),
+      el("div", {}, el("span", { class: "muted" }, "Kampfkraft gesamt"), el("span", {}, fmtInt(g.gear), " ", g.day ? delta(g.day) : ""))) : null,
     el("div", { class: "head" }, el("a", { href: `#/spieler/${login}` }, "Spielerseite"),
       el("a", { href: `https://www.twitch.tv/${login}`, target: "_blank", rel: "noopener" }, "Zum Stream auf Twitch"))));
   const visit = s.trader[0];
@@ -542,6 +539,12 @@ function viewStart(s) {
   return [
     card("Spieler suchen", el("div", { id: "hero-search" }), el("p", { class: "note" }, "Erfasst sind alle Gildenmitglieder und die Top 100.")),
     el("div", { class: "grid streams" }, streams.map(streamCard)),
+    el("div", { class: "grid tiles" },
+      tile("Kämpfe (24 h)", fmtInt(s.fights.day.n), s.fights.day.n ? `${fmtInt(s.fights.day.wins)} gewonnen (${pct(s.fights.day.wins, s.fights.day.n)})` : "noch keine"),
+      tile("Kämpfe erfasst", fmtInt(s.fights.total), s.since ? `seit ${fmtTime(s.since)}` : ""),
+      tile("Spieler erfasst", fmtInt(s.players), `davon ${fmtInt(s.active)} laut Gilde aktiv`),
+      tile("Grenze Top 100", s.top100.gear == null ? "-" : count(s.top100.gear, "Punkt", "Punkte"),
+        s.top100.pace == null ? "Tempo dort: nach 12 Stunden Verlauf" : `Tempo dort: ${signed(s.top100.pace, 1)} pro Tag`)),
     el("div", { class: "grid two" },
       card("Fahrender Händler", el("p", { class: "note" }, traderText)),
       card("Letzte Kämpfe", s.fights.recent.length ? [table([

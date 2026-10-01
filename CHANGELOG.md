@@ -3,6 +3,16 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.8.0 (01.10.2026)
+
+**Neu**
+- Gilden: Durchschnitt der Kampfkraft der aktiven Mitglieder, auf der Startseite und auf der Gildenseite. Die Gildenkarten der Startseite sind danach sortiert (Live zuerst).
+- Startseite: Kämpfe der letzten 24 Stunden mit Siegquote.
+
+**Oberfläche**
+- Die Kennzahlen über der Rangliste Kampfkraft sind auf die Startseite gewandert.
+- Rangliste Kampfkraft: ATK, DEF und SUP stehen in eigenen Spalten und sind sauber ausgerichtet, die Plätze seit gestern stehen direkt neben dem Rang.
+
 ## 0.7.0 (01.10.2026)
 
 **Neu**

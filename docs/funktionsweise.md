@@ -41,9 +41,9 @@ und Kämpfe eines Spielers werden nicht gespeichert, nur Werte und ihre Änderun
 
 Eine Startseite und drei Bereiche mit einer zweiten Tab-Zeile, damit keine Seite überladen ist (Adresse `#/<Bereich>/<Unterseite>`):
 
-- **Start** (`#/start`, Standard): eine Karte je Streamer (Kanal der Liste `channels`): Live-Status aus `/api/channels`, Link zum Twitch-Kanal, Gildenname, Mitglieder, Kasse und Kampfkraft der Gilde mit Link zur Gildenseite und zur Spielerseite des Streamers. Dazu der fahrende Händler ("gerade in", wenn der letzte gesehene Besuch unter 5 Minuten her ist), die fünf letzten Kämpfe und die Spielersuche. Zuschauerzahl und Titel des Streams gibt das Spiel nicht her, sie stehen nicht da.
+- **Start** (`#/start`, Standard): eine Karte je Streamer (Kanal der Liste `channels`): Live-Status aus `/api/channels`, Link zum Twitch-Kanal, Gildenname, Mitglieder, Kasse, durchschnittliche Kampfkraft der aktiven Mitglieder und Gesamtkampfkraft der Gilde (die Karten sind nach dem Durchschnitt sortiert, Live zuerst) mit Link zur Gildenseite und zur Spielerseite des Streamers. Darunter vier Kennzahlen: Kämpfe der letzten 24 Stunden (mit Siegquote), erfasste Kämpfe, erfasste Spieler und die Grenze der Top 100. Dazu der fahrende Händler ("gerade in", wenn der letzte gesehene Besuch unter 5 Minuten her ist), die fünf letzten Kämpfe und die Spielersuche. Zuschauerzahl und Titel des Streams gibt das Spiel nicht her, sie stehen nicht da.
 
-- **Ranglisten** (`#/rangliste/...`): `kampfkraft` (Standard, mit Kennzahlen und Bonus), `silber`, `errungenschaften`, `quests`,
+- **Ranglisten** (`#/rangliste/...`): `kampfkraft` (Standard, mit ATK, DEF, SUP und Bonus je Spieler), `silber`, `errungenschaften`, `quests`,
   `aufsteiger`, `formel`. Die vier Ranglisten sind die des Spiels (Parameter `by=gear|gold|errungenschaften|quests`; `gear` ist seit dem 30.09.2026 die Kampfkraft, je Top 100).
 - **Gilden** (`#/gilden/<Gilde>`): eine Unterseite pro Gilde, der Tab trägt den Namen des Streamers, die Überschrift den vollen Gildennamen.
 - **Kämpfe** (`#/kaempfe/...`): `arten`, `letzte`, `haendler`.

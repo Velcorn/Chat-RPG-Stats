@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.8.7 (02.10.2026)
+
+**Verbessert**
+- Kämpfe: Die Kampfarten sind nach Siegquote sortiert, bei gleicher Quote nach der Zahl der Kämpfe, nicht mehr alphabetisch.
+
 ## 0.8.6 (02.10.2026)
 
 **Verbessert**

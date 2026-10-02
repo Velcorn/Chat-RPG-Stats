@@ -4,7 +4,7 @@ requires-python = ">=3.13"
 
 [[package]]
 name = "chat-rpg-stats"
-version = "0.8.7"
+version = "0.8.8"
 source = { virtual = "." }
 
 [package.dev-dependencies]

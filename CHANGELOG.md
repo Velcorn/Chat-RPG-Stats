@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.8.8 (02.10.2026)
+
+**Verbessert**
+- Kämpfe: Die Kampfseiten und der Seitenfuß zeigen, seit wann die Daten erfasst werden ("Erfasst wird seit 30.09.2026, 17:48 Uhr, frühere Kämpfe fehlen"), denn die Siegquoten gelten nur für diese Zeit.
+
 ## 0.8.7 (02.10.2026)
 
 **Verbessert**

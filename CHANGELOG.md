@@ -3,6 +3,12 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.9.0 (02.10.2026)
+
+**Neu**
+- Kampf-Statistik mit drei neuen Seiten unter Kämpfe. "Überleben": wie viele Teilnehmer fallen (insgesamt, bei Siegen und Niederlagen, je Rolle, Kampfart und Kampf), dazu Schaden, Heilung, Runden und das Restleben des Bosses nach Niederlagen. "Kampfkraft": die durchschnittliche Kampfkraft der Teilnehmer gegen die Empfehlung des Spiels, mit Siegquote je Abstand. "Wann und wo": Kämpfe und Siegquote je Uhrzeit, Kanal und Tag.
+- Die Einzelheiten kommen aus den Kampfberichten des Spiels (eine zusätzliche Anfrage je neuem Kampf, etwa 100 am Tag) und dem laufenden Kampf (eine pro Lauf); gespeichert werden nur Summen je Kampf. Sie gibt es erst ab dem ersten Lauf nach dieser Version, die Seiten nennen den Beginn.
+
 ## 0.8.8 (02.10.2026)
 
 **Neu**

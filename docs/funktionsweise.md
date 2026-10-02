@@ -14,7 +14,7 @@ Zeitplan (alle 15 Min., 7-24 Uhr) -> collect.py -> Zweig "data" -> build.py -> G
 2. **Speichern:** im Zweig `data`, eine Datei `days/JJJJ-MM-TT.jsonl` pro Tag (eine Zeile pro Lauf) und `state.json`
    mit dem letzten Stand. Von einem bekannten Spieler oder einer Gilde werden nur die geänderten Werte gespeichert.
    Ein Lauf ist dadurch rund 10 KB groß, ein Tag etwa 0,7 MB.
-3. **Bauen** (`build.py`): spielt alle Tagesdateien ab und schreibt `summary.json` (Ranglisten, Gilden, Kämpfe),
+3. **Bauen** (`build.py`): spielt alle Tagesdateien ab und schreibt `summary.json` (Ranglisten, Gilden, Kämpfe, `stats` aus `fightstats.py`),
    `players.json` (Suchindex) und eine Datei `p/<name>.json` pro Spieler.
 4. **Veröffentlichen:** die Action lädt die Dateien samt `site/index.html` auf GitHub Pages. Besucher lesen nur diese
    fertigen Dateien; ihre Zahl ändert nichts an den Anfragen ans Spiel.
@@ -46,7 +46,7 @@ Eine Startseite und drei Bereiche mit einer zweiten Tab-Zeile, damit keine Seite
 - **Ranglisten** (`#/rangliste/...`): `kampfkraft` (Standard, mit ATK, DEF, SUP und Bonus je Spieler), `silber`, `errungenschaften`, `quests`,
   `aufsteiger`, `formel`. Die vier Ranglisten sind die des Spiels (Parameter `by=gear|gold|errungenschaften|quests`; `gear` ist seit dem 30.09.2026 die Kampfkraft, je Top 100).
 - **Gilden** (`#/gilden/<Gilde>`): eine Unterseite pro Gilde, der Tab trägt den Namen des Streamers, die Überschrift den vollen Gildennamen.
-- **Kämpfe** (`#/kaempfe/...`): `arten`, `letzte`, `haendler`.
+- **Kämpfe** (`#/kaempfe/...`): `arten`, `ueberleben`, `kraft`, `zeit`, `letzte`.
 - **Spieler** (`#/spieler/<Name>`): eine Seite pro Spieler, erreichbar über die Suche. Von oben nach unten: Kennzahlen, Verlauf der Kampfkraft und Verteilung der Werte, Gilde und Prognose, Rang und Silber, bei Spielern der Beobachtungsliste zuletzt Kämpfe, Statistik und Ausrüstung.
 
 ## So rechnet die Seite
@@ -87,6 +87,12 @@ Eine Startseite und drei Bereiche mit einer zweiten Tab-Zeile, damit keine Seite
 - **Aufsteiger:** größter Zuwachs in 24 Stunden bzw. 7 Tagen.
 - **Kämpfe:** Siegquote pro Kampfart der letzten 30 Tage, Bosse nach Name und Stufe, sonst nach Art und Schwierigkeit. Sortiert nach Siegquote, bei gleicher Quote nach Zahl der Kämpfe (mehr zuerst).
   Das Kampfarchiv des Spiels hält nur die letzten 20 Kämpfe, deshalb sammelt der Sammler sie fortlaufend. Die Kampfseiten nennen dazu den Beginn der Erfassung (`since` in `summary.json`, der erste Lauf); frühere Kämpfe fehlen, die Quoten gelten also nur für die Zeit danach. Derselbe Zeitpunkt steht im Seitenfuß.
+  Kampfstatistik (`fightstats.py`, `summary.json` -> `stats`, letzte 30 Tage), ab 0.9.0:
+  - Für jeden neuen Kampf holt der Sammler die Kampfbericht-Daten des Archivs (`/api/combat/history/{id}`, eine Anfrage je Kampf, nur einmal) und speichert daraus nur Summen: Teilnehmer und Gefallene je Rolle (Schildträger, Kämpfer, Unterstützer), Schaden, erlittener Schaden, Heilung, Runden, Leben des Bosses, mittleres Silber der Überlebenden und der Gefallenen. Namen und Einzelwerte einzelner Spieler werden nicht gespeichert. Beim ersten Lauf nach der Einführung kommen die 20 Kämpfe des Archivs nach; ältere fehlen.
+  - Der laufende Kampf (`/api/combat?kompakt=true`, eine Anfrage je Lauf) nennt als Einziger Durchschnitt der Kampfkraft und der Ausrüstung, die Empfehlung und die Kampfwerte (Dauer, Wut, Gruppenstärke); das Archiv hat dort nur Nullen. Der Sammler übernimmt sie für den Kampf, den das Spiel gerade noch anzeigt, einmal je Kampf. Kämpfe, die zwischen zwei Läufen verschwinden, haben keine Kampfkraft; die Seite weist aus, für wie viele sie vorliegt.
+  - **Überleben:** Anteil der Gefallenen (Gefallene durch Teilnehmer, alle Kämpfe mit Einzelheiten zusammen), getrennt nach Siegen und Niederlagen, nach Rolle, Kampfart und Kampf; dazu Schaden, Heilung, Runden und für Niederlagen das Leben, das der Boss noch hatte.
+  - **Kampfkraft:** Durchschnitt der Teilnehmer gegen die Empfehlung (Bereiche unter 80 %, 80 bis 100 %, 100 bis 120 %, über 120 %, jeweils mit Siegquote), Kampfkraft der Siege gegen die der Niederlagen je Kampf.
+  - **Wann und wo:** Kämpfe und Siegquote je Stunde (Berliner Zeit), je Kanal und je Tag. Braucht keine Einzelheiten.
   Links ins Spiel (öffnen in einem neuen Tab, nur feste Adressen und die Kampf-ID aus dem Archiv): der Kampfname in den Listen der letzten Kämpfe führt zu `/kampfbericht/{id}`, die Spieler- und Gildenseiten zu `/spieler/{login}` und `/gilden/{login}`, die Kampfseiten zu `/kampf`, der Seitenfuß zu Kämpfen, Bestenliste, Gilden, Markt und Kanälen. Es kommen keine zusätzlichen Anfragen dazu.
 
 Alle Werte sind Schätzungen aus dem, was seit Beginn der Aufzeichnung gesammelt wurde. Am Anfang und bei neuen

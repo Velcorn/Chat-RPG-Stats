@@ -35,7 +35,7 @@ def answers(**extra):
     return {"/api/guilds": [{"login": "karni", "members": 2}, {"login": "leer", "members": 0}],
             "/api/guilds/karni": {"guild": {"name": "Karni"}, "members": [member("a", 100)]},
             **{f"/api/leaderboard?by={b}&limit=100": board for b in collect.BOARD_FIELDS},
-            "/api/combat/history": [], "/api/channels": [], **extra}
+            "/api/combat/history": [], "/api/combat?kompakt=true": [], "/api/channels": [], **extra}
 
 
 class SnapshotTests(unittest.TestCase):
@@ -43,14 +43,14 @@ class SnapshotTests(unittest.TestCase):
         site = FakeSite(answers())
         s = collect.snapshot(site, [])
         self.assertEqual(list(s["guilds"]), ["karni"])  # a guild without members costs no request
-        self.assertEqual(site.requests, 8)
+        self.assertEqual(site.requests, 9)
         self.assertEqual(s["watch"], {})
 
     def test_watchlist_costs_one_request_each_and_skips_unknown_players(self):
         site = FakeSite(answers(**{"/api/players/sola": {"displayName": "Sola"}, "/api/players/weg": 404}))
         s = collect.snapshot(site, ["sola", "weg"])
         self.assertEqual(list(s["watch"]), ["sola"])
-        self.assertEqual(site.requests, 10)
+        self.assertEqual(site.requests, 11)
 
     def test_other_http_errors_are_raised(self):
         with self.assertRaises(urllib.error.HTTPError):
@@ -124,7 +124,7 @@ class MainTests(unittest.TestCase):
         out = Path(tempfile.mkdtemp()) / "out"
         patches = [mock.patch.object(collect, "datetime", mock.Mock(now=lambda tz: now)),
                    mock.patch.object(collect, "Site", lambda: mock.Mock(requests=7)),
-                   mock.patch.object(collect, "snapshot", snapshot or (lambda site, wl: snap(
+                   mock.patch.object(collect, "snapshot", snapshot or (lambda site, wl, after=0: snap(
                        {"karni": [member("a", 100)]}))),
                    mock.patch("sys.argv", ["collect.py", "--data", str(data), "--watchlist", str(data / "none.txt"),
                                            *args]),
@@ -156,7 +156,7 @@ class MainTests(unittest.TestCase):
         with mock.patch("sys.argv", ["collect.py", "--data", str(data), "--watchlist", str(data / "none.txt")]), \
                 mock.patch.object(collect, "datetime", mock.Mock(now=lambda tz: self.NOON)), \
                 mock.patch.object(collect, "Site", lambda: mock.Mock(requests=7)), \
-                mock.patch.object(collect, "snapshot", lambda site, wl: snap({"karni": [member("a", 105)]})), \
+                mock.patch.object(collect, "snapshot", lambda site, wl, after=0: snap({"karni": [member("a", 105)]})), \
                 redirect_stdout(io.StringIO()):
             collect.main()
         lines = (data / "days" / "2026-09-30.jsonl").read_text().splitlines()
@@ -175,7 +175,7 @@ class MainTests(unittest.TestCase):
         self.assertTrue(out.exists())
 
     def test_site_down_skips_the_run_without_failing(self):
-        def down(site, wl):
+        def down(site, wl, after=0):
             raise TimeoutError("timed out")
 
         code, data, out, printed = self.run_main(now=self.NOON, snapshot=down)

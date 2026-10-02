@@ -9,7 +9,7 @@ Ranglisten, Verlauf und Prognosen für das Twitch-Chat-RPG [rpg.sola.rip](https:
 deine Kampfkraft, wann erreichst du den nächsten Rang oder die Top 100, wie verteilen ähnlich starke Spieler ihre
 Werte, wo stehst du in deiner Gilde, welche Kämpfe gewinnt man meistens. Die Seite hat drei Bereiche mit
 Unterseiten: Ranglisten (Kampfkraft, Silber, Errungenschaften, Quests, Aufsteiger, Bonus-Formel), Gilden (eine Seite pro Gilde) und
-Kämpfe (Kampfarten, letzte Kämpfe), dazu eine Seite pro Spieler. Die Startseite zeigt die Streamer
+Kämpfe (Kampfarten, Überleben, Kampfkraft, Wann und wo, letzte Kämpfe), dazu eine Seite pro Spieler. Die Startseite zeigt die Streamer
 mit Live-Status, Link zum Stream und Gildenstand, die letzten Kämpfe und die Spielersuche.
 
 **Zur Seite: <https://velcorn.github.io/Chat-RPG-Stats/>**
@@ -31,11 +31,13 @@ zeigt:
 | Kampfkraft, Spenden und Aktivität aller Gildenmitglieder | Gildenliste und Gildenseiten | 1 + 1 pro Gilde |
 | Top 100 nach Kampfkraft (mit ATK/DEF/SUP), Silber, Errungenschaften und Quests | Ranglisten | 4 |
 | Die letzten 20 Kämpfe aller Kanäle | Kampfarchiv | 1 |
+| Gefallene, Rollen und Schaden jedes neuen Kampfes (nur Summen) | Kampfbericht | 1 pro neuem Kampf, etwa 3 pro Lauf |
+| Durchschnittliche Kampfkraft und Empfehlung des zuletzt angezeigten Kampfes | laufender Kampf | 1 |
 | Kanäle | Kanalliste, Live-Status | 1 |
 | Spieler auf der Beobachtungsliste | Spielerseite | 1 pro Spieler |
 
-Ein Lauf macht also etwa 15 Anfragen, im Abstand von 2 Sekunden. Bei 4 Läufen pro Stunde und 17 Stunden Spielzeit sind das
-rund 1.000 Anfragen am Tag, egal wie viele Leute die Seite ansehen: Besucher lesen nur fertige Dateien. Die Seite nennt diese Zahl
+Ein Lauf macht also etwa 15 Anfragen und eine pro neuem Kampf, im Abstand von 2 Sekunden. Bei 4 Läufen pro Stunde und
+17 Stunden Spielzeit sind das rund 1.100 Anfragen am Tag, egal wie viele Leute die Seite ansehen: Besucher lesen nur fertige Dateien. Die Seite nennt diese Zahl
 im Fuß (gemessen am letzten Lauf, mal 68 Läufe am Tag). Jede Anfrage nennt
 das Projekt im User-Agent. Ist die Seite nicht erreichbar, fällt der Lauf aus. Gespeichert wird nur, was sich geändert hat.
 

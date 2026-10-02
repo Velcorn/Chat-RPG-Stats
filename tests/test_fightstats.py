@@ -91,8 +91,15 @@ class StatsTests(unittest.TestCase):
         s = self.stats()
         self.assertEqual([r["role"] for r in s["roles"]], ["TANK", "FIGHTER", "SUPPORT"])
         self.assertEqual(s["roles"][1]["share"], 50.0)
-        self.assertEqual(s["roles"][1]["death"], round(100 * (1 + 2 + 1) / 6, 1))
+        self.assertEqual(s["roles"][1]["death"], 50.0)  # won fights only: the lost fight 2 would make it 66.7
         self.assertEqual(s["total"]["dmg"], 100)
+
+    def test_fallen_per_fight_and_for_the_power_list(self):
+        self.assertEqual(fightstats.fallen(self.extra[2]), {"dead": 4, "death": 100.0})
+        self.assertEqual(fightstats.fallen(self.extra[1]), {"dead": 2, "death": 50.0})
+        self.assertEqual(fightstats.fallen(None), {})
+        recent = {r["id"]: r for r in self.stats()["power"]["recent"]}
+        self.assertEqual(recent[2]["death"], 100.0)
 
     def test_fights_without_details_still_count_for_time_and_channel(self):
         s = self.stats()

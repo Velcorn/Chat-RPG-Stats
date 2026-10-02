@@ -46,7 +46,7 @@ keep it.
 
 - `collect.py`: one run (about 15 requests plus one per new fight): `snapshot` (the requests), `state_from` (flat current state, incl. the watchlist's gear per slot), `record` (only the changes).
   Writes `data/days/YYYY-MM-DD.jsonl` (one line per run) and `data/state.json` on the `data` branch.
-- `fightstats.py`: fight statistics for `summary.json` -> `stats` (death share, roles, power vs recommendation, hours, channels); only sums per fight, never per player.
+- `fightstats.py`: fight statistics for `summary.json` -> `stats` (death share in won fights and per fight (`fallen`), roles, power vs recommendation, hours, channels); only sums per fight, never per player.
 - `build.py`: replays the day files (`History`, incl. rules log and live share per channel), computes pace, forecasts, peers, guild standing, fight odds; writes
   `_site/data/summary.json`, `players.json` (search index) and `p/<login>.json`.
 - `site/index.html`: the whole dashboard (no build step; hash routes `#/<section>/<sub>` with sections `start` (default), `rangliste`, `gilden` (subs `vergleich` + one per guild), `spiel` (subs `wirtschaft`, `regeln`, `aenderungen`; `RULE_LABELS` holds the German rule names), `kaempfe` (subs `arten`, `ueberleben`, `kraft`, `zeit`, `letzte`; see `SECTIONS`: each sub

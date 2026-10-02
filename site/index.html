@@ -163,6 +163,8 @@ const signed = (n, d = 0) => n == null ? "-" : (n > 0 ? "+" : "") + (d ? fmtDec(
 const TZ = "Europe/Berlin";  // the game runs on Berlin time, whatever device views the page
 const fmtTime = (t) => new Date(t * 1000).toLocaleString("de-DE", { timeZone: TZ, weekday: "short", day: "2-digit",
   month: "2-digit", hour: "2-digit", minute: "2-digit" });
+const GAME = "https://rpg.sola.rip";
+const gameLink = (path, text) => el("a", { href: GAME + path, target: "_blank", rel: "noopener" }, text);
 const fmtSince = (t) => new Date(t * 1000).toLocaleString("de-DE", { timeZone: TZ, day: "2-digit", month: "2-digit",
   year: "numeric", hour: "2-digit", minute: "2-digit" }) + " Uhr";
 const fmtClock = (t) => new Date(t * 1000).toLocaleTimeString("de-DE", { timeZone: TZ, hour: "2-digit", minute: "2-digit" });
@@ -473,7 +475,8 @@ async function viewPlayer(s, login) {
 
   const out = [
     el("div", { class: "head start" }, el("h1", {}, p.name), g ? el("a", { href: `#/gilden/${g.login}` }, g.name) : null,
-      p.active === false ? el("span", { class: "tag" }, "laut Gilde inaktiv") : null),
+      p.active === false ? el("span", { class: "tag" }, "laut Gilde inaktiv") : null,
+      gameLink(`/spieler/${login}`, "Im Spiel")),
     tiles,
     el("div", { class: "grid two" }, chartCard("Kampfkraft", p.series.gear, { until: s.generated }),
       card("Verteilung gegenüber ähnlichen Spielern", split)),
@@ -502,7 +505,7 @@ async function viewPlayer(s, login) {
 function viewGuild(s, login) {
   const g = s.guilds.find((x) => x.login === login);
   return [el("section", { class: "grid" },
-    el("div", { class: "head" }, el("h1", {}, g.name)),
+    el("div", { class: "head" }, el("h1", {}, g.name), gameLink(`/gilden/${login}`, "Im Spiel")),
     el("div", { class: "grid tiles" },
       tile("Kasse", fmtSilver(g.treasury), `gespendet insgesamt: ${fmtSilver(g.donated)}`),
       tile("Mitglieder", fmtInt(g.members), `${fmtInt(g.active)} aktiv (${pct(g.active, g.members)})`),
@@ -543,7 +546,7 @@ function viewStart(s) {
 const RECENT_COLS = (s) => [
   { label: "Ende", get: (f) => fmtTime(iso(f.endedAt)) },
   { label: "Kanal", get: (f) => "#" + f.channel },
-  { label: "Kampf", get: (f) => f.kind === "BOSS" ? fightLabel(f) : `${f.name} (${fightLabel(f)})` },
+  { label: "Kampf", get: (f) => gameLink(`/kampfbericht/${f.id}`, f.kind === "BOSS" ? fightLabel(f) : `${f.name} (${fightLabel(f)})`) },
   { label: "Teilnehmer", num: true, get: (f) => fmtInt(f.fighters) },
   { label: "Ausgang", get: (f) => f.outcome === "VICTORY" ? el("span", { class: "up" }, "gewonnen") : el("span", { class: "down" }, "verloren") },
 ];
@@ -552,7 +555,8 @@ function viewFights(s, sub) {
   const groups = s.fights.groups;
   const since = s.since ? el("p", { class: "note" }, `Erfasst wird seit ${fmtSince(s.since)}, frühere Kämpfe fehlen.`) : null;
   if (sub === "letzte") return [
-    card("Letzte Kämpfe", el("div", { class: "scroll" }, table(RECENT_COLS(s), s.fights.recent)), since)];
+    card("Letzte Kämpfe", el("div", { class: "scroll" }, table(RECENT_COLS(s), s.fights.recent)),
+      el("p", { class: "note" }, "Der Kampfname führt zum Bericht im Spiel; alle Kämpfe: ", gameLink("/kampf", "Kämpfe im Spiel"), "."), since)];
   return [
     card("Siegquote nach Kampfart (30 Tage)", groups.length ? table([
       { label: "Kampf", get: fightLabel },
@@ -560,7 +564,8 @@ function viewFights(s, sub) {
       { label: "Siege", num: true, get: (g) => `${fmtInt(g.wins)} (${pct(g.wins, g.n)})` },
       { label: "Ø Teilnehmer", num: true, get: (g) => fmtInt(g.fighters) },
     ], groups) : el("p", { class: "note" }, "Noch keine Kämpfe erfasst."),
-    el("p", { class: "note" }, "Aus dem Kampfarchiv des Spiels (alle Kanäle). Wenige Kämpfe einer Art sagen noch wenig."), since)];
+    el("p", { class: "note" }, "Aus dem Kampfarchiv des Spiels (alle Kanäle). Wenige Kämpfe einer Art sagen noch wenig. ",
+      gameLink("/kampf", "Kämpfe im Spiel")), since)];
 }
 
 // ---- search ----
@@ -631,7 +636,9 @@ async function route() {
   $("footer").replaceChildren(`Stand ${fmtTime(s.generated)}${s.since ? `, Daten seit ${fmtSince(s.since)}` : ""}. Liest nur öffentliche Daten von `,
     el("a", { href: "https://rpg.sola.rip" }, "rpg.sola.rip"),
     ` (etwa alle 15 Minuten von 7 bis 24 Uhr, ohne Anmeldung${requests}). Kein offizielles Angebot des Spiels. Fast komplett vibe-coded (von einer KI geschrieben, nur stichprobenartig geprüft), die Zahlen sind Schätzungen. `,
-    el("a", { href: `https://github.com/${REPO}` }, "Quellcode und Beobachtungsliste"), ".");
+    el("a", { href: `https://github.com/${REPO}` }, "Quellcode und Beobachtungsliste"), ". Im Spiel: ",
+    gameLink("/kampf", "Kämpfe"), ", ", gameLink("/bestenliste", "Bestenliste"), ", ", gameLink("/gilden", "Gilden"), ", ",
+    gameLink("/markt", "Markt"), ", ", gameLink("/kanaele", "Kanäle"), ".");
   window.scrollTo(0, 0);
 }
 window.addEventListener("hashchange", route);

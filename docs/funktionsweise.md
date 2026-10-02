@@ -87,6 +87,7 @@ Eine Startseite und drei Bereiche mit einer zweiten Tab-Zeile, damit keine Seite
 - **Aufsteiger:** größter Zuwachs in 24 Stunden bzw. 7 Tagen.
 - **Kämpfe:** Siegquote pro Kampfart der letzten 30 Tage, Bosse nach Name und Stufe, sonst nach Art und Schwierigkeit. Sortiert nach Siegquote, bei gleicher Quote nach Zahl der Kämpfe (mehr zuerst).
   Das Kampfarchiv des Spiels hält nur die letzten 20 Kämpfe, deshalb sammelt der Sammler sie fortlaufend. Die Kampfseiten nennen dazu den Beginn der Erfassung (`since` in `summary.json`, der erste Lauf); frühere Kämpfe fehlen, die Quoten gelten also nur für die Zeit danach. Derselbe Zeitpunkt steht im Seitenfuß.
+  Links ins Spiel (öffnen in einem neuen Tab, nur feste Adressen und die Kampf-ID aus dem Archiv): der Kampfname in den Listen der letzten Kämpfe führt zu `/kampfbericht/{id}`, die Spieler- und Gildenseiten zu `/spieler/{login}` und `/gilden/{login}`, die Kampfseiten zu `/kampf`, der Seitenfuß zu Kämpfen, Bestenliste, Gilden, Markt und Kanälen. Es kommen keine zusätzlichen Anfragen dazu.
 
 Alle Werte sind Schätzungen aus dem, was seit Beginn der Aufzeichnung gesammelt wurde. Am Anfang und bei neuen
 Spielern fehlen Tempo und Prognose.

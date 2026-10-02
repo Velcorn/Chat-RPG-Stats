@@ -5,6 +5,9 @@ Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
 ## 0.8.8 (02.10.2026)
 
+**Neu**
+- Links ins Spiel: Der Kampfname in den Listen der letzten Kämpfe führt zum Kampfbericht, die Spieler- und Gildenseiten haben "Im Spiel", die Kampfseiten verlinken die Kämpfe des Spiels, und der Seitenfuß führt zu Kämpfen, Bestenliste, Gilden, Markt und Kanälen.
+
 **Verbessert**
 - Kämpfe: Die Kampfseiten und der Seitenfuß zeigen, seit wann die Daten erfasst werden ("Erfasst wird seit 30.09.2026, 17:48 Uhr, frühere Kämpfe fehlen"), denn die Siegquoten gelten nur für diese Zeit.
 

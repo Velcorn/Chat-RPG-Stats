@@ -100,7 +100,8 @@ def rounded(x, n=2):
 
 
 def fight_groups(fights: list[dict], now: float, days: int = 30) -> list[dict]:
-    """Win rate per fight type: bosses by name and level, the rest by kind and difficulty."""
+    """Win rate per fight type: bosses by name and level, the rest by kind and difficulty. Best win rate first,
+    then the most fights."""
     groups: dict[tuple, list] = defaultdict(list)
     for f in fights:
         ended = iso_ts(f.get("endedAt"))
@@ -112,7 +113,7 @@ def fight_groups(fights: list[dict], now: float, days: int = 30) -> list[dict]:
     out = [{"kind": k[0], "name": k[1], "level": k[2], "n": len(fs),
             "wins": sum(1 for f in fs if f.get("outcome") == "VICTORY"),
             "fighters": round(statistics.mean(f.get("fighters") or 0 for f in fs))} for k, fs in groups.items()]
-    return sorted(out, key=lambda g: (g["kind"], g["name"] or "", g["level"] or 0))
+    return sorted(out, key=lambda g: (-g["wins"] / g["n"], -g["n"], g["kind"], g["name"] or "", g["level"] or 0))
 
 
 def iso_ts(s: str | None) -> float | None:

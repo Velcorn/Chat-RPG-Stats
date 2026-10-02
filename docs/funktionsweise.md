@@ -86,7 +86,7 @@ Eine Startseite und drei Bereiche mit einer zweiten Tab-Zeile, damit keine Seite
 - **Silber:** Silber über die Zeit (Top 100 und Beobachtungsliste).
 - **Aufsteiger:** größter Zuwachs in 24 Stunden bzw. 7 Tagen.
 - **Kämpfe:** Siegquote pro Kampfart der letzten 30 Tage, Bosse nach Name und Stufe, sonst nach Art und Schwierigkeit. Sortiert nach Siegquote, bei gleicher Quote nach Zahl der Kämpfe (mehr zuerst).
-  Das Kampfarchiv des Spiels hält nur die letzten 20 Kämpfe, deshalb sammelt der Sammler sie fortlaufend.
+  Das Kampfarchiv des Spiels hält nur die letzten 20 Kämpfe, deshalb sammelt der Sammler sie fortlaufend. Die Kampfseiten nennen dazu den Beginn der Erfassung (`since` in `summary.json`, der erste Lauf); frühere Kämpfe fehlen, die Quoten gelten also nur für die Zeit danach. Derselbe Zeitpunkt steht im Seitenfuß.
 
 Alle Werte sind Schätzungen aus dem, was seit Beginn der Aufzeichnung gesammelt wurde. Am Anfang und bei neuen
 Spielern fehlen Tempo und Prognose.

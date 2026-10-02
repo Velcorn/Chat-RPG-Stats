@@ -70,6 +70,12 @@
   .stream .head { margin-bottom: 4px; }
   .stream .lines { display: grid; gap: 2px; margin: 8px 0; }
   .stream .lines div { display: flex; justify-content: space-between; gap: 8px; }
+  h2.section { font-size: 15px; margin: 10px 0 0; color: var(--text-secondary); }
+  .rules { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 6px 14px; margin: 0; }
+  .rules dt { color: var(--text-secondary); }
+  .rules dd { margin: 0; display: grid; gap: 1px; }
+  .rules dd .muted { font-size: 12px; }
+  @media (max-width: 600px) { .rules { grid-template-columns: 1fr; } .rules dd { margin-bottom: 6px; } }
   .pill { padding: 1px 9px; border-radius: 10px; font-size: 12px; border: 1px solid var(--border); color: var(--text-muted); }
   .pill.on { background: var(--good); border-color: var(--good); color: #fff; }
   .search { position: relative; flex: 1; min-width: 200px; max-width: 360px; }
@@ -535,17 +541,22 @@ function viewGuildRace(s) {
     { label: "Gespendet", num: true, get: (g) => fmtSilver(g.donated) },
     { label: "Bosse", num: true, title: "Siege / Niederlagen", get: (g) => `${fmtInt(g.boss_wins)} / ${fmtInt(g.boss_losses)}` },
   ];
-  const week = s.guilds.filter((g) => g.week != null);
-  const best = week.length ? week.reduce((a, b) => (per(b, b.week) > per(a, a.week) ? b : a)) : null;
+  // Small guilds would top every average, so they only count from 10 active members and stand last in the table.
+  const big = (g) => g.active >= 10;
+  const ranked = [...s.guilds].sort((x, y) => (big(y) - big(x)) || ((y.avg_gear || 0) - (x.avg_gear || 0)));
+  const bigOnes = ranked.filter(big);
+  const top = (key) => bigOnes.reduce((a, g) => (!a || (g[key] ?? -Infinity) > (a[key] ?? -Infinity) ? g : a), null);
+  const strongest = top("avg_gear"), largest = top("members"), richest = top("treasury");
+  const climber = bigOnes.filter((g) => g.day != null).reduce((a, g) => (!a || per(g, g.day) > per(a, a.day) ? g : a), null);
   return [el("section", { class: "grid" },
     el("div", { class: "head" }, el("h1", {}, "Gilden im Vergleich")),
     el("div", { class: "grid tiles" },
-      tile("Gilden", fmtInt(s.guilds.length), `${fmtInt(s.guilds.reduce((n, g) => n + g.members, 0))} Mitglieder`),
-      tile("Stärkste Gilde", s.guilds[0] ? s.guilds[0].name : "-", s.guilds[0] ? `Ø ${fmtDec(s.guilds[0].avg_gear, 1)} Kampfkraft` : ""),
-      tile("Schnellster Aufstieg", best ? best.name : "-", best ? `${signed(per(best, best.week), 1)} je Mitglied in 7 Tagen` : "nach einer Woche Verlauf"),
-      tile("Größte Kasse", fmtSilver(Math.max(0, ...s.guilds.map((g) => g.treasury || 0))),
-        (s.guilds.slice().sort((a, b) => (b.treasury || 0) - (a.treasury || 0))[0] || {}).name || "")),
-    card("Tabelle", el("div", { class: "scroll" }, table(cols, s.guilds))))];
+      tile("Höchster Ø Kampfkraft", strongest ? strongest.login : "-", strongest ? `${fmtDec(strongest.avg_gear, 1)} je aktivem Mitglied` : ""),
+      tile("Meiste Mitglieder", largest ? largest.login : "-", largest ? `${fmtInt(largest.members)}, davon ${fmtInt(largest.active)} aktiv` : ""),
+      tile("Schnellster Aufstieg", climber ? climber.login : "-", climber ? `${signed(per(climber, climber.day), 1)} je Mitglied in 24 Stunden` : "nach einem Tag Verlauf"),
+      tile("Größte Kasse", richest ? richest.login : "-", richest ? fmtSilver(richest.treasury) : "")),
+    card("Alle Gilden nach Ø Kampfkraft", el("div", { class: "scroll" }, table(cols, ranked)),
+      el("p", { class: "note" }, "Der Durchschnitt zählt nur aktive Mitglieder. Gilden mit weniger als 10 aktiven Mitgliedern stehen unten und gewinnen oben keine Kachel.")))];
 }
 
 function viewGuild(s, login) {
@@ -603,12 +614,46 @@ function viewStart(s) {
     channelLines(s.channel_stats[login]),
     el("div", { class: "head" }, el("a", { href: `#/spieler/${login}` }, "Spielerseite"),
       el("a", { href: `https://www.twitch.tv/${login}`, target: "_blank", rel: "noopener" }, "Zum Stream auf Twitch"))));
+  const top = s.board.slice(0, 5), t = s.stats.total, risers = (s.risers.day || []).slice(0, 5);
+  const guilds = [...s.guilds].filter((g) => g.active >= 10).sort((x, y) => (y.avg_gear || 0) - (x.avg_gear || 0)).slice(0, 4);
+  const lastRule = s.rules.log[0];
+  const more = (href, text) => el("p", { class: "note" }, el("a", { href }, text));
   return [
+    el("div", { class: "grid tiles" },
+      tile("Spieler erfasst", fmtInt(s.players), `${fmtInt(s.active)} davon aktiv`),
+      tile("Stärkste Kampfkraft", top[0] ? fmtInt(top[0].gear) : "-", top[0] ? top[0].name || top[0].login : ""),
+      tile("Kämpfe", fmtInt(t.n), t.n ? `${fmtInt(t.wins)} gewonnen, letzte ${fmtInt(s.stats.days)} Tage` : ""),
+      tile("Gilden", fmtInt(s.guilds.length), `${fmtInt(s.guilds.reduce((n, g) => n + g.members, 0))} Mitglieder`)),
     card("Spieler suchen", el("div", { id: "hero-search" }), el("p", { class: "note" }, "Erfasst sind alle Gildenmitglieder und die Top 100.")),
-    el("div", { class: "grid streams" }, streams.map(streamCard)),
-    card("Letzte Kämpfe", s.fights.recent.length ? [el("div", { class: "scroll" }, table(RECENT_COLS(s), s.fights.recent.slice(0, 10))),
-      el("p", { class: "note" }, el("a", { href: "#/kaempfe/letzte" }, "Alle letzten Kämpfe"))]
-      : el("p", { class: "note" }, "Noch keine Kämpfe erfasst."))];
+    el("div", { class: "grid two" },
+      card("Top 5 nach Kampfkraft", top.length ? [table([
+        { label: "#", num: true, get: (r) => fmtInt(r.rank) },
+        { label: "Spieler", get: playerLink },
+        { label: "Kampfkraft", num: true, get: (r) => fmtInt(r.gear) },
+      ], top), more("#/rangliste/kampfkraft", "Ganze Bestenliste")] : el("p", { class: "note" }, "Noch keine Daten.")),
+      card("Aufsteiger der letzten 24 Stunden", risers.length ? [table([
+        { label: "Spieler", get: playerLink },
+        { label: "Kampfkraft", num: true, get: (r) => fmtInt(r.gear) },
+        { label: "24 h", num: true, get: (r) => delta(r.day) },
+      ], risers), more("#/rangliste/aufsteiger", "Alle Aufsteiger")]
+        : el("p", { class: "note" }, "Aufsteiger gibt es nach einem Tag Datensammlung."))),
+    el("div", { class: "grid two" },
+      card("Gilden", guilds.length ? [table([
+        { label: "Gilde", get: (g) => el("a", { href: `#/gilden/${g.login}` }, g.login) },
+        { label: "Aktive", num: true, get: (g) => fmtInt(g.active) },
+        { label: "Ø Kampfkraft", num: true, get: (g) => fmtDec(g.avg_gear, 1) },
+      ], guilds), more("#/gilden/vergleich", "Gilden im Vergleich")] : el("p", { class: "note" }, "Noch keine Gilden mit mindestens 10 aktiven Mitgliedern.")),
+      card("Zuletzt", el("dl", { class: "facts" },
+        el("dt", {}, "Regeländerung"), el("dd", {}, lastRule
+          ? el("a", { href: "#/spiel/aenderungen" }, `${ruleName(lastRule[1])}: ${ruleText(lastRule[1], lastRule[2])} -> ${ruleText(lastRule[1], lastRule[3])} (${fmtTime(lastRule[0])})`)
+          : "keine seit Beginn der Aufzeichnung"),
+        el("dt", {}, "Kampf"), el("dd", {}, s.fights.recent[0]
+          ? el("a", { href: "#/kaempfe/letzte" }, `${fightLabel(s.fights.recent[0])} in #${s.fights.recent[0].channel}, ${fmtTime(iso(s.fights.recent[0].endedAt))}`)
+          : "noch keiner erfasst"),
+        el("dt", {}, "Daten vom"), el("dd", {}, fmtTime(s.generated)))),
+    ),
+    el("h2", { class: "section" }, "Die Kanäle"),
+    el("div", { class: "grid streams" }, streams.map(streamCard))];
 }
 
 const RECENT_COLS = (s) => [
@@ -776,40 +821,80 @@ $("q").addEventListener("keydown", (ev) => {
 document.addEventListener("click", (ev) => { if (!ev.target.closest(".search")) $("suggest").hidden = true; });
 
 // ---- the game itself: silver in circulation, rules and their changes ----
-const RULE_LABELS = {
-  questCooldownMinutes: ["Quest-Wartezeit", "Minuten"], questFailureCooldownMinutes: ["Wartezeit nach Fehlschlag", "Minuten"],
-  questRewardMin: ["Quest-Belohnung ab", "Silber"], questRewardMax: ["Quest-Belohnung bis", "Silber"],
-  questFailureGraceSilver: ["Fehlschlag trifft erst ab", "Silber"], silentQuestEvery: ["Stiller Chat: jedes n-te !quest", ""],
-  silverPerGold: ["Silber pro Gold", ""], sellValuePerTier: ["Schmied zahlt je Stufe", "Silber"],
-  smeltFeePerTier: ["Schmelzen kostet je Stufe", "Silber"], smeltMaxTier: ["Höchste Stufe beim Schmelzen", ""],
-  reforgeFeePerTier: ["Neuschmieden kostet je Stufe", "Silber"], repairFeePerTier: ["Reparieren kostet je Stufe", "Silber"],
-  upgradeScrollsPerThreeTiers: ["Schriftrollen je drei Stufen", ""], combatMinQuests: ["Quests bis zum ersten Kampf", ""],
-  combatLife: ["Leben im Kampf", ""], activityWindowMinutes: ["Aktivitätsfenster", "Minuten"],
-  marketFeePercent: ["Marktgebühr", "%"], marketUnlockQuests: ["Quests bis zum Markt", ""], marketMaxListings: ["Angebote je Spieler", ""],
-  marketListingDays: ["Angebote laufen", "Tage"], marketBuyLockMinutes: ["Sperre neuer Angebote", "Minuten"],
-  marketWithdrawSeconds: ["Rücktritt vom Kauf", "Sekunden"], traderEnabled: ["Fahrender Händler", "bool"],
-  traderStayMinutes: ["Händler bleibt", "Minuten"], traderWareCount: ["Waren des Händlers", ""],
-  traderTierMin: ["Händler ab Stufe", ""], traderTierMax: ["Händler bis Stufe", ""],
-  traderPurchasesPerVisit: ["Käufe je Besuch", ""], traderPricePerTier: ["Händlerpreis je Stufe", "Silber"],
-  playWindowFrom: ["Spielzeit ab", "Uhr"], playWindowTo: ["Spielzeit bis", "Uhr"],
-  liveOnly: ["Nur live zählt", "bool"], channelApplicationsOpen: ["Bewerbung für Kanäle offen", "bool"],
-  adventureLootTierOffset: ["Abenteuer-Beute: Stufe versetzt um", ""], adventureLootTierSpread: ["Abenteuer-Beute: Streuung", "Stufen"],
-};
+// [label, unit, what it means]; grouped for the Regeln page. Unknown rules still show, under "Sonstiges".
+const RULE_GROUPS = [
+  ["Quests", [
+    ["questCooldownMinutes", "Wartezeit zwischen Quests", "Minuten", "So lange dauert es, bis du wieder questen kannst."],
+    ["questRewardMin", "Belohnung ab", "Silber", "Eine erfolgreiche Quest bringt mindestens so viel."],
+    ["questRewardMax", "Belohnung bis", "Silber", "und höchstens so viel."],
+    ["questFailureCooldownMinutes", "Wartezeit nach Fehlschlag", "Minuten", "Schlägt eine Quest fehl, ist die Pause kürzer."],
+    ["questFailureGraceSilver", "Fehlschlag kostet erst ab", "Silber", "Wer weniger Silber hat, verliert bei einem Fehlschlag nichts."],
+    ["liveOnly", "Nur im Live-Chat", "bool", "Quests gibt es nur, wenn du im Chat eines Streams sitzt, der gerade live ist."],
+    ["silentQuestEvery", "Langsamer Chat: jedes n-te !quest", "", "In Kanälen mit langsamem Chat-Modus wird nur jedes n-te !quest im Chat beantwortet."],
+    ["activityWindowMinutes", "Aktivitätsfenster", "Minuten", "Vermutlich der Zeitraum, in dem du zuletzt etwas getan haben musst, um als aktiv zu gelten."],
+  ]],
+  ["Kämpfe", [
+    ["combatMinQuests", "Quests bis zum ersten Kampf", "", "So viele Quests brauchst du, bevor du an Kämpfen teilnehmen darfst."],
+    ["combatLife", "Basis-Leben im Kampf", "", "Vermutlich das Grundleben eines Kämpfers, bevor Ausrüstung und Talente dazukommen."],
+    ["adventureLootTierOffset", "Abenteuer-Beute: Stufenversatz", "", "Vermutlich: um wie viele Stufen die Beute aus Abenteuern gegenüber der Kampfstufe verschoben ist."],
+    ["adventureLootTierSpread", "Abenteuer-Beute: Streuung", "Stufen", "Vermutlich: um so viele Stufen kann die Beute von der Kampfstufe abweichen."],
+  ]],
+  ["Schmiede", [
+    ["smeltFeePerTier", "Einschmelzen", "Silber je Stufe", "Gebühr fürs Einschmelzen: aus mehreren Teilen wird ein neues."],
+    ["smeltMaxTier", "Höchste Stufe beim Einschmelzen", "", "Darüber geht es nicht weiter."],
+    ["reforgeFeePerTier", "Neu schmieden", "Silber je Stufe", "Gebühr, um die Werte eines Stücks neu zu würfeln."],
+    ["repairFeePerTier", "Reparieren", "Silber je Stufe", "Gebühr fürs Instandsetzen."],
+    ["upgradeScrollsPerThreeTiers", "Schriftrollen je drei Stufen", "", "So viele Schriftrollen kostet eine Aufwertung um drei Stufen."],
+    ["sellValuePerTier", "Verkauf an den Schmied", "Silber je Stufe", "Das zahlt der Schmied für ein Stück, das du nicht auf dem Markt anbieten kannst."],
+  ]],
+  ["Markt", [
+    ["marketUnlockQuests", "Quests bis zum Markt", "", "So viele Quests brauchst du, bevor du handeln darfst."],
+    ["marketFeePercent", "Marktgebühr", "%", "Anteil des Preises, den der Verkäufer abgibt."],
+    ["marketMaxListings", "Angebote gleichzeitig", "", "So viele Stücke darfst du gleichzeitig anbieten."],
+    ["marketListingDays", "Angebote laufen", "Tage", "Danach verschwindet ein Angebot vom Markt."],
+    ["marketBuyLockMinutes", "Sperre neuer Angebote", "Minuten", "So lange sind neue Angebote gesperrt, dann wird unter allen Interessenten gelost."],
+    ["marketWithdrawSeconds", "Frist zum Zurückziehen", "Sekunden", "Zeit, in der sich ein Kauf oder Interesse zurücknehmen lässt."],
+  ]],
+  ["Fahrender Händler", [
+    ["traderEnabled", "Händler unterwegs", "bool", "Ob der Händler gerade überhaupt kommt."],
+    ["traderStayMinutes", "Aufenthalt", "Minuten", "So lange steht sein Karren in einem Kanal."],
+    ["traderWareCount", "Waren", "", "So viele Stücke hat er dabei."],
+    ["traderTierMin", "Waren ab Stufe", "", ""],
+    ["traderTierMax", "Waren bis Stufe", "", ""],
+    ["traderPurchasesPerVisit", "Käufe je Besuch", "", "Mehr als so viele Stücke gibt es pro Besuch nicht."],
+    ["traderPricePerTier", "Preis", "Silber je Stufe", "Fester Preis, nicht verhandelbar."],
+  ]],
+  ["Allgemein", [
+    ["playWindowFrom", "Spielzeit ab", "Uhr", "Außerhalb der Spielzeit (Berliner Zeit) gibt es keine Quests, Kämpfe und neuen Angebote."],
+    ["playWindowTo", "Spielzeit bis", "Uhr", ""],
+    ["silverPerGold", "Silber pro Gold", "", "Das Spiel rechnet in Silber, Gold ist nur die Anzeige."],
+    ["channelApplicationsOpen", "Bewerbung für Kanäle", "bool", "Ob sich neue Streamer als Kanal bewerben können."],
+  ]],
+];
+const RULE_INFO = Object.fromEntries(RULE_GROUPS.flatMap(([, rows]) => rows.map(([key, label, unit, help]) => [key, { label, unit, help }])));
 function ruleText(key, v) {
-  const [, unit] = RULE_LABELS[key] || [];
+  const unit = (RULE_INFO[key] || {}).unit;
   if (unit === "bool") return v ? "ja" : "nein";
   if (typeof v === "number") return unit ? `${fmtInt(v)} ${unit}` : fmtInt(v);
   return String(v);
 }
-const ruleName = (key) => (RULE_LABELS[key] || [key])[0];
+const ruleName = (key) => (RULE_INFO[key] || { label: key }).label;
 
 function viewGame(s, sub) {
   if (sub === "regeln") {
-    const rows = Object.entries(s.rules.now).sort(([a], [b]) => ruleName(a).localeCompare(ruleName(b), "de"));
-    return [card("Regeln des Spiels", rows.length
-      ? [el("dl", { class: "facts" }, rows.flatMap(([k, v]) => [el("dt", {}, ruleName(k)), el("dd", {}, ruleText(k, v))])),
-        el("p", { class: "note" }, "Direkt aus dem Spiel gelesen, bei jedem Lauf. Was sich ändert, steht unter Änderungen.")]
-      : el("p", { class: "note" }, "Die Regeln werden gerade erst gesammelt."))];
+    const now = s.rules.now;
+    if (!Object.keys(now).length) return [card("Regeln des Spiels", el("p", { class: "note" }, "Die Regeln werden gerade erst gesammelt."))];
+    const known = new Set(RULE_GROUPS.flatMap(([, rows]) => rows.map((r) => r[0])));
+    const groups = RULE_GROUPS.map(([title, rows]) => [title, rows.map((r) => r[0]).filter((k) => k in now)]).filter(([, keys]) => keys.length);
+    const other = Object.keys(now).filter((k) => !known.has(k));
+    if (other.length) groups.push(["Sonstiges", other]);
+    return [card("Die Regeln des Spiels", el("p", { class: "note" },
+        "Das sind die Zahlen, mit denen das Spiel gerade rechnet, so wie es sie selbst veröffentlicht. Sie ändern sich ab und zu, oft ohne Ankündigung; ",
+        el("a", { href: "#/spiel/aenderungen" }, "unter Änderungen"), " steht, was sich wann geändert hat.")),
+      el("div", { class: "grid two" }, groups.map(([title, keys]) => card(title, el("dl", { class: "rules" },
+        keys.filter((k) => k in now).flatMap((k) => [
+          el("dt", {}, ruleName(k)),
+          el("dd", {}, el("b", {}, ruleText(k, now[k])), (RULE_INFO[k] || {}).help ? el("span", { class: "muted" }, (RULE_INFO[k] || {}).help) : null)])))))];
   }
   if (sub === "aenderungen") {
     const log = s.rules.log;

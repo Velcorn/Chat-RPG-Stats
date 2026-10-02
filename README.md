@@ -10,7 +10,7 @@ deine Kampfkraft, wann erreichst du den nächsten Rang oder die Top 100, wie ver
 Werte, wo stehst du in deiner Gilde, welche Kämpfe gewinnt man meistens. Die Seite hat vier Bereiche mit
 Unterseiten: Ranglisten (Kampfkraft, Silber, Errungenschaften, Quests, Aufsteiger, Bonus-Formel), Gilden (Vergleich und eine Seite pro Gilde),
 Kämpfe (Kampfarten, Überleben, Kampfkraft, Wann und wo, letzte Kämpfe) und Spiel (Wirtschaft, Regeln, Änderungen), dazu eine Seite pro Spieler
-mit Teilen-Knopf. Die Startseite zeigt die Streamer mit Live-Status, Chat-Modus, Link zum Stream und Gildenstand, die letzten Kämpfe und die Spielersuche.
+mit Teilen-Knopf. Die Startseite zeigt Kennzahlen, die Spielersuche, die Top 5, die Aufsteiger, die Gilden und die Streamer mit Live-Status, Chat-Modus, Link zum Stream und Gildenstand.
 
 **Zur Seite: <https://velcorn.github.io/Chat-RPG-Stats/>**
 

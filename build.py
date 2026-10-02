@@ -15,6 +15,7 @@ from collections import defaultdict
 from pathlib import Path
 
 import collect
+import fightstats
 
 DAY = 86400
 PEERS_MIN = 8
@@ -37,6 +38,7 @@ class History:
         self.rank: dict[str, list] = defaultdict(list)       # login -> [[t, rank on the gear board or None], ...]
         self.guilds: dict[str, list] = defaultdict(list)     # guild -> [[t, treasury, members, active, gear], ...]
         self.fights: list[dict] = []
+        self.fightx: dict[int, dict] = defaultdict(dict)  # fight id -> detail and live digests (since 0.9.0)
         self.first = self.last = None
         self.runs = 0
         self.requests = None  # requests of the latest run (recorded since 0.8.4)
@@ -64,6 +66,8 @@ class History:
                 full = guild_now[g] = {**guild_now.get(g, {}), **v}
                 self.guilds[g].append([t, *(full.get(k) for k in ("treasury", "members", "active", "gear"))])
             self.fights += rec.get("fights", [])
+            for fid, digest in rec.get("fightx", {}).items():
+                self.fightx[int(fid)].update(digest)
 
 
 def put(series: list, t: int, v) -> None:
@@ -107,9 +111,7 @@ def fight_groups(fights: list[dict], now: float, days: int = 30) -> list[dict]:
         ended = iso_ts(f.get("endedAt"))
         if ended and ended < now - days * DAY:
             continue
-        key = ("BOSS", f.get("name"), f.get("bossLevel")) if f.get("kind") == "BOSS" \
-            else (f.get("kind"), None, f.get("difficulty"))
-        groups[key].append(f)
+        groups[fightstats.fight_key(f)].append(f)
     out = [{"kind": k[0], "name": k[1], "level": k[2], "n": len(fs),
             "wins": sum(1 for f in fs if f.get("outcome") == "VICTORY"),
             "fighters": round(statistics.mean(f.get("fighters") or 0 for f in fs))} for k, fs in groups.items()]
@@ -198,6 +200,7 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
                "guilds": sorted(guild_rows, key=lambda g: -(g.get("gear") or 0)),
                "fights": {"groups": fight_groups(h.fights, now), "recent": h.fights[-50:][::-1],
                           "total": len(h.fights)},
+               "stats": fightstats.fight_stats(h.fights, h.fightx, now),
                "channels": state.get("channels", {})}
 
     target = out / "data"

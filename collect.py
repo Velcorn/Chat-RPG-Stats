@@ -1,13 +1,15 @@
 """Collector: one snapshot of the game's public data, stored as the changes since the last one.
 
 Runs every 15 minutes in GitHub Actions during the game's play window. Reads only public endpoints (no login,
-no cookies) and never sends anything but GETs. One run is about fifteen requests, two seconds apart.
+no cookies) and never sends anything but GETs. One run is about fifteen requests plus one per new fight, two
+seconds apart.
 """
 from __future__ import annotations
 
 import argparse
 import json
 import os
+import re
 import sys
 import time
 import urllib.error
@@ -50,14 +52,24 @@ def read_watchlist(path: Path) -> list[str]:
     return sorted({n for n in names if n})
 
 
-def snapshot(site: Site, watchlist: list[str]) -> dict:
-    """Everything one run asks the site, in the site's own shapes."""
-    snap: dict = {"guilds": {}, "watch": {}}
+def snapshot(site: Site, watchlist: list[str], detail_after: int = 0) -> dict:
+    """Everything one run asks the site, in the site's own shapes. Fights newer than `detail_after` also cost one
+    request for their detail page (the archive's own numbers: who fell, roles, damage)."""
+    snap: dict = {"guilds": {}, "watch": {}, "details": {}}
     for g in site.get("/api/guilds"):
         if g.get("members"):
             snap["guilds"][g["login"]] = site.get(f"/api/guilds/{quote(g['login'])}")
     snap["boards"] = {b: site.get(f"/api/leaderboard?by={b}&limit=100") for b in BOARD_FIELDS}
     snap["fights"] = site.get("/api/combat/history")
+    for f in sorted(snap["fights"], key=lambda f: f.get("id", 0)):
+        if f.get("id", 0) > detail_after:
+            try:
+                snap["details"][f["id"]] = site.get(f"/api/combat/history/{f['id']}")
+            except urllib.error.HTTPError as exc:
+                exc.close()
+                if exc.code != 404:
+                    raise
+    snap["live"] = site.get("/api/combat?kompakt=true")
     snap["channels"] = site.get("/api/channels")
     for login in watchlist:
         try:
@@ -67,6 +79,46 @@ def snapshot(site: Site, watchlist: list[str]) -> dict:
             if exc.code != 404:
                 raise
     return snap
+
+
+ROLES = ("TANK", "FIGHTER", "SUPPORT")
+
+
+def silver_value(text: str | None) -> int | None:
+    """"+4 Gold 65 Silber" -> 465, "-3 Gold 36 Silber" (with the game's minus sign) -> -336."""
+    m = re.fullmatch(r"([+\u2212-])\s*(?:(\d+) Gold)?\s*(?:(\d+) Silber)?", (text or "").strip())
+    if not m or not (m[2] or m[3]):
+        return None
+    value = int(m[2] or 0) * 100 + int(m[3] or 0)
+    return -value if m[1] != "+" else value
+
+
+def detail_digest(d: dict) -> dict:
+    """What one finished fight's detail page adds up to: sums and counts only, nothing per player."""
+    n, dead, pay = [0, 0, 0], [0, 0, 0], {True: [], False: []}
+    for f in d.get("fighters") or []:
+        if f.get("role") in ROLES:
+            i = ROLES.index(f["role"])
+            n[i] += 1
+            dead[i] += not f.get("alive")
+        if (v := silver_value(f.get("gold"))) is not None:
+            pay[bool(f.get("alive"))].append(v)
+    tally = (d.get("crowd") or {}).get("tally") or {}
+    mean = lambda xs: round(sum(xs) / len(xs)) if xs else None  # noqa: E731
+    return {"roles": n, "dead": dead, "dmg": tally.get("damage"), "taken": tally.get("taken"),
+            "heal": tally.get("healing"), "boost": tally.get("boosted"), "round": d.get("round"),
+            "rounds": d.get("maxRounds"), "hp": d.get("hp"), "maxhp": d.get("maxHp"),
+            "pay": [mean(pay[True]), mean(pay[False])]}
+
+
+def live_digest(e: dict) -> dict:
+    """The live view of a just finished fight has what the archive lacks: average gear and power, the
+    recommendation and the fight engine's numbers. Only the fight the site still shows."""
+    b = e.get("battle") or {}
+    return {"gear": e.get("averageGear"), "power": e.get("averagePower"), "rec": e.get("recommendedGear"),
+            "min": e.get("minGear"), "verdict": e.get("verdict"), "secs": b.get("secondsFought"),
+            "enraged": b.get("enraged"), "gs": b.get("groupStrength"), "gsmax": b.get("groupStrengthMax"),
+            "tanks": [b.get("tanksStanding"), b.get("tanksTotal")]}
 
 
 def state_from(snap: dict, prev: dict) -> dict:
@@ -113,7 +165,14 @@ def state_from(snap: dict, prev: dict) -> dict:
     return {"players": players, "details": {**prev.get("details", {}), **details}, "boards": boards,
             "guilds": guilds, "watch": watch,
             "channels": {c["login"]: bool(c.get("live")) for c in snap["channels"] if c.get("enabled")},
-            "fight_last": max([prev.get("fight_last", 0), *(f.get("id", 0) for f in snap["fights"])])}
+            "fight_last": max([prev.get("fight_last", 0), *(f.get("id", 0) for f in snap["fights"])]),
+            "detail_last": max([prev.get("detail_last", 0), *snap.get("details", {})]),
+            "live_seen": sorted({*prev.get("live_seen", []), *live_ids(snap)})[-30:]}
+
+
+def live_ids(snap: dict) -> list[int]:
+    return [e["archiveId"] for e in snap.get("live") or [] if e.get("archiveId") and e.get("phase") != "SIGNUP"
+            and e.get("endedAt")]
 
 
 def changed(old: dict, new: dict) -> dict:
@@ -142,6 +201,13 @@ def record(snap: dict, prev: dict, cur: dict, t: int) -> dict:
                                       "fighters", "endedAt")} for f in snap["fights"] if f.get("id", 0) > last]
     if fights:
         rec["fights"] = sorted(fights, key=lambda f: f["id"])
+    extra: dict[int, dict] = {i: detail_digest(d) for i, d in snap.get("details", {}).items()}
+    seen = set(prev.get("live_seen", []))
+    for e in snap.get("live") or []:
+        if e.get("archiveId") in live_ids(snap) and e["archiveId"] not in seen:
+            extra[e["archiveId"]] = {**extra.get(e["archiveId"], {}), **live_digest(e)}
+    if extra:
+        rec["fightx"] = extra
     return rec
 
 
@@ -160,14 +226,14 @@ def main() -> int:
         print("Außerhalb der Spielzeit, nichts zu tun.")
         return 0
     site = Site()
+    state_file = args.data / "state.json"
+    prev = json.loads(state_file.read_text("utf-8")) if state_file.exists() else {}
     try:
-        snap = snapshot(site, read_watchlist(args.watchlist))
+        snap = snapshot(site, read_watchlist(args.watchlist), prev.get("detail_last", 0))
     except (urllib.error.URLError, TimeoutError, ValueError) as exc:
         # The site is down or busy: skip this run instead of failing (and retrying) on every schedule.
         print(f"Seite nicht erreichbar, Lauf übersprungen: {exc}")
         return 0
-    state_file = args.data / "state.json"
-    prev = json.loads(state_file.read_text("utf-8")) if state_file.exists() else {}
     cur = state_from(snap, prev)
     rec = record(snap, prev, cur, int(now.timestamp()))
     rec["req"] = site.requests  # the site shows the load it puts on the game

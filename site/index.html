@@ -551,9 +551,122 @@ const RECENT_COLS = (s) => [
   { label: "Ausgang", get: (f) => f.outcome === "VICTORY" ? el("span", { class: "up" }, "gewonnen") : el("span", { class: "down" }, "verloren") },
 ];
 
+const pctv = (v) => v == null ? "-" : `${fmtDec(v, 1)} %`;
+const ROLE_LABELS = { TANK: "Schildträger", FIGHTER: "Kämpfer", SUPPORT: "Unterstützer" };
+const kindLabel = (k) => KINDS[k] || k;
+function barRows(rows) {
+  return el("div", { class: "bars" }, rows.map((r) => el("div", { class: "bar", style: "grid-template-columns:150px 1fr 90px" },
+    el("span", {}, r.label),
+    el("div", { class: "track" }, r.value == null ? null : el("div", { class: "fill", style: `width:${Math.min(100, r.value)}%;height:18px` })),
+    el("span", { class: "val" }, r.text))));
+}
+function detailNote(st) {
+  return el("p", { class: "note" }, st.detail
+    ? `Gerechnet aus den letzten ${st.days} Tagen: ${fmtInt(st.detail)} von ${fmtInt(st.fights)} Kämpfen mit Einzelheiten (die werden erst seit ${fmtSince(st.since_detail)} gesammelt).`
+    : "Einzelheiten zu den Kämpfen (Gefallene, Rollen, Schaden) werden gerade erst gesammelt, hier erscheinen bald Zahlen.");
+}
+const fallenCols = [
+  { label: "Gefallen", num: true, title: "Anteil der Teilnehmer, die im Kampf gefallen sind", get: (r) => pctv(r.death) },
+  { label: "bei Sieg", num: true, get: (r) => pctv(r.death_win) },
+  { label: "bei Niederlage", num: true, get: (r) => pctv(r.death_loss) },
+];
+
+function viewSurvival(s) {
+  const st = s.stats, t = st.total;
+  if (!st.detail) return [card("Wer fällt?", detailNote(st))];
+  return [
+    card("Wer fällt?", el("dl", { class: "facts" },
+      el("dt", {}, "Gefallen insgesamt"), el("dd", {}, `${pctv(t.death)} (${fmtInt(t.dead)} von ${fmtInt(t.people)} Teilnehmern)`),
+      el("dt", {}, "In gewonnenen Kämpfen"), el("dd", {}, pctv(t.death_win)),
+      el("dt", {}, "In verlorenen Kämpfen"), el("dd", {}, pctv(t.death_loss)),
+      el("dt", {}, "Ø Schaden pro Teilnehmer"), el("dd", {}, fmtInt(t.dmg)),
+      el("dt", {}, "Ø erlittener Schaden"), el("dd", {}, fmtInt(t.taken)),
+      el("dt", {}, "Ø Heilung"), el("dd", {}, fmtInt(t.heal)),
+      el("dt", {}, "Ø Silber, wer überlebt"), el("dd", {}, signed(t.pay_alive)),
+      el("dt", {}, "Ø Silber, wer fällt"), el("dd", {}, signed(t.pay_dead))), detailNote(st)),
+    card("Nach Rolle", barRows(st.roles.map((r) => ({ label: `${ROLE_LABELS[r.role]} (${pctv(r.share)} der Teilnehmer)`, value: r.death, text: `${pctv(r.death)} gefallen` }))),
+      el("p", { class: "note" }, "Balken: Anteil der Teilnehmer dieser Rolle, die gefallen sind.")),
+    card("Nach Kampfart", el("div", { class: "scroll" }, table([
+      { label: "Art", get: (r) => kindLabel(r.kind) },
+      { label: "Kämpfe", num: true, get: (r) => `${fmtInt(r.n)} (${fmtInt(r.detail)} mit Details)` },
+      { label: "Siege", num: true, get: (r) => pct(r.wins, r.n) },
+      ...fallenCols,
+      { label: "Ø Schaden", num: true, get: (r) => fmtInt(r.dmg) },
+      { label: "Ø erlitten", num: true, get: (r) => fmtInt(r.taken) },
+      { label: "Ø Runden", num: true, get: (r) => fmtDec(r.rounds, 1) },
+    ], st.kinds.filter((r) => r.detail)))),
+    card("Nach Kampf", el("div", { class: "scroll" }, table([
+      { label: "Kampf", get: fightLabel },
+      { label: "Kämpfe", num: true, get: (r) => fmtInt(r.detail) },
+      ...fallenCols,
+      { label: "Boss-Leben nach Niederlage", num: true, title: "Wie viel Leben der Boss in verlorenen Kämpfen noch hatte", get: (r) => pctv(r.boss_left) },
+      { label: "Boss-Leben", num: true, get: (r) => r.kind === "BOSS" ? fmtInt(r.maxhp) : "-" },
+    ], st.types.filter((r) => r.detail))))];
+}
+
+function viewPower(s) {
+  const st = s.stats, p = st.power;
+  const bucket = (m) => m.to == null ? `über ${fmtDec(100 * m.from, 0)} %` : m.from === 0 ? `unter ${fmtDec(100 * m.to, 0)} %` : `${fmtDec(100 * m.from, 0)} bis ${fmtDec(100 * m.to, 0)} %`;
+  const powered = st.types.filter((r) => r.power);
+  return [
+    card("Kampfkraft gegen Empfehlung", p.n ? el("dl", { class: "facts" },
+      el("dt", {}, "Ø Kampfkraft der Teilnehmer"), el("dd", {}, fmtInt(p.avg)),
+      el("dt", {}, "Ø Ausrüstungswert"), el("dd", {}, fmtInt(p.avg_gear)),
+      el("dt", {}, "Ø empfohlen"), el("dd", {}, p.rec ? fmtInt(p.rec) : "nicht gemessen")) : el("p", { class: "note" }, "Noch keine Kämpfe mit Kampfkraft erfasst."),
+      el("p", { class: "note" }, `Die Durchschnitte nennt das Spiel nur, solange es den Kampf noch anzeigt; die Seite sieht sie deshalb nur bei einem Teil der Kämpfe (bisher ${fmtInt(p.n)} von ${fmtInt(st.fights)}). Die Empfehlung gibt es nicht bei jeder Kampfart.`)),
+    card("Siegquote nach Abstand zur Empfehlung", p.margins.some((m) => m.n) ? el("div", { class: "scroll" }, table([
+      { label: "Ø Kampfkraft / Empfehlung", get: bucket },
+      { label: "Kämpfe", num: true, get: (m) => fmtInt(m.n) },
+      { label: "Siege", num: true, get: (m) => m.n ? pct(m.wins, m.n) : "-" },
+      { label: "Gefallen", num: true, get: (m) => pctv(m.death) },
+    ], p.margins)) : el("p", { class: "note" }, "Noch keine Kämpfe, bei denen das Spiel eine Empfehlung nannte.")),
+    card("Nach Kampf", powered.length ? el("div", { class: "scroll" }, table([
+      { label: "Kampf", get: fightLabel },
+      { label: "Ø Kampfkraft", num: true, get: (r) => fmtInt(r.power) },
+      { label: "bei Siegen", num: true, get: (r) => fmtInt(r.power_win) },
+      { label: "bei Niederlagen", num: true, get: (r) => fmtInt(r.power_loss) },
+      { label: "Empfohlen", num: true, get: (r) => r.rec ? fmtInt(r.rec) : "-" },
+    ], powered)) : el("p", { class: "note" }, "Noch keine Daten."),
+      el("p", { class: "note" }, "So siehst du, ab welcher Gruppenstärke ein Kampf meist klappt: die Kampfkraft der Siege gegen die der Niederlagen.")),
+    card("Letzte Kämpfe mit Kampfkraft", p.recent.length ? el("div", { class: "scroll" }, table([
+      { label: "Kampf", get: (f) => gameLink(`/kampfbericht/${f.id}`, f.kind === "BOSS" ? `Boss ${f.name}` : `${f.name} (${kindLabel(f.kind)})`) },
+      { label: "Ausgang", get: (f) => f.outcome === "VICTORY" ? el("span", { class: "up" }, "gewonnen") : el("span", { class: "down" }, "verloren") },
+      { label: "Ø Kampfkraft", num: true, get: (f) => fmtInt(f.power) },
+      { label: "Ø Ausrüstung", num: true, get: (f) => fmtInt(f.gear) },
+      { label: "Empfohlen", num: true, get: (f) => f.rec ? fmtInt(f.rec) : "-" },
+      { label: "Dauer", num: true, get: (f) => f.secs ? `${fmtInt(f.secs)} s` : "-" },
+    ], p.recent)) : el("p", { class: "note" }, "Noch keine Daten."))];
+}
+
+function viewWhen(s) {
+  const st = s.stats, top = Math.max(1, ...st.hours.map((h) => h.n));
+  const hours = st.hours.filter((h) => h.n || (h.hour >= 7 && h.hour < 24));
+  return [
+    card(`Kämpfe nach Uhrzeit (${st.days} Tage)`, barRows(hours.map((h) => ({ label: `${String(h.hour).padStart(2, "0")} bis ${String(h.hour + 1).padStart(2, "0")} Uhr`,
+      value: 100 * h.n / top, text: h.n ? `${fmtInt(h.n)} | ${pct(h.wins, h.n)}` : "-" }))),
+      el("p", { class: "note" }, "Berliner Zeit. Zahl der Kämpfe und Siegquote; der Balken zeigt die Zahl der Kämpfe.")),
+    card("Nach Kanal", el("div", { class: "scroll" }, table([
+      { label: "Kanal", get: (c) => "#" + c.channel },
+      { label: "Kämpfe", num: true, get: (c) => fmtInt(c.n) },
+      { label: "Siege", num: true, get: (c) => pct(c.wins, c.n) },
+      { label: "Ø Teilnehmer", num: true, get: (c) => fmtInt(c.fighters) },
+      { label: "Gefallen", num: true, get: (c) => pctv(c.death) },
+    ], st.channels))),
+    card("Nach Tag", el("div", { class: "scroll" }, table([
+      { label: "Tag", get: (d) => new Date(d.day + "T12:00:00Z").toLocaleDateString("de-DE", { timeZone: TZ, weekday: "short", day: "2-digit", month: "2-digit" }) },
+      { label: "Kämpfe", num: true, get: (d) => fmtInt(d.n) },
+      { label: "Siege", num: true, get: (d) => pct(d.wins, d.n) },
+      { label: "Ø Teilnehmer", num: true, get: (d) => fmtInt(d.fighters) },
+      { label: "Gefallen", num: true, get: (d) => pctv(d.death) },
+    ], st.daily.slice(-14).reverse())), detailNote(st))];
+}
+
 function viewFights(s, sub) {
   const groups = s.fights.groups;
   const since = s.since ? el("p", { class: "note" }, `Erfasst wird seit ${fmtSince(s.since)}, frühere Kämpfe fehlen.`) : null;
+  if (sub === "ueberleben") return viewSurvival(s);
+  if (sub === "kraft") return viewPower(s);
+  if (sub === "zeit") return viewWhen(s);
   if (sub === "letzte") return [
     card("Letzte Kämpfe", el("div", { class: "scroll" }, table(RECENT_COLS(s), s.fights.recent)),
       el("p", { class: "note" }, "Der Kampfname führt zum Bericht im Spiel; alle Kämpfe: ", gameLink("/kampf", "Kämpfe im Spiel"), "."), since)];
@@ -601,7 +714,8 @@ const SECTIONS = {
   rangliste: { subs: () => [["kampfkraft", "Kampfkraft"], ["silber", "Silber"], ["errungenschaften", "Errungenschaften"],
                             ["quests", "Quests"], ["aufsteiger", "Aufsteiger"], ["formel", "Bonus-Formel"]], render: viewRanks },
   gilden: { subs: (s) => s.guilds.map((g) => [g.login, g.login]), render: viewGuild },
-  kaempfe: { subs: () => [["arten", "Kampfarten"], ["letzte", "Letzte Kämpfe"]],
+  kaempfe: { subs: () => [["arten", "Kampfarten"], ["ueberleben", "Überleben"], ["kraft", "Kampfkraft"],
+                          ["zeit", "Wann und wo"], ["letzte", "Letzte Kämpfe"]],
              render: viewFights },
 };
 async function route() {

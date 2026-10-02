@@ -3,6 +3,15 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.10.1 (03.10.2026)
+
+**Behoben**
+- Gilden: Die Vergleichsseite sortiert jetzt nach der durchschnittlichen Kampfkraft (vorher nach der Summe, deshalb stand die größte Gilde oben). Die Kacheln nennen den Streamer-Namen statt des langen Gildennamens, Gilden mit weniger als 10 aktiven Mitgliedern gewinnen keine Kachel mehr.
+
+**Verbessert**
+- Regeln: nach Themen gruppiert, mit einem Satz zur Bedeutung jeder Regel.
+- Startseite: Kennzahlen, Top 5, Aufsteiger der letzten 24 Stunden, Gildenüberblick und "Zuletzt" statt der Kampfliste (die gibt es weiter unter Kämpfe, "Letzte").
+
 ## 0.10.0 (03.10.2026)
 
 **Neu**

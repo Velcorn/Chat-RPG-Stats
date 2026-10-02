@@ -35,7 +35,8 @@ def answers(**extra):
     return {"/api/guilds": [{"login": "karni", "members": 2}, {"login": "leer", "members": 0}],
             "/api/guilds/karni": {"guild": {"name": "Karni"}, "members": [member("a", 100)]},
             **{f"/api/leaderboard?by={b}&limit=100": board for b in collect.BOARD_FIELDS},
-            "/api/combat/history": [], "/api/combat?kompakt=true": [], "/api/channels": [], **extra}
+            "/api/combat/history": [], "/api/combat?kompakt=true": [], "/api/channels": [],
+            "/api/rules": {"questCooldownMinutes": 45}, **extra}
 
 
 class SnapshotTests(unittest.TestCase):
@@ -43,14 +44,14 @@ class SnapshotTests(unittest.TestCase):
         site = FakeSite(answers())
         s = collect.snapshot(site, [])
         self.assertEqual(list(s["guilds"]), ["karni"])  # a guild without members costs no request
-        self.assertEqual(site.requests, 9)
+        self.assertEqual(site.requests, 10)
         self.assertEqual(s["watch"], {})
 
     def test_watchlist_costs_one_request_each_and_skips_unknown_players(self):
         site = FakeSite(answers(**{"/api/players/sola": {"displayName": "Sola"}, "/api/players/weg": 404}))
         s = collect.snapshot(site, ["sola", "weg"])
         self.assertEqual(list(s["watch"]), ["sola"])
-        self.assertEqual(site.requests, 11)
+        self.assertEqual(site.requests, 12)
 
     def test_other_http_errors_are_raised(self):
         with self.assertRaises(urllib.error.HTTPError):

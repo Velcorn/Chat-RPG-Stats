@@ -105,6 +105,41 @@ class CollectTests(unittest.TestCase):
         self.assertEqual(collect.read_watchlist(path), ["sola", "velcorn"])
 
 
+class CommunityTests(unittest.TestCase):
+    """Rules log, channel stats, guild comparison, economy and standing (since 0.10.0)."""
+
+    def setUp(self):
+        self.pipe = Pipeline()
+        day = 86_400
+        for k in range(8):
+            s = snap({"karni": [member("a", 100 + 10 * k), member("b", 50)]}, board=[("a", 100 + 10 * k, 1, 2, 3)],
+                     treasury=1000 + 100 * k)
+            s["rules"] = {"questCooldownMinutes": 60 if k < 4 else 45, "playWindowOpenNow": bool(k % 2)}
+            s["channels"] = [{"login": "sola", "live": k % 2 == 0, "enabled": True, "chatMode": "SLOW"}]
+            self.pipe.run(s, T0 + k * day)
+        self.summary, _ = self.pipe.build(T0 + 7 * day)
+
+    def test_rule_change_is_logged_but_the_open_flag_is_not(self):
+        self.assertEqual(self.summary["rules"]["log"], [[T0 + 4 * 86_400, "questCooldownMinutes", 60, 45]])
+        self.assertEqual(self.summary["rules"]["now"], {"questCooldownMinutes": 45})
+
+    def test_channel_stats_have_mode_and_live_share(self):
+        self.assertEqual(self.summary["channel_stats"]["sola"]["mode"], "SLOW")
+        self.assertEqual(self.summary["channel_stats"]["sola"]["live_share"], 50.0)
+
+    def test_guild_week_and_treasury_change(self):
+        g = self.summary["guilds"][0]
+        self.assertEqual((g["week"], g["treasury_week"]), (70, 700))
+
+    def test_economy_series_sums_the_treasuries(self):
+        self.assertEqual(self.summary["economy"]["series"][-1]["treasury"], 1700)
+
+    def test_standing_is_the_share_of_players_below(self):
+        _, data = self.pipe.build(T0 + 7 * 86_400)
+        page = json.loads((data / "p" / "a.json").read_text())
+        self.assertEqual(page["standing"], {"better": 50.0, "of": 2})
+
+
 class BuildTests(unittest.TestCase):
     def setUp(self):
         # A week of history: "fast" gains 10 a day, "slow" 2 a day, "top" sits at the top-100 border.

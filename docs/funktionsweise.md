@@ -14,7 +14,7 @@ Zeitplan (alle 15 Min., 7-24 Uhr) -> collect.py -> Zweig "data" -> build.py -> G
 2. **Speichern:** im Zweig `data`, eine Datei `days/JJJJ-MM-TT.jsonl` pro Tag (eine Zeile pro Lauf) und `state.json`
    mit dem letzten Stand. Von einem bekannten Spieler oder einer Gilde werden nur die geänderten Werte gespeichert.
    Ein Lauf ist dadurch rund 10 KB groß, ein Tag etwa 0,7 MB.
-3. **Bauen** (`build.py`): spielt alle Tagesdateien ab und schreibt `summary.json` (Ranglisten, Gilden, Kämpfe, `stats` aus `fightstats.py`),
+3. **Bauen** (`build.py`): spielt alle Tagesdateien ab und schreibt `summary.json` (Ranglisten, Gilden, Kämpfe, `stats` aus `fightstats.py`, `channel_stats`, `rules`, `economy`),
    `players.json` (Suchindex) und eine Datei `p/<name>.json` pro Spieler.
 4. **Veröffentlichen:** die Action lädt die Dateien samt `site/index.html` auf GitHub Pages. Besucher lesen nur diese
    fertigen Dateien; ihre Zahl ändert nichts an den Anfragen ans Spiel.
@@ -41,13 +41,14 @@ und Kämpfe eines Spielers werden nicht gespeichert, nur Werte und ihre Änderun
 
 Eine Startseite und drei Bereiche mit einer zweiten Tab-Zeile, damit keine Seite überladen ist (Adresse `#/<Bereich>/<Unterseite>`):
 
-- **Start** (`#/start`, Standard): eine Karte je Streamer (Kanal der Liste `channels`): Live-Status aus `/api/channels`, Link zum Twitch-Kanal, Gildenname, Mitglieder, Kasse, durchschnittliche Kampfkraft der aktiven Mitglieder (die Karten sind nach dem Durchschnitt sortiert, Live zuerst) mit Link zur Gildenseite und zur Spielerseite des Streamers. Dazu die zehn letzten Kämpfe und die Spielersuche. Laufende Kämpfe zeigt die Startseite nicht, denn bei einem Abruf alle 15 Minuten wären sie fast immer schon vorbei. Zuschauerzahl und Titel des Streams gibt das Spiel nicht her, sie stehen nicht da.
+- **Start** (`#/start`, Standard): eine Karte je Streamer (Kanal der Liste `channels`): Live-Status aus `/api/channels`, Chat-Modus (`chatMode`: normal, langsam = nur jedes zehnte !quest im Chat wird beantwortet, still = gar keins), Live-Anteil (Anteil der Läufe, in denen der Kanal live war, seit Beginn der Daten), Kämpfe der letzten 30 Tage in diesem Kanal mit Siegquote, Teilnehmern und Gefallenen, Link zum Twitch-Kanal, Gildenname, Mitglieder, Kasse, durchschnittliche Kampfkraft der aktiven Mitglieder (die Karten sind nach dem Durchschnitt sortiert, Live zuerst) mit Link zur Gildenseite und zur Spielerseite des Streamers. Dazu die zehn letzten Kämpfe und die Spielersuche. Laufende Kämpfe zeigt die Startseite nicht, denn bei einem Abruf alle 15 Minuten wären sie fast immer schon vorbei. Zuschauerzahl und Titel des Streams gibt das Spiel nicht her, sie stehen nicht da.
 
 - **Ranglisten** (`#/rangliste/...`): `kampfkraft` (Standard, mit ATK, DEF, SUP und Bonus je Spieler), `silber`, `errungenschaften`, `quests`,
   `aufsteiger`, `formel`. Die vier Ranglisten sind die des Spiels (Parameter `by=gear|gold|errungenschaften|quests`; `gear` ist seit dem 30.09.2026 die Kampfkraft, je Top 100).
-- **Gilden** (`#/gilden/<Gilde>`): eine Unterseite pro Gilde, der Tab trägt den Namen des Streamers, die Überschrift den vollen Gildennamen.
+- **Gilden** (`#/gilden/<Gilde>`): `vergleich` (Standard) stellt alle Gilden nebeneinander: Mitglieder, durchschnittliche Kampfkraft der Aktiven, Veränderung der Gesamt-Kampfkraft in 24 Stunden und 7 Tagen (auch je Mitglied), Kasse und ihre Veränderung in 7 Tagen, Spenden, Bossiege und -niederlagen. Dazu eine Unterseite pro Gilde, der Tab trägt den Namen des Streamers, die Überschrift den vollen Gildennamen.
+- **Spiel** (`#/spiel/...`): `wirtschaft` (Silber in allen Gildenkassen und das Silber der heutigen Top 100 im Verlauf der letzten 30 Tage, Median der Top 100; der Markt ist ohne Anmeldung nicht lesbar und fehlt), `regeln` (die Regeln aus `/api/rules` mit deutschen Namen) und `aenderungen` (jede Änderung einer Regel mit Zeitpunkt, Vorher und Nachher; das Feld `playWindowOpenNow` wird nicht verglichen, es wechselt täglich). Der Sammler holt die Regeln bei jedem Lauf (eine Anfrage) und speichert sie nur bei Änderung.
 - **Kämpfe** (`#/kaempfe/...`): `arten`, `ueberleben`, `kraft`, `zeit`, `letzte`.
-- **Spieler** (`#/spieler/<Name>`): eine Seite pro Spieler, erreichbar über die Suche. Von oben nach unten: Kennzahlen, Verlauf der Kampfkraft und Verteilung der Werte, Gilde und Prognose, Rang und Silber, bei Spielern der Beobachtungsliste zuletzt Kämpfe, Statistik und Ausrüstung.
+- **Spieler** (`#/spieler/<Name>`): eine Seite pro Spieler, erreichbar über die Suche. Der Knopf "Teilen" kopiert eine kurze Zusammenfassung (Kampfkraft, Rang, Gilde, Link) in die Zwischenablage. "Vergleich" nennt den Anteil der erfassten Spieler mit niedrigerer Kampfkraft. Von oben nach unten: Kennzahlen, Verlauf der Kampfkraft und Verteilung der Werte, Gilde und Prognose, Rang und Silber, bei Spielern der Beobachtungsliste zuletzt Kämpfe, Statistik und Ausrüstung.
 
 ## So rechnet die Seite
 

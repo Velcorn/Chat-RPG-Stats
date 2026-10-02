@@ -133,6 +133,7 @@
       <a href="#/rangliste" data-view="rangliste">Ranglisten</a>
       <a href="#/gilden" data-view="gilden">Gilden</a>
       <a href="#/kaempfe" data-view="kaempfe">Kämpfe</a>
+      <a href="#/spiel" data-view="spiel">Spiel</a>
     </nav>
   </header>
   <nav id="subtabs" class="tabs sub" aria-label="Bereich" hidden></nav>
@@ -426,6 +427,23 @@ function fightCard(st) {
   return card("Kämpfe: Siegquote", bars, el("p", { class: "note" }, `Gefallen in ${pct(st.fallen, st.fights)} der Kämpfe, ${fmtInt(st.damage / Math.max(1, st.fights))} Schaden pro Kampf, höchste Bossstufe ${fmtInt(st.highestBossLevel)}.`));
 }
 
+function shareText(p, login) {
+  const f = p.forecast, g = p.guild;
+  return [`${p.name}: Kampfkraft ${fmtInt(p.gear)}` + (p.day == null ? "" : ` (${signed(p.day)} in 24 Stunden)`),
+    `${f.exact ? "Rang" : "etwa Rang"} ${fmtInt(f.rank)}, stärker als ${fmtDec(p.standing.better, 1)} % der Spieler` + (g ? `, Gilde ${g.name}` : ""),
+    `${location.origin}${location.pathname}#/spieler/${encodeURIComponent(login)}`].join("\n");
+}
+function shareButton(p, login) {
+  const b = el("button", { class: "pill", type: "button", style: "cursor:pointer;background:none" }, "Teilen");
+  b.addEventListener("click", async () => {
+    const text = shareText(p, login);
+    try { await navigator.clipboard.writeText(text); b.textContent = "Kopiert"; }
+    catch { window.prompt("Zum Teilen kopieren:", text); }
+    setTimeout(() => { b.textContent = "Teilen"; }, 2000);
+  });
+  return b;
+}
+
 async function viewPlayer(s, login) {
   let p;
   try { p = await load(`p/${encodeURIComponent(login)}.json`); }
@@ -445,6 +463,7 @@ async function viewPlayer(s, login) {
   else top100 = `${count(f.top100_gap, "Punkt", "Punkte")} bis zur Grenze` + (f.top100_days ? `, bei deinem Tempo ${inDays(f.top100_days)} (die Grenze steigt mit)`
     : p.pace == null ? "" : ", bei diesem Tempo holst du sie nicht ein (sie steigt mindestens so schnell)");
   const forecast = el("dl", { class: "facts" },
+    el("dt", {}, "Vergleich"), el("dd", {}, `Stärker als ${fmtDec(p.standing.better, 1)} % der ${fmtInt(p.standing.of)} erfassten Spieler.`),
     el("dt", {}, "Top 100"), el("dd", {}, top100),
     el("dt", {}, "Tempo"), el("dd", {}, p.peers && p.peers.pace != null && p.pace != null
       ? `Spieler mit ähnlichem Wert legen im Mittel ${signed(p.peers.pace, 1)} pro Tag zu, du ${signed(p.pace, 1)}.`
@@ -476,7 +495,7 @@ async function viewPlayer(s, login) {
   const out = [
     el("div", { class: "head start" }, el("h1", {}, p.name), g ? el("a", { href: `#/gilden/${g.login}` }, g.name) : null,
       p.active === false ? el("span", { class: "tag" }, "laut Gilde inaktiv") : null,
-      gameLink(`/spieler/${login}`, "Im Spiel")),
+      gameLink(`/spieler/${login}`, "Im Spiel"), shareButton(p, login)),
     tiles,
     el("div", { class: "grid two" }, chartCard("Kampfkraft", p.series.gear, { until: s.generated }),
       card("Verteilung gegenüber ähnlichen Spielern", split)),
@@ -502,7 +521,35 @@ async function viewPlayer(s, login) {
   return out;
 }
 
+function viewGuildRace(s) {
+  const per = (g, v) => v == null || !g.members ? null : v / g.members;
+  const cols = [
+    { label: "Gilde", get: (g) => el("a", { href: `#/gilden/${g.login}` }, g.name) },
+    { label: "Mitglieder", num: true, get: (g) => `${fmtInt(g.members)} (${fmtInt(g.active)} aktiv)` },
+    { label: "Ø Kampfkraft", num: true, title: "Durchschnitt der aktiven Mitglieder", get: (g) => fmtDec(g.avg_gear, 1) },
+    { label: "24 h", num: true, title: "Kampfkraft der ganzen Gilde", get: (g) => delta(g.day) },
+    { label: "7 Tage", num: true, title: "Kampfkraft der ganzen Gilde", get: (g) => delta(g.week) },
+    { label: "7 Tage je Mitglied", num: true, get: (g) => delta(per(g, g.week), 1) },
+    { label: "Kasse", num: true, get: (g) => fmtSilver(g.treasury) },
+    { label: "Kasse 7 Tage", num: true, get: (g) => g.treasury_week == null ? "-" : el("span", { class: g.treasury_week >= 0 ? "up" : "down" }, signed(g.treasury_week) + " Silber") },
+    { label: "Gespendet", num: true, get: (g) => fmtSilver(g.donated) },
+    { label: "Bosse", num: true, title: "Siege / Niederlagen", get: (g) => `${fmtInt(g.boss_wins)} / ${fmtInt(g.boss_losses)}` },
+  ];
+  const week = s.guilds.filter((g) => g.week != null);
+  const best = week.length ? week.reduce((a, b) => (per(b, b.week) > per(a, a.week) ? b : a)) : null;
+  return [el("section", { class: "grid" },
+    el("div", { class: "head" }, el("h1", {}, "Gilden im Vergleich")),
+    el("div", { class: "grid tiles" },
+      tile("Gilden", fmtInt(s.guilds.length), `${fmtInt(s.guilds.reduce((n, g) => n + g.members, 0))} Mitglieder`),
+      tile("Stärkste Gilde", s.guilds[0] ? s.guilds[0].name : "-", s.guilds[0] ? `Ø ${fmtDec(s.guilds[0].avg_gear, 1)} Kampfkraft` : ""),
+      tile("Schnellster Aufstieg", best ? best.name : "-", best ? `${signed(per(best, best.week), 1)} je Mitglied in 7 Tagen` : "nach einer Woche Verlauf"),
+      tile("Größte Kasse", fmtSilver(Math.max(0, ...s.guilds.map((g) => g.treasury || 0))),
+        (s.guilds.slice().sort((a, b) => (b.treasury || 0) - (a.treasury || 0))[0] || {}).name || "")),
+    card("Tabelle", el("div", { class: "scroll" }, table(cols, s.guilds))))];
+}
+
 function viewGuild(s, login) {
+  if (login === "vergleich") return viewGuildRace(s);
   const g = s.guilds.find((x) => x.login === login);
   return [el("section", { class: "grid" },
     el("div", { class: "head" }, el("h1", {}, g.name), gameLink(`/gilden/${login}`, "Im Spiel")),
@@ -523,16 +570,37 @@ function viewGuild(s, login) {
 }
 
 // ---- start page: the streamers, what is going on now, search ----
+const CHAT_MODES = {
+  NORMAL: ["Chat normal", "Jedes !quest im Chat wird beantwortet."],
+  SLOW: ["Chat langsam", "Nur jedes zehnte !quest im Chat wird beantwortet."],
+  SILENT: ["Chat still", "Im Chat wird kein !quest beantwortet."],
+};
+function chatPill(c) {
+  const m = c && CHAT_MODES[c.mode];
+  return m ? el("span", { class: "pill", title: m[1] }, m[0]) : null;
+}
+function channelLines(c) {
+  if (!c) return null;
+  return el("div", { class: "lines" },
+    c.live_share == null ? null : el("div", {}, el("span", { class: "muted" }, "Live-Anteil"), `${fmtDec(c.live_share, 0)} % der Messungen`),
+    c.fights ? el("div", {}, el("span", { class: "muted" }, "Kämpfe (30 Tage)"),
+      `${fmtInt(c.fights)}, ${pctv(c.fights ? 100 * c.wins / c.fights : null)} gewonnen`) : null,
+    c.fights && c.fighters != null ? el("div", {}, el("span", { class: "muted" }, "Ø Teilnehmer"), fmtDec(c.fighters, 1)) : null,
+    c.death != null ? el("div", {}, el("span", { class: "muted" }, "Gefallen"), pctv(c.death)) : null);
+}
+
 function viewStart(s) {
   const streams = Object.entries(s.channels).map(([login, live]) => ({ login, live, guild: s.guilds.find((g) => g.login === login) }))
     .sort((a, b) => (b.live - a.live) || ((b.guild?.avg_gear || 0) - (a.guild?.avg_gear || 0)));
   const streamCard = ({ login, live, guild: g }) => card(null, el("div", { class: "stream" },
-    el("div", { class: "head" }, el("h2", {}, login), el("span", { class: live ? "pill on" : "pill" }, live ? "Live" : "Offline")),
+    el("div", { class: "head" }, el("h2", {}, login), el("span", { class: "head" }, chatPill(s.channel_stats[login]),
+      el("span", { class: live ? "pill on" : "pill" }, live ? "Live" : "Offline"))),
     g ? el("div", {}, el("a", { href: `#/gilden/${login}` }, g.name)) : el("div", { class: "muted" }, "Keine Gilde erfasst"),
     g ? el("div", { class: "lines" },
       el("div", {}, el("span", { class: "muted" }, "Mitglieder"), `${fmtInt(g.members)} (${fmtInt(g.active)} aktiv)`),
       el("div", {}, el("span", { class: "muted" }, "Kasse"), fmtSilver(g.treasury)),
       el("div", {}, el("span", { class: "muted" }, "Ø Kampfkraft (aktive)"), fmtDec(g.avg_gear, 1)),) : null,
+    channelLines(s.channel_stats[login]),
     el("div", { class: "head" }, el("a", { href: `#/spieler/${login}` }, "Spielerseite"),
       el("a", { href: `https://www.twitch.tv/${login}`, target: "_blank", rel: "noopener" }, "Zum Stream auf Twitch"))));
   return [
@@ -707,13 +775,75 @@ $("q").addEventListener("keydown", (ev) => {
 });
 document.addEventListener("click", (ev) => { if (!ev.target.closest(".search")) $("suggest").hidden = true; });
 
+// ---- the game itself: silver in circulation, rules and their changes ----
+const RULE_LABELS = {
+  questCooldownMinutes: ["Quest-Wartezeit", "Minuten"], questFailureCooldownMinutes: ["Wartezeit nach Fehlschlag", "Minuten"],
+  questRewardMin: ["Quest-Belohnung ab", "Silber"], questRewardMax: ["Quest-Belohnung bis", "Silber"],
+  questFailureGraceSilver: ["Fehlschlag trifft erst ab", "Silber"], silentQuestEvery: ["Stiller Chat: jedes n-te !quest", ""],
+  silverPerGold: ["Silber pro Gold", ""], sellValuePerTier: ["Schmied zahlt je Stufe", "Silber"],
+  smeltFeePerTier: ["Schmelzen kostet je Stufe", "Silber"], smeltMaxTier: ["Höchste Stufe beim Schmelzen", ""],
+  reforgeFeePerTier: ["Neuschmieden kostet je Stufe", "Silber"], repairFeePerTier: ["Reparieren kostet je Stufe", "Silber"],
+  upgradeScrollsPerThreeTiers: ["Schriftrollen je drei Stufen", ""], combatMinQuests: ["Quests bis zum ersten Kampf", ""],
+  combatLife: ["Leben im Kampf", ""], activityWindowMinutes: ["Aktivitätsfenster", "Minuten"],
+  marketFeePercent: ["Marktgebühr", "%"], marketUnlockQuests: ["Quests bis zum Markt", ""], marketMaxListings: ["Angebote je Spieler", ""],
+  marketListingDays: ["Angebote laufen", "Tage"], marketBuyLockMinutes: ["Sperre neuer Angebote", "Minuten"],
+  marketWithdrawSeconds: ["Rücktritt vom Kauf", "Sekunden"], traderEnabled: ["Fahrender Händler", "bool"],
+  traderStayMinutes: ["Händler bleibt", "Minuten"], traderWareCount: ["Waren des Händlers", ""],
+  traderTierMin: ["Händler ab Stufe", ""], traderTierMax: ["Händler bis Stufe", ""],
+  traderPurchasesPerVisit: ["Käufe je Besuch", ""], traderPricePerTier: ["Händlerpreis je Stufe", "Silber"],
+  playWindowFrom: ["Spielzeit ab", "Uhr"], playWindowTo: ["Spielzeit bis", "Uhr"],
+  liveOnly: ["Nur live zählt", "bool"], channelApplicationsOpen: ["Bewerbung für Kanäle offen", "bool"],
+  adventureLootTierOffset: ["Abenteuer-Beute: Stufe versetzt um", ""], adventureLootTierSpread: ["Abenteuer-Beute: Streuung", "Stufen"],
+};
+function ruleText(key, v) {
+  const [, unit] = RULE_LABELS[key] || [];
+  if (unit === "bool") return v ? "ja" : "nein";
+  if (typeof v === "number") return unit ? `${fmtInt(v)} ${unit}` : fmtInt(v);
+  return String(v);
+}
+const ruleName = (key) => (RULE_LABELS[key] || [key])[0];
+
+function viewGame(s, sub) {
+  if (sub === "regeln") {
+    const rows = Object.entries(s.rules.now).sort(([a], [b]) => ruleName(a).localeCompare(ruleName(b), "de"));
+    return [card("Regeln des Spiels", rows.length
+      ? [el("dl", { class: "facts" }, rows.flatMap(([k, v]) => [el("dt", {}, ruleName(k)), el("dd", {}, ruleText(k, v))])),
+        el("p", { class: "note" }, "Direkt aus dem Spiel gelesen, bei jedem Lauf. Was sich ändert, steht unter Änderungen.")]
+      : el("p", { class: "note" }, "Die Regeln werden gerade erst gesammelt."))];
+  }
+  if (sub === "aenderungen") {
+    const log = s.rules.log;
+    return [card("Regeländerungen", log.length ? el("div", { class: "scroll" }, table([
+      { label: "Wann", get: (r) => fmtTime(r[0]) }, { label: "Regel", get: (r) => ruleName(r[1]) },
+      { label: "Vorher", num: true, get: (r) => ruleText(r[1], r[2]) }, { label: "Nachher", num: true, get: (r) => ruleText(r[1], r[3]) },
+    ], log)) : el("p", { class: "note" }, s.rules.since
+      ? `Seit ${fmtSince(s.rules.since)} hat sich keine Regel geändert. Die Regeln werden bei jedem Lauf geprüft.`
+      : "Die Regeln werden gerade erst gesammelt."))];
+  }
+  const e = s.economy, now = e.series[e.series.length - 1];
+  const treasury = e.series.map((p) => [p.t, p.treasury]);
+  const top = e.series.filter((p) => p.top100 != null).map((p) => [p.t, p.top100]);
+  return [el("section", { class: "grid" },
+    el("div", { class: "head" }, el("h1", {}, "Wirtschaft")),
+    el("div", { class: "grid tiles" },
+      tile("In den Gildenkassen", now ? fmtSilver(now.treasury) : "-", `${fmtInt(s.guilds.length)} Gilden`),
+      tile("Silber der Top 100", now && now.top100 != null ? fmtSilver(now.top100) : "-", "reichste 100 Spieler"),
+      tile("Mittel der Top 100", e.median_top100 == null ? "-" : fmtSilver(e.median_top100), "Silber je Spieler (Median)"),
+      tile("Gespendet insgesamt", fmtSilver(s.guilds.reduce((n, g) => n + (g.donated || 0), 0)), "in allen Gilden")),
+    el("div", { class: "grid two" },
+      chartCard("Silber in den Gildenkassen", treasury, { fmt: fmtSilver, until: s.generated }),
+      chartCard("Silber der heutigen Top 100", top, { fmt: fmtSilver, until: s.generated })),
+    el("p", { class: "note" }, "Der Markt und seine Preise sind im Spiel nur mit Anmeldung sichtbar und fehlen deshalb hier. Gezählt wird, was Gilden und Bestenliste öffentlich zeigen."))];
+}
+
 // ---- routing ----
 // Each section has sub pages (one per ranking, guild or fight table), shown as a second tab row.
 const SECTIONS = {
   start: { subs: () => [], render: viewStart },
   rangliste: { subs: () => [["kampfkraft", "Kampfkraft"], ["silber", "Silber"], ["errungenschaften", "Errungenschaften"],
                             ["quests", "Quests"], ["aufsteiger", "Aufsteiger"], ["formel", "Bonus-Formel"]], render: viewRanks },
-  gilden: { subs: (s) => s.guilds.map((g) => [g.login, g.login]), render: viewGuild },
+  gilden: { subs: (s) => [["vergleich", "Vergleich"], ...s.guilds.map((g) => [g.login, g.login])], render: viewGuild },
+  spiel: { subs: () => [["wirtschaft", "Wirtschaft"], ["regeln", "Regeln"], ["aenderungen", "Änderungen"]], render: viewGame },
   kaempfe: { subs: () => [["arten", "Kampfarten"], ["ueberleben", "Überleben"], ["kraft", "Kampfkraft"],
                           ["zeit", "Wann und wo"], ["letzte", "Letzte Kämpfe"]],
              render: viewFights },

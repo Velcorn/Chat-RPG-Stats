@@ -39,11 +39,15 @@ class History:
         self.guilds: dict[str, list] = defaultdict(list)     # guild -> [[t, treasury, members, active, gear], ...]
         self.fights: list[dict] = []
         self.fightx: dict[int, dict] = defaultdict(dict)  # fight id -> detail and live digests (since 0.9.0)
+        self.rules_log: list[list] = []                      # [[t, rule, old, new], ...] (since 0.10.0)
+        self.live_runs: dict[str, list] = defaultdict(lambda: [0, 0])  # channel -> [runs live, runs seen]
         self.first = self.last = None
         self.runs = 0
         self.requests = None  # requests of the latest run (recorded since 0.8.4)
         board: list[str] = []
         guild_now: dict[str, dict] = {}
+        rules_now: dict = {}
+        live_now: dict[str, bool] = {}
         for rec in records:
             t = rec["t"]
             self.first = self.first or t
@@ -65,6 +69,14 @@ class History:
             for g, v in rec.get("guilds", {}).items():
                 full = guild_now[g] = {**guild_now.get(g, {}), **v}
                 self.guilds[g].append([t, *(full.get(k) for k in ("treasury", "members", "active", "gear"))])
+            for rule, v in rec.get("rules", {}).items():
+                if rule in rules_now and rules_now[rule] != v:
+                    self.rules_log.append([t, rule, rules_now[rule], v])
+                rules_now[rule] = v
+            live_now.update(rec.get("channels", {}))
+            for channel, live in live_now.items():
+                self.live_runs[channel][0] += bool(live)
+                self.live_runs[channel][1] += 1
             self.fights += rec.get("fights", [])
             for fid, digest in rec.get("fightx", {}).items():
                 self.fightx[int(fid)].update(digest)
@@ -181,7 +193,12 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
         members = guild_members.get(g, [])
         active_gear = [players[m]["gear"] for m in members
                        if players[m].get("active") and players[m].get("gear") is not None]
+        gear_series = [[r[0], r[4]] for r in h.guilds.get(g, []) if r[4] is not None]
+        treasury_series = [[r[0], r[1]] for r in h.guilds.get(g, []) if r[1] is not None]
         guild_rows.append({"login": g, **info, "day": sum(day.get(m) or 0 for m in members),
+                           "week": change(gear_series, now, 7 * DAY),
+                           "treasury_day": change(treasury_series, now, DAY),
+                           "treasury_week": change(treasury_series, now, 7 * DAY),
                            "avg_gear": rounded(statistics.mean(active_gear), 1) if active_gear else None,
                            "donated": sum(players[m].get("donated") or 0 for m in members),
                            "top": [row(m) for m in sorted(members, key=lambda m: -(players[m].get("gear") or 0))[:10]],
@@ -189,6 +206,7 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
                                       for m in sorted(members, key=lambda m: -(players[m].get("donated") or 0))[:10]],
                            "series": h.guilds.get(g, [])})
 
+    summary_stats = fightstats.fight_stats(h.fights, h.fightx, now)
     summary = {"generated": int(now), "since": h.first, "runs": h.runs,
                "load": {"per_run": h.requests, "runs_per_day": (collect.PLAY_TO - collect.PLAY_FROM) * 4},
                "players": len(gear),
@@ -200,8 +218,12 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
                "guilds": sorted(guild_rows, key=lambda g: -(g.get("gear") or 0)),
                "fights": {"groups": fight_groups(h.fights, now), "recent": h.fights[-50:][::-1],
                           "total": len(h.fights)},
-               "stats": fightstats.fight_stats(h.fights, h.fightx, now),
-               "channels": state.get("channels", {})}
+               "stats": summary_stats,
+               "channels": state.get("channels", {}),
+               "channel_stats": channel_stats(h, state, summary_stats["channels"]),
+               "rules": {"now": state.get("rules", {}), "log": h.rules_log[::-1][:60],
+                         "since": h.first if state.get("rules") else None},
+               "economy": economy(h, state, now)}
 
     target = out / "data"
     if target.exists():
@@ -212,13 +234,49 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
                                            for login, p in players.items() if p.get("gear") is not None),
                                           key=lambda r: -r[2]))
     with_split = [x for x in gear if all(details.get(x, {}).get(k) is not None for k in ("atk", "def", "sup"))]
+    gear_sorted = sorted(gear.values())
     for login in gear:
         write(target / "p" / f"{login}.json", player_page(login, h, state, now, rank, paces, with_split,
-                                                          top100_gear, top100_pace, guild_members))
+                                                          top100_gear, top100_pace, guild_members,
+                                                          gear_sorted))
     return summary
 
 
-def player_page(login, h, state, now, rank, paces, with_split, top100_gear, top100_pace, guild_members) -> dict:
+def channel_stats(h: History, state: dict, fights_by_channel: list[dict]) -> dict:
+    """Per streamer: chat mode, share of runs live, and the fight numbers of their channel."""
+    fights = {c["channel"]: c for c in fights_by_channel}
+    out = {}
+    for login in state.get("channels", {}):
+        live, seen = h.live_runs.get(login, [0, 0])
+        f = fights.get(login, {})
+        out[login] = {"mode": state.get("chat", {}).get(login),
+                      "live_share": rounded(100 * live / seen, 1) if seen else None,
+                      "fights": f.get("n", 0), "wins": f.get("wins", 0), "fighters": f.get("fighters"),
+                      "death": f.get("death")}
+    return out
+
+
+def economy(h: History, state: dict, now: float, days: int = 30) -> dict:
+    """Silver in the guild treasuries and held by today's silver top 100, one point per day."""
+    board = [login for login, _ in state["boards"].get("gold", [])]
+    held = {login: [[t, d["silver"]] for t, d in h.details.get(login, []) if d.get("silver")] for login in board}
+    held = {login: series for login, series in held.items() if series}
+    treasuries = [[[r[0], r[1]] for r in rows if r[1] is not None] for rows in h.guilds.values()]
+    points = []
+    for k in range(days, -1, -1):
+        t = now - k * DAY
+        if h.first is None or t < h.first:
+            continue
+        top = [v for v in (value_at(series, t) for series in held.values()) if v is not None]
+        points.append({"t": int(t), "treasury": sum(value_at(series, t) or 0 for series in treasuries),
+                       "top100": sum(top) if len(top) >= 0.9 * len(held) else None})
+    latest = [series[-1][1] for series in held.values()]
+    return {"series": points, "players": len(held),
+            "median_top100": rounded(statistics.median(latest), 0) if latest else None}
+
+
+def player_page(login, h, state, now, rank, paces, with_split, top100_gear, top100_pace, guild_members,
+                gear_sorted) -> dict:
     players, details = state["players"], state["details"]
     p = players[login]
     g = p["gear"]
@@ -262,7 +320,10 @@ def player_page(login, h, state, now, rank, paces, with_split, top100_gear, top1
                  "gear_share": rounded(100 * g / info["gear"], 3) if info.get("gear") else None}
 
     watch = state.get("watch", {}).get(login)
-    return {"login": login, "name": p.get("name") or login, "gear": g, "guild": guild, "active": p.get("active"),
+    standing = {"better": rounded(100 * bisect.bisect_left(gear_sorted, g) / len(gear_sorted), 1),
+                "of": len(gear_sorted)}
+    return {"login": login, "standing": standing, "name": p.get("name") or login, "gear": g, "guild": guild,
+            "active": p.get("active"),
             "pace": rounded(my_pace), "day": change(h.gear[login], now, DAY),
             "week": change(h.gear[login], now, 7 * DAY), "forecast": forecast,
             "board_rank": on_board,

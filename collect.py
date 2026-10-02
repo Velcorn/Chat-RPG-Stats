@@ -1,7 +1,7 @@
 """Collector: one snapshot of the game's public data, stored as the changes since the last one.
 
 Runs every 15 minutes in GitHub Actions during the game's play window. Reads only public endpoints (no login,
-no cookies) and never sends anything but GETs. One run is about fifteen requests plus one per new fight, two
+no cookies) and never sends anything but GETs. One run is about sixteen requests plus one per new fight, two
 seconds apart.
 """
 from __future__ import annotations
@@ -71,6 +71,7 @@ def snapshot(site: Site, watchlist: list[str], detail_after: int = 0) -> dict:
                     raise
     snap["live"] = site.get("/api/combat?kompakt=true")
     snap["channels"] = site.get("/api/channels")
+    snap["rules"] = site.get("/api/rules")
     for login in watchlist:
         try:
             snap["watch"][login] = site.get(f"/api/players/{quote(login)}")
@@ -165,6 +166,8 @@ def state_from(snap: dict, prev: dict) -> dict:
     return {"players": players, "details": {**prev.get("details", {}), **details}, "boards": boards,
             "guilds": guilds, "watch": watch,
             "channels": {c["login"]: bool(c.get("live")) for c in snap["channels"] if c.get("enabled")},
+            "chat": {c["login"]: c.get("chatMode") for c in snap["channels"] if c.get("enabled")},
+            "rules": {k: v for k, v in (snap.get("rules") or {}).items() if k != "playWindowOpenNow"},
             "fight_last": max([prev.get("fight_last", 0), *(f.get("id", 0) for f in snap["fights"])]),
             "detail_last": max([prev.get("detail_last", 0), *snap.get("details", {})]),
             "live_seen": sorted({*prev.get("live_seen", []), *live_ids(snap)})[-30:]}
@@ -191,7 +194,7 @@ def changed(old: dict, new: dict) -> dict:
 def record(snap: dict, prev: dict, cur: dict, t: int) -> dict:
     """One line of history: only what changed since `prev`, plus new fights."""
     rec: dict = {"t": t}
-    for key in ("players", "details", "guilds", "channels", "watch"):
+    for key in ("players", "details", "guilds", "channels", "chat", "rules", "watch"):
         if diff := changed(prev.get(key, {}), cur[key]):
             rec[key] = diff
     if boards := changed(prev.get("boards", {}), cur["boards"]):

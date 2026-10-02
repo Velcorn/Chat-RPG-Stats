@@ -48,19 +48,26 @@ class DigestTests(unittest.TestCase):
                                             "tanksTotal": 4, "groupStrength": 10, "groupStrengthMax": 12}})
         self.assertEqual((d["gear"], d["power"], d["secs"], d["tanks"]), (196, 222, 50, [3, 4]))
 
-    def test_record_asks_for_details_of_new_fights_once(self):
-        snap = {"fights": [{"id": 5, "kind": "BOSS"}], "details": {5: detail()},
+    def test_record_keeps_details_of_new_fights_once(self):
+        snap = {"fights": [{"id": 5, "kind": "BOSS"}], "details": {5: detail()}, "guilds": {}, "boards": {},
+                "watch": {}, "channels": [],
                 "live": [{"archiveId": 5, "phase": "VICTORY", "endedAt": "x", "averagePower": 300, "battle": {}}]}
-        prev: dict = {}
-        rec = collect.record(snap, prev, {k: {} for k in ("players", "details", "guilds", "channels", "watch",
-                                                          "boards")} | {"boards": {}}, 1)
+        cur = collect.state_from(snap, {})
+        rec = collect.record(snap, {}, cur, 1)
         self.assertEqual(rec["fightx"][5]["power"], 300)
         self.assertEqual(rec["fightx"][5]["dead"], [0, 1, 1])
-        cur = collect.state_from({**snap, "guilds": {}, "boards": {}, "watch": {}, "channels": []}, prev)
         self.assertEqual((cur["detail_last"], cur["live_seen"]), (5, [5]))
-        again = collect.record({**snap, "details": {}}, cur, {k: {} for k in ("players", "details", "guilds",
-                                                                              "channels", "watch")} | {"boards": {}}, 2)
+        again = collect.record({**snap, "details": {}}, cur, collect.state_from({**snap, "details": {}}, cur), 2)
         self.assertNotIn("fightx", again)
+
+    def test_rules_and_chat_mode_are_kept_as_changes(self):
+        snap = {"fights": [], "guilds": {}, "boards": {}, "watch": {}, "rules": {"a": 1, "playWindowOpenNow": True},
+                "channels": [{"login": "sola", "enabled": True, "live": True, "chatMode": "SLOW"}]}
+        cur = collect.state_from(snap, {})
+        self.assertEqual(cur["rules"], {"a": 1})
+        self.assertEqual(cur["chat"], {"sola": "SLOW"})
+        later = collect.state_from({**snap, "rules": {"a": 2}}, cur)
+        self.assertEqual(collect.record(snap, cur, later, 2)["rules"], {"a": 2})
 
 
 class StatsTests(unittest.TestCase):

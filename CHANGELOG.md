@@ -3,6 +3,14 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.10.0 (03.10.2026)
+
+**Neu**
+- Gilden: neue Seite "Vergleich" mit allen Gilden nebeneinander (Mitglieder, Kampfkraft, Zuwachs in 24 Stunden und 7 Tagen, auch je Mitglied, Kasse, Spenden, Bosse).
+- Spiel: neuer Bereich mit "Wirtschaft" (Silber in den Gildenkassen und bei den Top 100 im Verlauf), "Regeln" (die aktuellen Regeln des Spiels) und "Änderungen" (jede Regeländerung mit Zeitpunkt, Vorher und Nachher). Der Markt fehlt, er ist ohne Anmeldung nicht lesbar.
+- Startseite: Die Streamerkarten zeigen den Chat-Modus (normal, langsam, still), den Live-Anteil und die Kämpfe des Kanals.
+- Spielerseiten: Knopf "Teilen" kopiert eine Kurzfassung mit Link, dazu der Vergleich "Stärker als x % der erfassten Spieler".
+
 ## 0.9.0 (02.10.2026)
 
 **Neu**

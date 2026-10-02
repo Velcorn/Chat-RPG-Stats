@@ -47,9 +47,9 @@ keep it.
 - `collect.py`: one run (about 15 requests plus one per new fight): `snapshot` (the requests), `state_from` (flat current state, incl. the watchlist's gear per slot), `record` (only the changes).
   Writes `data/days/YYYY-MM-DD.jsonl` (one line per run) and `data/state.json` on the `data` branch.
 - `fightstats.py`: fight statistics for `summary.json` -> `stats` (death share, roles, power vs recommendation, hours, channels); only sums per fight, never per player.
-- `build.py`: replays the day files (`History`), computes pace, forecasts, peers, guild standing, fight odds; writes
+- `build.py`: replays the day files (`History`, incl. rules log and live share per channel), computes pace, forecasts, peers, guild standing, fight odds; writes
   `_site/data/summary.json`, `players.json` (search index) and `p/<login>.json`.
-- `site/index.html`: the whole dashboard (no build step; hash routes `#/<section>/<sub>` with sections `start` (default), `rangliste`, `gilden`, `kaempfe` (subs `arten`, `ueberleben`, `kraft`, `zeit`, `letzte`; see `SECTIONS`: each sub
+- `site/index.html`: the whole dashboard (no build step; hash routes `#/<section>/<sub>` with sections `start` (default), `rangliste`, `gilden` (subs `vergleich` + one per guild), `spiel` (subs `wirtschaft`, `regeln`, `aenderungen`; `RULE_LABELS` holds the German rule names), `kaempfe` (subs `arten`, `ueberleben`, `kraft`, `zeit`, `letzte`; see `SECTIONS`: each sub
   page is a tab in the second row) and `#/spieler/<login>`).
 - `watchlist.py` + `watchlist.txt`: the list (channel owners by default, others opt-in), changed by the issue form via `.github/workflows/watchlist.yml`.
 - `tests/`: `test_collect.py`, `test_pipeline.py` (build), `test_fightstats.py`, `test_watchlist.py`.
@@ -64,7 +64,7 @@ keep it.
 
 - Public without login: `/api/rules`, `/api/leaderboard?by=gear|quests&limit=100` (max 100; `silver` and `level` return
   the gear board), `/api/players/{login}`, `/api/guilds`, `/api/guilds/{login}` (all members with gear score and
-  donations), `/api/combat/history` (last 20 fights, about a day), `/api/combat/history/{id}` (one fight: fighters with role and alive, `crowd.tally`; `power`, `gearScore`, `averagePower`, `recommendedGear` are 0 there), `/api/combat?kompakt=true` (the fight the site still shows: average gear and power, recommendation, `battle`), `/api/channels` (the trader endpoint is not used).
+  donations), `/api/combat/history` (last 20 fights, about a day), `/api/combat/history/{id}` (one fight: fighters with role and alive, `crowd.tally`; `power`, `gearScore`, `averagePower`, `recommendedGear` are 0 there), `/api/combat?kompakt=true` (the fight the site still shows: average gear and power, recommendation, `battle`), `/api/channels` (with `chatMode`), `/api/rules` (the trader endpoint is not used).
   `/api/market/board` needs a login (not used).
 - The leaderboard lags the guild pages by a few minutes.
 - Since 30.09.2026 `gearScore` (boards, guild pages, guild total) is Kampfkraft: gear (ATK+DEF+SUP) plus a talent bonus the API

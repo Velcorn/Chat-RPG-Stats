@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.8.6 (02.10.2026)
+
+**Verbessert**
+- Bonus-Formel: neue Messung an 220 statt 14 Ausrüstungszuständen (Kampfkraft etwa 2,7 x ATK + 0,8 x DEF + 2,3 x SUP - 20, Abweichung um 15), dazu die genaue Formel der Schadensminderung. Die Gewichte von vorher (0,9 DEF, 1,6 SUP) stimmten nicht mehr.
+
 ## 0.8.5 (01.10.2026)
 
 **Behoben**

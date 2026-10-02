@@ -215,8 +215,7 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
                "risers": {"day": risers(day), "week": risers(week)},
                "top100": {"gear": top100_gear, "pace": rounded(top100_pace)},
                "guilds": sorted(guild_rows, key=lambda g: -(g.get("gear") or 0)),
-               "fights": {"groups": fight_groups(h.fights, now), "recent": [{**f, **fightstats.fallen(h.fightx.get(f["id"]))}
-                                     for f in h.fights[-50:][::-1]],
+               "fights": {"groups": fight_groups(h.fights, now), "recent": recent_fights(h),
                           "total": len(h.fights)},
                "stats": summary_stats,
                "channels": state.get("channels", {}),
@@ -240,6 +239,11 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
                                                           top100_gear, top100_pace, guild_members,
                                                           gear_sorted))
     return summary
+
+
+def recent_fights(h: History, n: int = 50) -> list[dict]:
+    """The last fights, newest first, with the share that fell where the fight has a detail digest."""
+    return [{**f, **fightstats.fallen(h.fightx.get(f["id"]))} for f in h.fights[-n:][::-1]]
 
 
 def channel_stats(h: History, state: dict, fights_by_channel: list[dict]) -> dict:

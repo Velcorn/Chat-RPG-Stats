@@ -197,7 +197,6 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
         treasury_series = [[r[0], r[1]] for r in h.guilds.get(g, []) if r[1] is not None]
         guild_rows.append({"login": g, **info, "day": sum(day.get(m) or 0 for m in members),
                            "week": change(gear_series, now, 7 * DAY),
-                           "treasury_day": change(treasury_series, now, DAY),
                            "treasury_week": change(treasury_series, now, 7 * DAY),
                            "avg_gear": rounded(statistics.mean(active_gear), 1) if active_gear else None,
                            "donated": sum(players[m].get("donated") or 0 for m in members),

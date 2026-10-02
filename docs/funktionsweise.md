@@ -13,7 +13,7 @@ Zeitplan (alle 15 Min., 7-24 Uhr) -> collect.py -> Zweig "data" -> build.py -> G
    aktuellen Stand und schreibt nur die Änderungen zum letzten Lauf.
 2. **Speichern:** im Zweig `data`, eine Datei `days/JJJJ-MM-TT.jsonl` pro Tag (eine Zeile pro Lauf) und `state.json`
    mit dem letzten Stand. Von einem bekannten Spieler oder einer Gilde werden nur die geänderten Werte gespeichert.
-   Ein Lauf ist dadurch rund 10 KB groß, ein Tag etwa 0,7 MB.
+   Ein Lauf ist dadurch rund 25 KB groß, ein Tag etwa 1,6 MB (die Summen je Kampf kommen dazu).
 3. **Bauen** (`build.py`): spielt alle Tagesdateien ab und schreibt `summary.json` (Ranglisten, Gilden, Kämpfe, `stats` aus `fightstats.py`, `channel_stats`, `rules`, `economy`),
    `players.json` (Suchindex) und eine Datei `p/<name>.json` pro Spieler.
 4. **Veröffentlichen:** die Action lädt die Dateien samt `site/index.html` auf GitHub Pages. Besucher lesen nur diese
@@ -39,7 +39,7 @@ und Kämpfe eines Spielers werden nicht gespeichert, nur Werte und ihre Änderun
 
 ## Aufbau der Seite
 
-Eine Startseite und drei Bereiche mit einer zweiten Tab-Zeile, damit keine Seite überladen ist (Adresse `#/<Bereich>/<Unterseite>`):
+Eine Startseite und vier Bereiche mit einer zweiten Tab-Zeile, damit keine Seite überladen ist (Adresse `#/<Bereich>/<Unterseite>`):
 
 - **Start** (`#/start`, Standard): eine Karte je Streamer (Kanal der Liste `channels`): Live-Status aus `/api/channels`, Chat-Modus (`chatMode`: normal, langsam = nur jedes zehnte !quest im Chat wird beantwortet, still = gar keins), Live-Anteil (Anteil der Läufe, in denen der Kanal live war, seit Beginn der Daten), Kämpfe der letzten 30 Tage in diesem Kanal mit Siegquote, Teilnehmern und Gefallenen, Link zum Twitch-Kanal, Gildenname, Mitglieder, Kasse, durchschnittliche Kampfkraft der aktiven Mitglieder (die Karten sind nach dem Durchschnitt sortiert, Live zuerst) mit Link zur Gildenseite und zur Spielerseite des Streamers. Dazu die zehn letzten Kämpfe und die Spielersuche. Laufende Kämpfe zeigt die Startseite nicht, denn bei einem Abruf alle 15 Minuten wären sie fast immer schon vorbei. Zuschauerzahl und Titel des Streams gibt das Spiel nicht her, sie stehen nicht da.
 

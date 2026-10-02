@@ -53,6 +53,13 @@ def digest_totals(digests: list[dict]) -> dict:
             "pay_dead": mean([d["pay"][1] for d in digests if d.get("pay")])}
 
 
+def fallen(d: dict | None) -> dict:
+    """Who fell in one fight, from its digest (nothing when there is none)."""
+    if not d or "roles" not in d or not sum(d["roles"]):
+        return {}
+    return {"dead": sum(d["dead"]), "death": pct(sum(d["dead"]), sum(d["roles"]))}
+
+
 def summarize(fs: list[dict], extra: dict[int, dict]) -> dict:
     """One row for a set of fights: counts, win rate, and the digest numbers where there are any."""
     digests = [extra[f["id"]] for f in fs if "roles" in extra.get(f["id"], {})]
@@ -100,10 +107,12 @@ def fight_stats(fights: list[dict], extra: dict[int, dict], now: float, days: in
         type_rows.append(row)
     type_rows.sort(key=lambda r: (-(r["wins"] / r["n"]), -r["n"], r["kind"], r["name"] or "", r["level"] or 0))
 
-    role_people = [sum(extra[f["id"]]["roles"][i] for f in detailed) for i in range(3)]
-    role_dead = [sum(extra[f["id"]]["dead"][i] for f in detailed) for i in range(3)]
+    # A lost boss fight takes everyone down, so the role split only counts won fights.
+    won = [f for f in detailed if f.get("outcome") == "VICTORY"]
+    role_people = [sum(extra[f["id"]]["roles"][i] for f in won) for i in range(3)]
+    role_dead = [sum(extra[f["id"]]["dead"][i] for f in won) for i in range(3)]
     roles = [{"role": ROLE_NAMES[i], "share": pct(role_people[i], sum(role_people)),
-              "death": pct(role_dead[i], role_people[i])} for i in range(3)] if detailed else []
+              "death": pct(role_dead[i], role_people[i])} for i in range(3)] if won else []
 
     with_power = [(extra[f["id"]], f) for f in window if extra.get(f["id"], {}).get("power")]
     margins = []
@@ -128,6 +137,6 @@ def fight_stats(fights: list[dict], extra: dict[int, dict], now: float, days: in
                   "margins": margins,
                   "recent": [{"id": f["id"], "kind": f.get("kind"), "name": f.get("name"), "outcome": f.get("outcome"),
                               "power": d["power"], "gear": d.get("gear"), "rec": d.get("rec") or None,
-                              "enraged": d.get("enraged"), "secs": d.get("secs")}
+                              "enraged": d.get("enraged"), "secs": d.get("secs"), **fallen(d)}
                              for d, f in sorted(with_power, key=lambda x: -x[1]["id"])[:30]]},
     }

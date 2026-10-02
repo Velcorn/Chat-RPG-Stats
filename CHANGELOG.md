@@ -3,6 +3,14 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.10.2 (03.10.2026)
+
+**Neu**
+- Kämpfe: Die Liste der letzten Kämpfe und die Kampfkraft-Liste zeigen, wie viel Prozent der Teilnehmer im jeweiligen Kampf gefallen sind (nur bei Kämpfen mit Einzelheiten).
+
+**Verbessert**
+- Überleben: Wer einen Kampf verliert, fällt mit der ganzen Gruppe, die 100 % sagten nichts aus. Rolle, Kampfart, Kampf, Kanal, Tag und die Streamerkarten zählen jetzt nur das Fallen in gewonnenen Kämpfen, die Spalte "bei Niederlage" entfällt.
+
 ## 0.10.1 (03.10.2026)
 
 **Behoben**

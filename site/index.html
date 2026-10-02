@@ -597,7 +597,7 @@ function channelLines(c) {
     c.fights ? el("div", {}, el("span", { class: "muted" }, "Kämpfe (30 Tage)"),
       `${fmtInt(c.fights)}, ${pctv(c.fights ? 100 * c.wins / c.fights : null)} gewonnen`) : null,
     c.fights && c.fighters != null ? el("div", {}, el("span", { class: "muted" }, "Ø Teilnehmer"), fmtDec(c.fighters, 1)) : null,
-    c.death != null ? el("div", {}, el("span", { class: "muted" }, "Gefallen"), pctv(c.death)) : null);
+    c.death != null ? el("div", {}, el("span", { class: "muted" }, "Gefallen in Siegen"), pctv(c.death)) : null);
 }
 
 function viewStart(s) {
@@ -661,6 +661,7 @@ const RECENT_COLS = (s) => [
   { label: "Kanal", get: (f) => "#" + f.channel },
   { label: "Kampf", get: (f) => gameLink(`/kampfbericht/${f.id}`, f.kind === "BOSS" ? fightLabel(f) : `${f.name} (${fightLabel(f)})`) },
   { label: "Teilnehmer", num: true, get: (f) => fmtInt(f.fighters) },
+  { label: "Gefallen", num: true, title: "Anteil der Teilnehmer, die in diesem Kampf gefallen sind (nur bei Kämpfen mit Einzelheiten)", get: (f) => pctv(f.death) },
   { label: "Ausgang", get: (f) => f.outcome === "VICTORY" ? el("span", { class: "up" }, "gewonnen") : el("span", { class: "down" }, "verloren") },
 ];
 
@@ -679,9 +680,7 @@ function detailNote(st) {
     : "Einzelheiten zu den Kämpfen (Gefallene, Rollen, Schaden) werden gerade erst gesammelt, hier erscheinen bald Zahlen.");
 }
 const fallenCols = [
-  { label: "Gefallen", num: true, title: "Anteil der Teilnehmer, die im Kampf gefallen sind", get: (r) => pctv(r.death) },
-  { label: "bei Sieg", num: true, get: (r) => pctv(r.death_win) },
-  { label: "bei Niederlage", num: true, get: (r) => pctv(r.death_loss) },
+  { label: "Gefallen", num: true, title: "Anteil der Teilnehmer, die in gewonnenen Kämpfen gefallen sind (wer verliert, fällt ganz)", get: (r) => pctv(r.death_win) },
 ];
 
 function viewSurvival(s) {
@@ -689,16 +688,18 @@ function viewSurvival(s) {
   if (!st.detail) return [card("Wer fällt?", detailNote(st))];
   return [
     card("Wer fällt?", el("dl", { class: "facts" },
-      el("dt", {}, "Gefallen insgesamt"), el("dd", {}, `${pctv(t.death)} (${fmtInt(t.dead)} von ${fmtInt(t.people)} Teilnehmern)`),
       el("dt", {}, "In gewonnenen Kämpfen"), el("dd", {}, pctv(t.death_win)),
-      el("dt", {}, "In verlorenen Kämpfen"), el("dd", {}, pctv(t.death_loss)),
+      el("dt", {}, "In verlorenen Kämpfen"), el("dd", {}, t.death_loss === 100 ? "alle (100 %)" : pctv(t.death_loss)),
+      el("dt", {}, "Insgesamt"), el("dd", {}, `${pctv(t.death)} (${fmtInt(t.dead)} von ${fmtInt(t.people)} Teilnehmern)`),
       el("dt", {}, "Ø Schaden pro Teilnehmer"), el("dd", {}, fmtInt(t.dmg)),
       el("dt", {}, "Ø erlittener Schaden"), el("dd", {}, fmtInt(t.taken)),
       el("dt", {}, "Ø Heilung"), el("dd", {}, fmtInt(t.heal)),
       el("dt", {}, "Ø Silber, wer überlebt"), el("dd", {}, signed(t.pay_alive)),
-      el("dt", {}, "Ø Silber, wer fällt"), el("dd", {}, signed(t.pay_dead))), detailNote(st)),
+      el("dt", {}, "Ø Silber, wer fällt"), el("dd", {}, signed(t.pay_dead))),
+      t.death_loss === 100 ? el("p", { class: "note" }, "Wer einen Kampf verliert, fällt mit der ganzen Gruppe. Damit die Zahlen etwas aussagen, zeigen die Tabellen darunter nur das Fallen in gewonnenen Kämpfen.") : null,
+      detailNote(st)),
     card("Nach Rolle", barRows(st.roles.map((r) => ({ label: `${ROLE_LABELS[r.role]} (${pctv(r.share)} der Teilnehmer)`, value: r.death, text: `${pctv(r.death)} gefallen` }))),
-      el("p", { class: "note" }, "Balken: Anteil der Teilnehmer dieser Rolle, die gefallen sind.")),
+      el("p", { class: "note" }, "Balken: Anteil der Teilnehmer dieser Rolle, die in gewonnenen Kämpfen gefallen sind.")),
     card("Nach Kampfart", el("div", { class: "scroll" }, table([
       { label: "Art", get: (r) => kindLabel(r.kind) },
       { label: "Kämpfe", num: true, get: (r) => `${fmtInt(r.n)} (${fmtInt(r.detail)} mit Details)` },
@@ -731,7 +732,7 @@ function viewPower(s) {
       { label: "Ø Kampfkraft / Empfehlung", get: bucket },
       { label: "Kämpfe", num: true, get: (m) => fmtInt(m.n) },
       { label: "Siege", num: true, get: (m) => m.n ? pct(m.wins, m.n) : "-" },
-      { label: "Gefallen", num: true, get: (m) => pctv(m.death) },
+      { label: "Gefallen", num: true, title: "in gewonnenen Kämpfen", get: (m) => pctv(m.death_win) },
     ], p.margins)) : el("p", { class: "note" }, "Noch keine Kämpfe, bei denen das Spiel eine Empfehlung nannte.")),
     card("Nach Kampf", powered.length ? el("div", { class: "scroll" }, table([
       { label: "Kampf", get: fightLabel },
@@ -747,6 +748,7 @@ function viewPower(s) {
       { label: "Ø Kampfkraft", num: true, get: (f) => fmtInt(f.power) },
       { label: "Ø Ausrüstung", num: true, get: (f) => fmtInt(f.gear) },
       { label: "Empfohlen", num: true, get: (f) => f.rec ? fmtInt(f.rec) : "-" },
+      { label: "Gefallen", num: true, get: (f) => pctv(f.death) },
       { label: "Dauer", num: true, get: (f) => f.secs ? `${fmtInt(f.secs)} s` : "-" },
     ], p.recent)) : el("p", { class: "note" }, "Noch keine Daten."))];
 }
@@ -763,14 +765,14 @@ function viewWhen(s) {
       { label: "Kämpfe", num: true, get: (c) => fmtInt(c.n) },
       { label: "Siege", num: true, get: (c) => pct(c.wins, c.n) },
       { label: "Ø Teilnehmer", num: true, get: (c) => fmtInt(c.fighters) },
-      { label: "Gefallen", num: true, get: (c) => pctv(c.death) },
+      { label: "Gefallen", num: true, title: "in gewonnenen Kämpfen", get: (c) => pctv(c.death_win) },
     ], st.channels))),
     card("Nach Tag", el("div", { class: "scroll" }, table([
       { label: "Tag", get: (d) => new Date(d.day + "T12:00:00Z").toLocaleDateString("de-DE", { timeZone: TZ, weekday: "short", day: "2-digit", month: "2-digit" }) },
       { label: "Kämpfe", num: true, get: (d) => fmtInt(d.n) },
       { label: "Siege", num: true, get: (d) => pct(d.wins, d.n) },
       { label: "Ø Teilnehmer", num: true, get: (d) => fmtInt(d.fighters) },
-      { label: "Gefallen", num: true, get: (d) => pctv(d.death) },
+      { label: "Gefallen", num: true, title: "in gewonnenen Kämpfen", get: (d) => pctv(d.death_win) },
     ], st.daily.slice(-14).reverse())), detailNote(st))];
 }
 

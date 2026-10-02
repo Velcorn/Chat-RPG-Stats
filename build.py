@@ -215,7 +215,8 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
                "risers": {"day": risers(day), "week": risers(week)},
                "top100": {"gear": top100_gear, "pace": rounded(top100_pace)},
                "guilds": sorted(guild_rows, key=lambda g: -(g.get("gear") or 0)),
-               "fights": {"groups": fight_groups(h.fights, now), "recent": [{**f, **fightstats.fallen(h.fightx.get(f["id"]))} for f in h.fights[-50:][::-1]],
+               "fights": {"groups": fight_groups(h.fights, now), "recent": [{**f, **fightstats.fallen(h.fightx.get(f["id"]))}
+                                     for f in h.fights[-50:][::-1]],
                           "total": len(h.fights)},
                "stats": summary_stats,
                "channels": state.get("channels", {}),

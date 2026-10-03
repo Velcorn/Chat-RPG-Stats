@@ -72,9 +72,10 @@ Eine Startseite und vier Bereiche mit einer zweiten Tab-Zeile, damit keine Seite
   der Anteil des eingehenden Schadens, den die Verteidigung abfängt.
 - **Kampfkraft und Bonus:** Kampfkraft = ATK + DEF + SUP + Talentbonus (das Spiel nennt nur die Summe). Die Spalte "Bonus" der
   Rangliste ist Kampfkraft minus ATK, DEF und SUP. Die Seite "Bonus-Formel" hält die geschätzte Formel fest, von Hand
-  aus einer Messung am eigenen Verteidiger (220 Ausrüstungszustände, 02.10.2026, nach dem Kampf-Umbau): Kampfkraft
-  etwa 2,7 ATK + 0,8 DEF + 2,3 SUP - 20 (Abweichung um 15, höchstens 40; nahe dem Optimum gewölbt), Bonus etwa
-  1,7 ATK - 0,2 DEF + 1,3 SUP. Dazu die Schadensminderung 100 DEF / (DEF + 80) Prozent. Eine Anpassung an den Ranglisten
+  aus einer Messung am eigenen Verteidiger (70 Ausrüstungszustände, 03.10.2026, nach den beiden Änderungen des Spiels an
+  diesem Tag, 07:14 mit und gegen 10:59 ohne Eintrag im Änderungsprotokoll): Kampfkraft etwa 3,0 ATK + 0,8 DEF + 2,7 SUP - 14
+  (Abweichung um 9; ab etwa 120 DEF zählt ein Punkt nur noch etwa 0,5 statt 0,8), Bonus etwa 2,0 ATK - 0,2 DEF + 1,7 SUP - 14.
+  Dazu die Schadensminderung 100 DEF / (DEF + 80) Prozent. Eine Anpassung an den Ranglisten
   geht nicht, weil die Top 100 nach Kampfkraft ausgewählt sind (die Gewichte kämen um null heraus). Die Schätzung
   wird nicht automatisch neu angepasst; die Kennzahlen (kleinster, mittlerer, größter
   Bonus) auf der Seite kommen dagegen live aus den aktuellen Top 100.

@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.10.3 (03.10.2026)
+
+**Verbessert**
+- Bonus-Formel: neue Messung an 70 Ausrüstungszuständen nach den zwei Änderungen des Spiels am 03.10.2026 (Kampfkraft etwa 3,0 x ATK + 0,8 x DEF + 2,7 x SUP - 14, Abweichung um 9), mit dem Knick bei hoher Verteidigung und einem Beispiel, in dem Handschuhe mit weniger Ausrüstung mehr Kampfkraft bringen.
+
 ## 0.10.2 (03.10.2026)
 
 **Neu**

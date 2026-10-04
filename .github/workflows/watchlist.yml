@@ -23,7 +23,7 @@ jobs:
         id: change
         env:
           BODY: ${{ github.event.issue.body }}
-        run: uv run --no-dev python watchlist.py >> "$GITHUB_OUTPUT"
+        run: uv run --no-dev python src/watchlist.py >> "$GITHUB_OUTPUT"
       - name: Speichern
         if: steps.change.outputs.changed == 'true'
         run: |

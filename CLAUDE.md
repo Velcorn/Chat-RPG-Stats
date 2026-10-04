@@ -32,7 +32,7 @@ keep it.
 
 ## After every change
 
-1. `uv run python -m unittest discover tests` and `uv run ruff check` (the commit hook runs both; CI runs the same hooks plus coverage).
+1. `PYTHONPATH=src uv run python -m unittest discover tests` and `uv run ruff check` (the commit hook runs both; CI runs the same hooks plus coverage).
 2. Keep the docs current in the same commit, so they never lag the code: README.md (short; what it shows, the request
    table, schedule, setup and commands must be true today), docs/funktionsweise.md (data flow and every calculation)
    and this file's map and facts. Grep them for every number, name and behaviour the change touches, removed things
@@ -44,14 +44,16 @@ keep it.
 
 ## Project map
 
-- `collect.py`: one run (about 15 requests plus one per new fight): `snapshot` (the requests), `state_from` (flat current state, incl. the watchlist's gear per slot), `record` (only the changes).
+Python modules live in `src/` (flat, no package; tests and tools need `PYTHONPATH=src`); `site/`, `tests/`, `docs/` stay at the top.
+
+- `src/collect.py`: one run (about 15 requests plus one per new fight): `snapshot` (the requests), `state_from` (flat current state, incl. the watchlist's gear per slot), `record` (only the changes).
   Writes `data/days/YYYY-MM-DD.jsonl` (one line per run) and `data/state.json` on the `data` branch.
-- `fightstats.py`: fight statistics for `summary.json` -> `stats` (death share in won fights and per fight (`fallen`), roles, power vs recommendation, hours, channels); only sums per fight, never per player.
-- `build.py`: replays the day files (`History`, incl. rules log and live share per channel), computes pace, forecasts, peers, guild standing, fight odds; writes
+- `src/fightstats.py`: fight statistics for `summary.json` -> `stats` (death share in won fights and per fight (`fallen`), roles, power vs recommendation, hours, channels); only sums per fight, never per player.
+- `src/build.py`: replays the day files (`History`, incl. rules log and live share per channel), computes pace, forecasts, peers, guild standing, fight odds; writes
   `_site/data/summary.json`, `players.json` (search index) and `p/<login>.json`.
 - `site/index.html`: the whole dashboard (no build step; hash routes `#/<section>/<sub>` with sections `start` (default), `rangliste`, `gilden` (subs `vergleich` + one per guild), `spiel` (subs `wirtschaft`, `regeln`, `aenderungen`; `RULE_LABELS` holds the German rule names), `kaempfe` (subs `arten`, `ueberleben`, `kraft`, `zeit`, `letzte`; see `SECTIONS`: each sub
   page is a tab in the second row) and `#/spieler/<login>`).
-- `watchlist.py` + `watchlist.txt`: the list (channel owners by default, others opt-in), changed by the issue form via `.github/workflows/watchlist.yml`.
+- `src/watchlist.py` + `watchlist.txt`: the list (channel owners by default, others opt-in), changed by the issue form via `.github/workflows/watchlist.yml`.
 - `tests/`: `test_collect.py`, `test_pipeline.py` (build), `test_fightstats.py`, `test_watchlist.py`, `test_site.py` (the page script parses with `node --check`).
 - `docs/funktionsweise.md`: German detail: data flow, storage, watchlist, every calculation. README stays short.
 - `.pre-commit-config.yaml` (prek: ruff, tests, hygiene, plain punctuation), `.github/workflows/ci.yml` (hooks + coverage; writes

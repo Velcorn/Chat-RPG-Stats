@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ["site/**", "build.py", ".github/workflows/collect.yml"]
+    paths: ["site/**", "src/**", ".github/workflows/collect.yml"]
 
 permissions:
   contents: write
@@ -41,7 +41,7 @@ jobs:
       - name: Sammeln
         id: collect
         if: github.event_name != 'push'
-        run: uv run --no-dev python collect.py --data data ${{ github.event_name == 'workflow_dispatch' && '--force' || '' }}
+        run: uv run --no-dev python src/collect.py --data data ${{ github.event_name == 'workflow_dispatch' && '--force' || '' }}
       - name: Daten sichern
         if: steps.collect.outputs.collected == 'true'
         working-directory: data
@@ -54,7 +54,7 @@ jobs:
       - name: Seite bauen
         id: build
         if: (steps.collect.outputs.collected == 'true' || github.event_name == 'push') && hashFiles('data/state.json') != ''
-        run: uv run --no-dev python build.py --data data --out _site
+        run: uv run --no-dev python src/build.py --data data --out _site
       - uses: actions/upload-pages-artifact@v5
         if: steps.build.outcome == 'success'
         with:

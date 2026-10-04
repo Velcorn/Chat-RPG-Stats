@@ -19,7 +19,7 @@ repos:
         types: [python]
       - id: tests
         name: tests
-        entry: uv run python -m unittest discover tests
+        entry: env PYTHONPATH=src uv run python -m unittest discover tests
         language: system
         types: [python]
         pass_filenames: false

@@ -6,15 +6,15 @@ benutzt, steht in der [README](../README.md).
 ## Ablauf
 
 ```
-Zeitplan (alle 15 Min., 7-24 Uhr) -> collect.py -> Zweig "data" -> build.py -> GitHub Pages
+Zeitplan (alle 15 Min., 7-24 Uhr) -> src/collect.py -> Zweig "data" -> src/build.py -> GitHub Pages
 ```
 
-1. **Sammeln** (`collect.py`): fragt die öffentlichen Schnittstellen ab (Tabelle in der README), bildet daraus den
+1. **Sammeln** (`src/collect.py`): fragt die öffentlichen Schnittstellen ab (Tabelle in der README), bildet daraus den
    aktuellen Stand und schreibt nur die Änderungen zum letzten Lauf.
 2. **Speichern:** im Zweig `data`, eine Datei `days/JJJJ-MM-TT.jsonl` pro Tag (eine Zeile pro Lauf) und `state.json`
    mit dem letzten Stand. Von einem bekannten Spieler oder einer Gilde werden nur die geänderten Werte gespeichert.
    Ein Lauf ist dadurch rund 25 KB groß, ein Tag etwa 1,6 MB (die Summen je Kampf kommen dazu).
-3. **Bauen** (`build.py`): spielt alle Tagesdateien ab und schreibt `summary.json` (Ranglisten, Gilden, Kämpfe, `stats` aus `fightstats.py`, `channel_stats`, `rules`, `economy`),
+3. **Bauen** (`src/build.py`): spielt alle Tagesdateien ab und schreibt `summary.json` (Ranglisten, Gilden, Kämpfe, `stats` aus `src/fightstats.py`, `channel_stats`, `rules`, `economy`),
    `players.json` (Suchindex) und eine Datei `p/<name>.json` pro Spieler.
 4. **Veröffentlichen:** die Action lädt die Dateien samt `site/index.html` auf GitHub Pages. Besucher lesen nur diese
    fertigen Dateien; ihre Zahl ändert nichts an den Anfragen ans Spiel.
@@ -27,7 +27,7 @@ GitHubs eigener Zeitplan löst bei kleinen Repos unzuverlässig aus (am 30.09.20
 ein systemd-Timer (`deploy/chat-rpg-stats-collect.timer`, Einrichtung im Kopf der Service-Datei) die Action alle 15 Minuten
 von 7 bis 24 Uhr per `gh workflow run`. Der Zeitplan auf GitHub bleibt als Rückfall.
 
-Änderungen an `site/` oder `build.py` lösen nur Bauen und Veröffentlichen aus, ohne neue Anfragen.
+Änderungen an `site/` oder `src/` lösen nur Bauen und Veröffentlichen aus, ohne neue Anfragen.
 
 ## Beobachtungsliste
 
@@ -89,7 +89,7 @@ Eine Startseite und vier Bereiche mit einer zweiten Tab-Zeile, damit keine Seite
 - **Aufsteiger:** größter Zuwachs in 24 Stunden bzw. 7 Tagen.
 - **Kämpfe:** Siegquote pro Kampfart der letzten 30 Tage, Bosse nach Name und Stufe, sonst nach Art und Schwierigkeit. Sortiert nach Siegquote, bei gleicher Quote nach Zahl der Kämpfe (mehr zuerst).
   Das Kampfarchiv des Spiels hält nur die letzten 20 Kämpfe, deshalb sammelt der Sammler sie fortlaufend. Die Kampfseiten nennen dazu den Beginn der Erfassung (`since` in `summary.json`, der erste Lauf); frühere Kämpfe fehlen, die Quoten gelten also nur für die Zeit danach. Derselbe Zeitpunkt steht im Seitenfuß.
-  Kampfstatistik (`fightstats.py`, `summary.json` -> `stats`, letzte 30 Tage), ab 0.9.0:
+  Kampfstatistik (`src/fightstats.py`, `summary.json` -> `stats`, letzte 30 Tage), ab 0.9.0:
   - Für jeden neuen Kampf holt der Sammler die Kampfbericht-Daten des Archivs (`/api/combat/history/{id}`, eine Anfrage je Kampf, nur einmal) und speichert daraus nur Summen: Teilnehmer und Gefallene je Rolle (Schildträger, Kämpfer, Unterstützer), Schaden, erlittener Schaden, Heilung, Runden, Leben des Bosses, mittleres Silber der Überlebenden und der Gefallenen. Namen und Einzelwerte einzelner Spieler werden nicht gespeichert. Beim ersten Lauf nach der Einführung kommen die 20 Kämpfe des Archivs nach; ältere fehlen.
   - Der laufende Kampf (`/api/combat?kompakt=true`, eine Anfrage je Lauf) nennt als Einziger Durchschnitt der Kampfkraft und der Ausrüstung, die Empfehlung und die Kampfwerte (Dauer, Wut, Gruppenstärke); das Archiv hat dort nur Nullen. Der Sammler übernimmt sie für den Kampf, den das Spiel gerade noch anzeigt, einmal je Kampf. Kämpfe, die zwischen zwei Läufen verschwinden, haben keine Kampfkraft; die Seite weist aus, für wie viele sie vorliegt.
   - **Überleben:** Anteil der Gefallenen (Gefallene durch Teilnehmer, alle Kämpfe mit Einzelheiten zusammen), getrennt nach Siegen und Niederlagen. Wer einen Kampf verliert, fällt mit der ganzen Gruppe (bei Bossen durchweg 100 %); deshalb zeigen die Tabellen nach Rolle, Kampfart, Kampf, Kanal, Tag und Kampfkraft-Abstand und die Streamerkarten nur den Anteil in gewonnenen Kämpfen. Der Anteil je einzelnem Kampf steht in den Listen der letzten Kämpfe (unter Start/Kämpfe/Letzte und in der Kampfkraft-Liste), allerdings nur für Kämpfe mit Einzelheiten; dazu Schaden, Heilung, Runden und für Niederlagen das Leben, das der Boss noch hatte.

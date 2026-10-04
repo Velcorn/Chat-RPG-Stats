@@ -349,7 +349,7 @@ def main() -> None:
     ap.add_argument("--out", type=Path, default=Path("_site"))
     args = ap.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
-    shutil.copy(Path(__file__).with_name("site") / "index.html", args.out / "index.html")
+    shutil.copy(Path(__file__).parent.parent / "site" / "index.html", args.out / "index.html")
     summary = build(args.data, args.out)
     print(f"{summary['players']} Spieler, {summary['runs']} Läufe, {summary['fights']['total']} Kämpfe")
 

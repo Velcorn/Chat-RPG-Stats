@@ -61,10 +61,10 @@ Python 3.13 ohne Laufzeit-Abhängigkeiten, verwaltet mit [uv](https://docs.astra
 HTML-Datei ohne Build-Schritt.
 
 ```
-uv run python collect.py --data data --force    # ein Lauf, auch außerhalb der Spielzeit
-uv run python build.py --data data --out _site   # die Dateien für die Seite
+uv run python src/collect.py --data data --force    # ein Lauf, auch außerhalb der Spielzeit
+uv run python src/build.py --data data --out _site   # die Dateien für die Seite
 uv run python -m http.server -d _site            # ansehen unter http://localhost:8000
-uv run python -m unittest discover tests
+PYTHONPATH=src uv run python -m unittest discover tests
 uv run ruff check
 uv run prek install                              # Git-Hooks: ruff, Tests, Dateihygiene, einfache Satzzeichen
 ```

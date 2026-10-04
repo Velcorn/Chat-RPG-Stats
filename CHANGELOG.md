@@ -3,6 +3,17 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.11.0 (04.10.2026)
+
+**Neu**
+- Kämpfe: neue Seite "Abenteuer". Seit dem Update vom 04.10.2026 stimmt der Chat in Abenteuern jede Szene ab. Die Seite zeigt je Abenteuer die Szenen, was der Chat gewählt hat, wie oft das zum Sieg führte und was die Wahl bewirkte (Gefahr, Leben, Silber, Ausgeschiedene).
+- Kämpfe: Bei Kampfarten, Überleben, Kampfkraft und Wann und wo lassen sich die Zahlen auf die Zeit seit dem Update oder davor beschränken, weil das Spiel Abenteuer und Kämpfe umgebaut hat.
+- Gilden: Gebäude (Werkstatt, Kontor, Kriegskasse, Wall) mit Stufe, Wirkung und Preis der nächsten Stufe sowie der Bossfortschritt (höchste besiegte Stufe, Preis der nächsten) im Vergleich und auf jeder Gildenseite.
+- Spiel: neue Seite "Kompendium" mit Tränken, Stufen, Bossen (Beutestufen, empfohlene Ausrüstung, Hortstücke), Kampfarten und Projekten.
+
+**Verbessert**
+- Die Rundenzahl zählt nur noch bei Kämpfen mit mehr als einer Runde (Abenteuer haben seit dem Update keine Runden mehr).
+
 ## 0.10.3 (03.10.2026)
 
 **Verbessert**

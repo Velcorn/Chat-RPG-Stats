@@ -47,6 +47,14 @@ class SnapshotTests(unittest.TestCase):
         self.assertEqual(site.requests, 10)
         self.assertEqual(s["watch"], {})
 
+    def test_compendium_is_read_on_request_and_a_failing_page_costs_nothing(self):
+        site = FakeSite(answers(**{"/api/compendium": {"potions": []}}))
+        s = collect.snapshot(site, [], compendium_day="2026-10-04")
+        self.assertEqual((s["compendium"], s["compendium_day"], site.requests), ({"potions": []}, "2026-10-04", 11))
+        self.assertNotIn("compendium", collect.snapshot(FakeSite(answers()), []))
+        broken = collect.snapshot(FakeSite(answers(**{"/api/compendium": 503})), [], compendium_day="2026-10-04")
+        self.assertNotIn("compendium", broken)
+
     def test_watchlist_costs_one_request_each_and_skips_unknown_players(self):
         site = FakeSite(answers(**{"/api/players/sola": {"displayName": "Sola"}, "/api/players/weg": 404}))
         s = collect.snapshot(site, ["sola", "weg"])
@@ -113,6 +121,42 @@ class StateTests(unittest.TestCase):
         self.assertEqual(state["players"]["solo"]["gear"], 80)
         self.assertEqual(state["boards"]["gear"], [["solo", 80]])
 
+    def test_guild_buildings_and_bosses(self):
+        s = snap({"karni": [member("a", 100)]})
+        s["guilds"]["karni"]["boss"] = {"wins": 3, "losses": 1, "averageGear": 248, "bosses": [
+            {"name": "Die Rattenkönigin", "highestWon": 2, "nextPriceSilver": 1500, "nextRecommendedGear": 170}]}
+        s["guilds"]["karni"]["buildings"] = [
+            {"key": "WERKSTATT", "label": "Werkstatt", "level": 3, "maxLevel": 5, "effect": "3 Siegel weniger",
+             "nextPrice": "4545 Gold 20 Silber"},
+            {"key": "WALL", "label": "Wall", "level": 5, "maxLevel": 5, "effect": "voll", "nextPrice": None}]
+        g = collect.state_from(s, {})["guilds"]["karni"]
+        self.assertEqual(g["buildings"], {"WERKSTATT": [3, 5, "Werkstatt", "3 Siegel weniger", 454520],
+                                          "WALL": [5, 5, "Wall", "voll", None]})
+        self.assertEqual(g["bosses"], {"Die Rattenkönigin": [2, 1500, 170]})
+        self.assertEqual(g["boss_gear"], 248)
+        self.assertEqual(collect.price_value("15 Gold"), 1500)
+        self.assertEqual(collect.price_value("80 Silber"), 80)
+        self.assertIsNone(collect.price_value("kostenlos"))
+
+    def test_compendium_keeps_the_reference_data_and_carries_over_until_the_next_read(self):
+        raw = {"potions": [{"kind": "HEAL", "label": "Heiltrank", "description": "d", "icon": "x.png", "use": "FIGHT"}],
+               "tiers": [{"tier": 1, "material": "Holz", "templates": 90, "examples": [{}], "sources": ["Quests"]}],
+               "bosses": [{"name": "Boss", "intro": "...", "lootTierMin": 4, "lootTierMax": 5, "gearTier": 3,
+                           "recommendedGear": 170, "mythicGearTier": 3, "hidden": False, "unlockedBy": None,
+                           "hoard": [{"name": "Helm", "slot": "Helm", "icon": "i.png"}]}],
+               "fights": [{"name": "Höhle", "kind": "ADVENTURE", "kindLabel": "Abenteuer", "difficulty": 1}],
+               "projects": [{"project": "WARD", "label": "Schutzzeichen", "description": "d", "nextBattle": True}]}
+        s = snap({"karni": [member("a", 100)]})
+        first = collect.state_from({**s, "compendium": raw, "compendium_day": "2026-10-04"}, {})
+        self.assertEqual(first["compendium"]["potions"], [{"kind": "HEAL", "label": "Heiltrank", "description": "d",
+                                                          "use": "FIGHT"}])
+        self.assertEqual(first["compendium"]["tiers"][0], {"tier": 1, "material": "Holz", "templates": 90,
+                                                          "sources": ["Quests"]})
+        self.assertEqual(first["compendium"]["bosses"][0]["hoard"], [{"name": "Helm", "slot": "Helm"}])
+        self.assertNotIn("mythicGearTier", first["compendium"]["bosses"][0])
+        later = collect.state_from(s, first)
+        self.assertEqual((later["compendium"], later["compendium_day"]), (first["compendium"], "2026-10-04"))
+
     def test_changed_ignores_equal_entries_and_keeps_new_ones_whole(self):
         old = {"a": {"x": 1, "y": 2}, "b": {"x": 1}}
         new = {"a": {"x": 1, "y": 3}, "b": {"x": 1}, "c": {"x": 9}}
@@ -120,13 +164,13 @@ class StateTests(unittest.TestCase):
 
 
 class MainTests(unittest.TestCase):
-    def run_main(self, *, now, snapshot=None, args=()):
-        data = Path(tempfile.mkdtemp())
+    def run_main(self, *, now, snapshot=None, args=(), data=None):
+        data = data or Path(tempfile.mkdtemp())
         out = Path(tempfile.mkdtemp()) / "out"
         patches = [mock.patch.object(collect, "datetime", mock.Mock(now=lambda tz: now)),
                    mock.patch.object(collect, "Site", lambda: mock.Mock(requests=7)),
-                   mock.patch.object(collect, "snapshot", snapshot or (lambda site, wl, after=0: snap(
-                       {"karni": [member("a", 100)]}))),
+                   mock.patch.object(collect, "snapshot", snapshot or (
+                       lambda site, wl, after=0, compendium_day=None: snap({"karni": [member("a", 100)]}))),
                    mock.patch("sys.argv", ["collect.py", "--data", str(data), "--watchlist", str(data / "none.txt"),
                                            *args]),
                    mock.patch.dict(os.environ, {"GITHUB_OUTPUT": str(out)})]
@@ -152,12 +196,25 @@ class MainTests(unittest.TestCase):
         self.assertEqual(out.read_text(), "collected=true\n")
         self.assertFalse((data / "state.json.tmp").exists())
 
+    def test_compendium_is_asked_for_once_a_day(self):
+        asked = []
+
+        def fake(site, wl, after=0, compendium_day=None):
+            asked.append(compendium_day)
+            return {**snap({"karni": [member("a", 100)]}), "compendium_day": compendium_day,
+                    **({"compendium": {"potions": []}} if compendium_day else {})}
+
+        _, data, _, _ = self.run_main(now=self.NOON, snapshot=fake)
+        self.run_main(now=self.NOON, snapshot=fake, data=data)
+        self.assertEqual(asked, ["2026-09-30", None])
+
     def test_second_run_appends_and_reads_the_state(self):
         _, data, _, _ = self.run_main(now=self.NOON)
         with mock.patch("sys.argv", ["collect.py", "--data", str(data), "--watchlist", str(data / "none.txt")]), \
                 mock.patch.object(collect, "datetime", mock.Mock(now=lambda tz: self.NOON)), \
                 mock.patch.object(collect, "Site", lambda: mock.Mock(requests=7)), \
-                mock.patch.object(collect, "snapshot", lambda site, wl, after=0: snap({"karni": [member("a", 105)]})), \
+                mock.patch.object(collect, "snapshot",
+                                  lambda site, wl, after=0, compendium_day=None: snap({"karni": [member("a", 105)]})), \
                 redirect_stdout(io.StringIO()):
             collect.main()
         lines = (data / "days" / "2026-09-30.jsonl").read_text().splitlines()
@@ -176,7 +233,7 @@ class MainTests(unittest.TestCase):
         self.assertTrue(out.exists())
 
     def test_site_down_skips_the_run_without_failing(self):
-        def down(site, wl, after=0):
+        def down(site, wl, after=0, compendium_day=None):
             raise TimeoutError("timed out")
 
         code, data, out, printed = self.run_main(now=self.NOON, snapshot=down)

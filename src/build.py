@@ -115,28 +115,6 @@ def rounded(x, n=2):
     return None if x is None else round(x, n)
 
 
-def fight_groups(fights: list[dict], now: float, days: int = 30) -> list[dict]:
-    """Win rate per fight type: bosses by name and level, the rest by kind and difficulty. Best win rate first,
-    then the most fights."""
-    groups: dict[tuple, list] = defaultdict(list)
-    for f in fights:
-        ended = iso_ts(f.get("endedAt"))
-        if ended and ended < now - days * DAY:
-            continue
-        groups[fightstats.fight_key(f)].append(f)
-    out = [{"kind": k[0], "name": k[1], "level": k[2], "n": len(fs),
-            "wins": sum(1 for f in fs if f.get("outcome") == "VICTORY"),
-            "fighters": round(statistics.mean(f.get("fighters") or 0 for f in fs))} for k, fs in groups.items()]
-    return sorted(out, key=lambda g: (-g["wins"] / g["n"], -g["n"], g["kind"], g["name"] or "", g["level"] or 0))
-
-
-def iso_ts(s: str | None) -> float | None:
-    if not s:
-        return None
-    from datetime import datetime
-    return datetime.fromisoformat(s.replace("Z", "+00:00")).timestamp()
-
-
 def build(data: Path, out: Path, now: float | None = None) -> dict:
     h = History(replay(data / "days"))
     state = json.loads((data / "state.json").read_text("utf-8"))
@@ -215,13 +193,17 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
                "risers": {"day": risers(day), "week": risers(week)},
                "top100": {"gear": top100_gear, "pace": rounded(top100_pace)},
                "guilds": sorted(guild_rows, key=lambda g: -(g.get("gear") or 0)),
-               "fights": {"groups": fight_groups(h.fights, now), "recent": recent_fights(h),
+               "fights": {"recent": recent_fights(h),
                           "total": len(h.fights)},
                "stats": summary_stats,
+               "eras": {"after": fightstats.fight_stats(h.fights, h.fightx, now, lo=fightstats.UPDATE),
+                        "before": fightstats.fight_stats(h.fights, h.fightx, now, hi=fightstats.UPDATE)},
+               "stories": fightstats.story_stats(h.fights, h.fightx, now),
                "channels": state.get("channels", {}),
                "channel_stats": channel_stats(h, state, summary_stats["channels"]),
                "rules": {"now": state.get("rules", {}), "log": h.rules_log[::-1][:60],
                          "since": h.first if state.get("rules") else None},
+               "compendium": state.get("compendium", {}),
                "economy": economy(h, state, now)}
 
     target = out / "data"

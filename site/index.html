@@ -70,6 +70,8 @@
   .stream .head { margin-bottom: 4px; }
   .stream .lines { display: grid; gap: 2px; margin: 8px 0; }
   .stream .lines div { display: flex; justify-content: space-between; gap: 8px; }
+  h3 { font-size: 13px; margin: 14px 0 0; font-weight: 600; }
+  .era { margin-bottom: 4px; }
   h2.section { font-size: 15px; margin: 10px 0 0; color: var(--text-secondary); }
   .rules { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 6px 14px; margin: 0; }
   .rules dt { color: var(--text-secondary); }
@@ -529,6 +531,53 @@ async function viewPlayer(s, login) {
   return out;
 }
 
+// ---- guild buildings and bosses ----
+const BUILDING_ORDER = ["WERKSTATT", "KONTOR", "KRIEGSKASSE", "WALL"];
+const bossShort = (name) => name.replace(/^(Die|Der|Das|Verteidigung der) /, "").split(" ")[0];
+function bossNames(guilds) {
+  const names = [];
+  for (const g of guilds) for (const n of Object.keys(g.bosses || {})) if (!names.includes(n)) names.push(n);
+  return names;
+}
+function buildingsOf(g) {
+  const b = g.buildings || {};
+  return BUILDING_ORDER.filter((k) => b[k]).map((k) => ({ key: k, label: b[k][2], level: b[k][0], max: b[k][1], effect: b[k][3], next: b[k][4] }))
+    .concat(Object.keys(b).filter((k) => !BUILDING_ORDER.includes(k)).map((k) => ({ key: k, label: b[k][2], level: b[k][0], max: b[k][1], effect: b[k][3], next: b[k][4] })));
+}
+function buildingsCard(g) {
+  const rows = buildingsOf(g);
+  if (!rows.length) return null;
+  return card("Gebäude", table([
+    { label: "Gebäude", get: (r) => r.label },
+    { label: "Stufe", num: true, get: (r) => `${fmtInt(r.level)} / ${fmtInt(r.max)}` },
+    { label: "Wirkung", get: (r) => r.effect },
+    { label: "Nächste Stufe", num: true, get: (r) => r.level >= r.max ? "voll ausgebaut" : fmtSilver(r.next) }], rows),
+  el("p", { class: "note" }, "Gebaut wird aus der Gildenkasse. Die Preise der nächsten Stufe zeigt das Spiel."));
+}
+function bossesCard(g) {
+  const rows = Object.entries(g.bosses || {}).map(([name, v]) => ({ name, won: v[0], price: v[1], rec: v[2] }));
+  if (!rows.length) return null;
+  return card("Gildenbosse", table([
+    { label: "Boss", get: (r) => r.name },
+    { label: "Höchste Stufe besiegt", num: true, get: (r) => fmtInt(r.won) },
+    { label: "Beschwören", num: true, get: (r) => fmtSilver(r.price) },
+    { label: "Empfohlene Ausrüstung", num: true, get: (r) => fmtInt(r.rec) }], rows),
+  el("p", { class: "note" }, `Ø Ausrüstung der Gilde: ${fmtInt(g.boss_gear)}. Preis und Empfehlung gelten für die nächste Stufe.`));
+}
+
+function progressCard(ranked) {
+  const names = bossNames(ranked);
+  if (!names.length && !ranked.some((g) => g.buildings)) return null;
+  const cols = [{ label: "Gilde", get: (g) => el("a", { href: `#/gilden/${g.login}` }, g.name) }]
+    .concat(BUILDING_ORDER.map((k) => {
+      const label = (ranked.map(buildingsOf).flat().find((b) => b.key === k) || { label: k }).label;
+      return { label, num: true, title: "Stufe", get: (g) => { const b = buildingsOf(g).find((x) => x.key === k); return b ? `${b.level} / ${b.max}` : "-"; } };
+    }))
+    .concat(names.map((n) => ({ label: bossShort(n), num: true, title: `${n}: höchste besiegte Stufe`, get: (g) => g.bosses && g.bosses[n] ? fmtInt(g.bosses[n][0]) : "-" })));
+  return card("Gebäude und Gildenbosse", table(cols, ranked),
+    el("p", { class: "note" }, "Gebäude: Stufe von höchstens 5. Bosse: höchste besiegte Stufe der Gilde. Einzelheiten stehen auf der Seite jeder Gilde."));
+}
+
 function viewGuildRace(s) {
   const per = (g, v) => v == null || !g.members ? null : v / g.members;
   const cols = [
@@ -558,7 +607,8 @@ function viewGuildRace(s) {
       tile("Schnellster Aufstieg", climber ? climber.login : "-", climber ? `${signed(per(climber, climber.day), 1)} je Mitglied in 24 Stunden` : "nach einem Tag Verlauf"),
       tile("Größte Kasse", richest ? richest.login : "-", richest ? fmtSilver(richest.treasury) : "")),
     card("Alle Gilden nach Ø Kampfkraft", el("div", { class: "scroll" }, table(cols, ranked)),
-      el("p", { class: "note" }, "Der Durchschnitt zählt nur aktive Mitglieder. Gilden mit weniger als 10 aktiven Mitgliedern stehen unten und gewinnen oben keine Kachel.")))];
+      el("p", { class: "note" }, "Der Durchschnitt zählt nur aktive Mitglieder. Gilden mit weniger als 10 aktiven Mitgliedern stehen unten und gewinnen oben keine Kachel.")),
+    progressCard(ranked))];
 }
 
 function viewGuild(s, login) {
@@ -574,6 +624,7 @@ function viewGuild(s, login) {
     el("div", { class: "grid two" },
       chartCard("Kasse", g.series.map((r) => [r[0], r[1]]), { fmt: fmtSilver, until: s.generated }),
       chartCard("Aktive Mitglieder", g.series.map((r) => [r[0], r[3]]), { until: s.generated })),
+    el("div", { class: "grid two" }, buildingsCard(g), bossesCard(g)),
     el("div", { class: "grid two" },
       card("Höchste Kampfkraft", table([
         { label: "Spieler", get: playerLink }, { label: "Kampfkraft", num: true, get: (r) => fmtInt(r.gear) },
@@ -667,6 +718,20 @@ const RECENT_COLS = (s) => [
   { label: "Ausgang", get: (f) => f.outcome === "VICTORY" ? el("span", { class: "up" }, "gewonnen") : el("span", { class: "down" }, "verloren") },
 ];
 
+// The game version the fight tables show: the whole window, or only the fights since/before the story update
+// (04.10.2026: adventures became chat-voted stories, no more rounds). Offered while both sides have fights.
+const ERAS = [["all", "Alle"], ["after", "Seit dem Update (04.10.)"], ["before", "Davor"]];
+let ERA = "all";
+try { ERA = localStorage.getItem("era") || "all"; } catch { /* a private window: no memory */ }
+const hasEras = (s) => s.eras && s.eras.after.fights && s.eras.before.fights;
+const stFor = (s) => hasEras(s) && s.eras[ERA] ? s.eras[ERA] : s.stats;
+function eraBar(s) {
+  if (!hasEras(s)) return null;
+  return el("div", { class: "era" },
+    seg(ERAS, s.eras[ERA] ? ERA : "all", (k) => { ERA = k; try { localStorage.setItem("era", k); } catch { /* ignore */ } route(); }),
+    el("p", { class: "note" }, "Am 04.10.2026 hat das Spiel Abenteuer und Kämpfe umgebaut. Zahlen davor und danach lassen sich schlecht vergleichen, hier trennst du sie."));
+}
+
 const pctv = (v) => v == null ? "-" : `${fmtDec(v, 1)} %`;
 const ROLE_LABELS = { TANK: "Schildträger", FIGHTER: "Kämpfer", SUPPORT: "Unterstützer" };
 const kindLabel = (k) => KINDS[k] || k;
@@ -686,7 +751,7 @@ const fallenCols = [
 ];
 
 function viewSurvival(s) {
-  const st = s.stats, t = st.total;
+  const st = stFor(s), t = st.total;
   if (!st.detail) return [card("Wer fällt?", detailNote(st))];
   return [
     card("Wer fällt?", el("dl", { class: "facts" },
@@ -721,7 +786,7 @@ function viewSurvival(s) {
 }
 
 function viewPower(s) {
-  const st = s.stats, p = st.power;
+  const st = stFor(s), p = st.power;
   const bucket = (m) => m.to == null ? `über ${fmtDec(100 * m.from, 0)} %` : m.from === 0 ? `unter ${fmtDec(100 * m.to, 0)} %` : `${fmtDec(100 * m.from, 0)} bis ${fmtDec(100 * m.to, 0)} %`;
   const powered = st.types.filter((r) => r.power);
   return [
@@ -756,7 +821,7 @@ function viewPower(s) {
 }
 
 function viewWhen(s) {
-  const st = s.stats, top = Math.max(1, ...st.hours.map((h) => h.n));
+  const st = stFor(s), top = Math.max(1, ...st.hours.map((h) => h.n));
   const hours = st.hours.filter((h) => h.n || (h.hour >= 7 && h.hour < 24));
   return [
     card(`Kämpfe nach Uhrzeit (${st.days} Tage)`, barRows(hours.map((h) => ({ label: `${String(h.hour).padStart(2, "0")} bis ${String(h.hour + 1).padStart(2, "0")} Uhr`,
@@ -778,22 +843,53 @@ function viewWhen(s) {
     ], st.daily.slice(-14).reverse())), detailNote(st))];
 }
 
+function effectText(p) {
+  const bits = [];
+  if (p.fight) bits.push("Kampf");
+  if (p.out) bits.push(`${fmtDec(p.out, 0)} % scheiden aus`);
+  if (p.life) bits.push(`alle verlieren ${p.life} % Leben`);
+  if (p.silver) bits.push(`je Kopf ${signed(p.silver)} Silber`);
+  if (p.danger) bits.push(`Gefahr steigt auf ${p.danger}`);
+  return bits.join(", ");
+}
+
+function viewStories(s) {
+  if (!s.stories.length) return [card("Abenteuer", el("p", { class: "note" }, "Noch keine Abenteuer seit dem Update gesammelt."))];
+  return [
+    el("p", { class: "note" }, "Seit dem Update 04.10.2026 sind Abenteuer Geschichten, bei denen der Chat jede Szene abstimmt. Hier siehst du, was gewählt wurde und wie die Läufe ausgingen. Wenige Läufe sagen noch wenig."),
+    ...s.stories.map((st) => card(`${st.name} (Schwierigkeit ${st.difficulty ?? "?"})`,
+      el("p", { class: "note" }, `${count(st.n, "Lauf", "Läufe")} der letzten ${s.stats.days} Tage, ${pct(st.wins, st.n)} gewonnen, Ø ${fmtInt(st.fighters)} Teilnehmer.`),
+      ...st.scenes.flatMap((sc) => [
+        el("h3", {}, `Szene ${sc.i}`),
+        el("p", { class: "note" }, sc.text),
+        el("div", { class: "scroll" }, table([
+          { label: "Wahl des Chats", get: (p) => el("div", {}, p.choice,
+            el("div", { class: "note" }, [p.result, effectText(p) ? `(${effectText(p)})` : ""].filter(Boolean).join(" "))) },
+          { label: "Gewählt", num: true, get: (p) => `${fmtInt(p.n)} von ${fmtInt(sc.n)}` },
+          { label: "Siege", num: true, title: "Läufe, in denen diese Wahl getroffen wurde und das Abenteuer gewonnen wurde", get: (p) => pct(p.wins, p.n) },
+          { label: "Stimmen", num: true, title: "Ø Anteil der Stimmen der Szene für diese Wahl", get: (p) => p.share == null ? "-" : pct(p.share, 1) },
+        ], sc.picks))]))
+    )];
+}
+
 function viewFights(s, sub) {
-  const groups = s.fights.groups;
   const since = s.since ? el("p", { class: "note" }, `Erfasst wird seit ${fmtSince(s.since)}, frühere Kämpfe fehlen.`) : null;
-  if (sub === "ueberleben") return viewSurvival(s);
-  if (sub === "kraft") return viewPower(s);
-  if (sub === "zeit") return viewWhen(s);
+  if (sub === "abenteuer") return viewStories(s);
+  if (sub === "ueberleben") return [eraBar(s), ...viewSurvival(s)];
+  if (sub === "kraft") return [eraBar(s), ...viewPower(s)];
+  if (sub === "zeit") return [eraBar(s), ...viewWhen(s)];
   if (sub === "letzte") return [
     card("Letzte Kämpfe", el("div", { class: "scroll" }, table(RECENT_COLS(s), s.fights.recent)),
       el("p", { class: "note" }, "Der Kampfname führt zum Bericht im Spiel; alle Kämpfe: ", gameLink("/kampf", "Kämpfe im Spiel"), "."), since)];
+  const types = stFor(s).types;
   return [
-    card("Siegquote nach Kampfart (30 Tage)", groups.length ? table([
+    eraBar(s),
+    card("Siegquote nach Kampfart (30 Tage)", types.length ? table([
       { label: "Kampf", get: fightLabel },
       { label: "Kämpfe", num: true, get: (g) => fmtInt(g.n) },
       { label: "Siege", num: true, get: (g) => `${fmtInt(g.wins)} (${pct(g.wins, g.n)})` },
       { label: "Ø Teilnehmer", num: true, get: (g) => fmtInt(g.fighters) },
-    ], groups) : el("p", { class: "note" }, "Noch keine Kämpfe erfasst."),
+    ], types) : el("p", { class: "note" }, "Noch keine Kämpfe erfasst."),
     el("p", { class: "note" }, "Aus dem Kampfarchiv des Spiels (alle Kanäle). Wenige Kämpfe einer Art sagen noch wenig. ",
       gameLink("/kampf", "Kämpfe im Spiel")), since)];
 }
@@ -884,7 +980,36 @@ function ruleText(key, v) {
 }
 const ruleName = (key) => (RULE_INFO[key] || { label: key }).label;
 
+const POTION_USE = { FIGHT: "nächster Kampf", GROUP: "ganze Gruppe", BOSS: "nächster Bosskampf", FORGE: "Schmieden", UPGRADE: "Verbessern",
+                     SOCKET: "Sockeln", MEAL: "Mahlzeit", QUEST: "nächste Quest" };
+function viewCompendium(s) {
+  const c = s.compendium || {};
+  if (!c.tiers || !c.tiers.length) return [card("Kompendium", el("p", { class: "note" }, "Das Kompendium wird gerade erst gesammelt."))];
+  const range = (b) => b.lootTierMin === b.lootTierMax ? `Stufe ${b.lootTierMin}` : `Stufe ${b.lootTierMin} bis ${b.lootTierMax}`;
+  return [el("section", { class: "grid" },
+    el("div", { class: "head" }, el("h1", {}, "Kompendium"), gameLink("/kompendium", "Im Spiel")),
+    el("p", { class: "note" }, "Das Nachschlagewerk des Spiels, einmal am Tag abgefragt. Es zeigt, was das Spiel selbst veröffentlicht; die Zahlen dazu stehen unter Regeln."),
+    card("Ausrüstungsstufen", table([
+      { label: "Stufe", num: true, get: (r) => r.tier }, { label: "Material", get: (r) => r.material },
+      { label: "Vorlagen", num: true, get: (r) => fmtInt(r.templates) }, { label: "Zu finden bei", get: (r) => r.sources.join(", ") }], c.tiers)),
+    card("Bosse", table([
+      { label: "Boss", get: (r) => r.name }, { label: "Beute", get: range },
+      { label: "Empfohlene Ausrüstung", num: true, get: (r) => fmtInt(r.recommendedGear) },
+      { label: "Besonderes Beutestück", get: (r) => r.hoard.length ? r.hoard.map((h) => `${h.name} (${h.slot})`).join(", ") : "-" }], c.bosses),
+      el("p", { class: "note" }, "Beute ist die Ausrüstungsstufe der Stücke, die ein Boss fallen lässt. Seit dem Update vom 04.10.2026 gibt es keinen Mythic-Modus mehr, jeder Boss hat eine Stufe nach der anderen.")),
+    el("div", { class: "grid two" },
+      card("Abenteuer und Überfälle", table([
+        { label: "Name", get: (r) => r.name }, { label: "Art", get: (r) => r.kindLabel },
+        { label: "Schwierigkeit", num: true, get: (r) => r.difficulty }], c.fights)),
+      card("Gildenprojekte", table([
+        { label: "Projekt", get: (r) => r.label }, { label: "Wirkung", get: (r) => r.description }], c.projects))),
+    card("Tränke, Rollen und Verpflegung", el("div", { class: "scroll" }, table([
+      { label: "Name", get: (r) => r.label }, { label: "Wirkung", get: (r) => r.description },
+      { label: "Wirkt auf", get: (r) => POTION_USE[r.use] || r.use }], c.potions))))];
+}
+
 function viewGame(s, sub) {
+  if (sub === "kompendium") return viewCompendium(s);
   if (sub === "regeln") {
     const now = s.rules.now;
     if (!Object.keys(now).length) return [card("Regeln des Spiels", el("p", { class: "note" }, "Die Regeln werden gerade erst gesammelt."))];
@@ -932,8 +1057,9 @@ const SECTIONS = {
   rangliste: { subs: () => [["kampfkraft", "Kampfkraft"], ["silber", "Silber"], ["errungenschaften", "Errungenschaften"],
                             ["quests", "Quests"], ["aufsteiger", "Aufsteiger"], ["formel", "Bonus-Formel"]], render: viewRanks },
   gilden: { subs: (s) => [["vergleich", "Vergleich"], ...s.guilds.map((g) => [g.login, g.login])], render: viewGuild },
-  spiel: { subs: () => [["wirtschaft", "Wirtschaft"], ["regeln", "Regeln"], ["aenderungen", "Änderungen"]], render: viewGame },
-  kaempfe: { subs: () => [["arten", "Kampfarten"], ["ueberleben", "Überleben"], ["kraft", "Kampfkraft"],
+  spiel: { subs: () => [["wirtschaft", "Wirtschaft"], ["regeln", "Regeln"], ["aenderungen", "Änderungen"], ["kompendium", "Kompendium"]],
+           render: viewGame },
+  kaempfe: { subs: () => [["arten", "Kampfarten"], ["abenteuer", "Abenteuer"], ["ueberleben", "Überleben"], ["kraft", "Kampfkraft"],
                           ["zeit", "Wann und wo"], ["letzte", "Letzte Kämpfe"]],
              render: viewFights },
 };
@@ -961,7 +1087,7 @@ async function route() {
   // The search box lives in the header, on the start page it moves into the page.
   const search = document.querySelector(".search"), header = document.querySelector("header");
   if (view !== "start" && search.parentNode !== header) header.insertBefore(search, header.querySelector(".tabs"));
-  $("view").replaceChildren(...parts);
+  $("view").replaceChildren(...parts.filter(Boolean));
   if (view === "start") $("hero-search").replaceWith(search);
   document.title = view === "player" ? `${login} | Chat-RPG Statistik` : "Chat-RPG Statistik";
   const ld = s.load;

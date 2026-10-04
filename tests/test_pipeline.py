@@ -183,7 +183,7 @@ class BuildTests(unittest.TestCase):
         self.assertIsNone(fast["split"]["atk"])
 
     def test_fight_groups(self):
-        groups = self.summary["fights"]["groups"]
+        groups = self.summary["stats"]["types"]
         self.assertEqual([(g["name"], g["level"], g["n"], g["wins"]) for g in groups], [("Drache", 2, 8, 4)])
 
     def test_guild_series_is_complete_from_partial_records(self):
@@ -252,32 +252,6 @@ class BuildEdgeTests(unittest.TestCase):
         self.assertNotIn("quests", page["watch"])
         self.assertEqual(page["watch"]["slots"], {"HELMET": ["Helm", "Helm", 6, 1, 9, 2, True], "BOOTS": ["Stiefel"]})
         self.assertEqual(page["split"]["atk"], 1)
-
-    def test_old_fights_leave_the_statistics_window(self):
-        old = {"id": 1, "kind": "RAID", "difficulty": 1, "outcome": "VICTORY", "fighters": 5,
-               "endedAt": "2026-06-01T10:00:00Z"}
-        new = {"id": 2, "kind": "RAID", "difficulty": 1, "outcome": "DEFEAT", "fighters": 15,
-               "endedAt": "2026-09-30T10:00:00Z"}
-        now = datetime.fromisoformat("2026-09-30T12:00:00+00:00").timestamp()
-        groups = build.fight_groups([old, new], now)
-        self.assertEqual([(g["n"], g["wins"], g["fighters"]) for g in groups], [(1, 0, 15)])
-        self.assertIsNone(build.iso_ts(None))
-
-    def test_fight_groups_are_ordered_by_win_rate_then_number_of_fights(self):
-        def fight(i, kind, difficulty, outcome):
-            return {"id": i, "kind": kind, "difficulty": difficulty, "outcome": outcome, "fighters": 5,
-                    "endedAt": "2026-09-30T10:00:00Z"}
-        win, lose = "VICTORY", "DEFEAT"
-        fights = [fight(1, "ADVENTURE", 1, win), fight(2, "ADVENTURE", 1, lose),
-                  fight(3, "RAID", 1, win), fight(4, "RAID", 1, win),
-                  fight(5, "RAID", 1, lose), fight(6, "RAID", 1, lose),
-                  fight(7, "ADVENTURE", 2, win), fight(8, "RAID", 2, win),
-                  fight(9, "ADVENTURE", 3, win), fight(10, "ADVENTURE", 3, win), fight(11, "ADVENTURE", 3, win)]
-        now = datetime.fromisoformat("2026-09-30T12:00:00+00:00").timestamp()
-        groups = build.fight_groups(fights, now)
-        self.assertEqual([(g["kind"], g["n"], g["wins"]) for g in groups],
-                         [("ADVENTURE", 3, 3), ("ADVENTURE", 1, 1), ("RAID", 1, 1), ("RAID", 4, 2),
-                          ("ADVENTURE", 2, 1)])
 
     def test_guild_average_counts_active_members_only(self):
         pipe = Pipeline()

@@ -129,3 +129,79 @@ class StatsTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class WindowAndOrderTests(unittest.TestCase):
+    def test_old_fights_leave_the_window(self):
+        old = fight(1, hour=10, endedAt="2026-06-01T10:00:00Z")
+        new = fight(2, "DEFEAT")
+        types = fightstats.fight_stats([old, new], {}, NOW)["types"]
+        self.assertEqual([(t["n"], t["wins"]) for t in types], [(1, 0)])
+        self.assertIsNone(fightstats.iso_ts(None))
+
+    def test_types_are_ordered_by_win_rate_then_number_of_fights(self):
+        win, lose = "VICTORY", "DEFEAT"
+
+        def f(i, kind, difficulty, outcome):
+            return {**fight(i, outcome, kind), "difficulty": difficulty}
+        fights = [f(1, "ADVENTURE", 1, win), f(2, "ADVENTURE", 1, lose),
+                  f(3, "RAID", 1, win), f(4, "RAID", 1, win), f(5, "RAID", 1, lose), f(6, "RAID", 1, lose),
+                  f(7, "ADVENTURE", 2, win), f(8, "RAID", 2, win),
+                  f(9, "ADVENTURE", 3, win), f(10, "ADVENTURE", 3, win), f(11, "ADVENTURE", 3, win)]
+        types = fightstats.fight_stats(fights, {}, NOW)["types"]
+        self.assertEqual([(t["kind"], t["n"], t["wins"]) for t in types],
+                         [("ADVENTURE", 3, 3), ("ADVENTURE", 1, 1), ("RAID", 1, 1), ("RAID", 4, 2),
+                          ("ADVENTURE", 2, 1)])
+
+    def test_a_game_version_is_cut_out_by_time(self):
+        before = fight(1, hour=10, endedAt="2026-10-03T10:00:00Z")
+        after = fight(2, endedAt="2026-10-03T21:00:00Z")
+        undated = {**fight(3), "endedAt": None}
+        args = ([before, after, undated], {}, NOW + 86400)
+        self.assertEqual(fightstats.fight_stats(*args)["fights"], 3)
+        self.assertEqual(fightstats.fight_stats(*args, lo=fightstats.UPDATE)["fights"], 1)
+        self.assertEqual(fightstats.fight_stats(*args, hi=fightstats.UPDATE)["fights"], 1)
+
+
+LOG = [
+    "Aufbruch nach „Gift im Moor“: 1014 ziehen los - alice, bob und 1012 weitere.",
+    "Szene 1/3: Blaue Lichter tanzen über dem Wasser.",
+    "Der Chat wählt „Den Lichtern folgen“ (143 von 193): Sie führen euch an einem Abgrund vorbei.",
+    "Szene 2/3: Eine Brücke.",
+    "Der Chat wählt „Warten“ (304 von 443): Der Wind legt sich nicht. Ausgeschieden: kevo, nagath und 191 weitere. "
+    "Alle verlieren 10 % Leben. Die Gefahr steigt auf 2.",
+    "Szene 3/3: Ein Lagerhaus.",
+    "Der Chat wählt „Angreifen“ (383 von 529): Seine Leute fliehen. Je Kopf 80 Silber mehr am Ende. Kampf!",
+    "Kampf: carol und 267 weitere werden getroffen. Der Gegner fällt.",
+    "Geschafft! Stücke gehen an dave (silberner Turmschild).",
+]
+
+
+class StoryTests(unittest.TestCase):
+    def test_story_digest_counts_those_who_drop_out_and_keeps_no_names(self):
+        story = collect.story_digest(LOG)
+        self.assertEqual(story[0], ["Blaue Lichter tanzen über dem Wasser.", "Den Lichtern folgen", 143, 193,
+                                    "Sie führen euch an einem Abgrund vorbei.", 0, None, 0, 0, False])
+        self.assertEqual(story[1][1:], ["Warten", 304, 443, "Der Wind legt sich nicht.", 193, 2, 10, 0, False])
+        self.assertEqual(story[2][4:], ["Seine Leute fliehen.", 0, None, 0, 80, True])
+        self.assertNotIn("kevo", str(story))
+        self.assertIsNone(collect.story_digest(["Runde 1: ...", "Geschafft!"]))
+
+    def test_detail_digest_keeps_the_story_of_adventures_only(self):
+        self.assertEqual(len(collect.detail_digest(detail(kind="ADVENTURE", log=LOG))["story"]), 3)
+        self.assertNotIn("story", collect.detail_digest(detail(kind="BOSS", log=LOG)))
+        self.assertNotIn("story", collect.detail_digest(detail(kind="ADVENTURE", log=["Runde 1"])))
+
+    def test_story_stats_tell_scenes_and_picks_apart(self):
+        extra = {i: collect.detail_digest(detail(kind="ADVENTURE", log=LOG)) for i in (1, 2)}
+        extra[2]["story"][1][1] = "Springen"
+        fights = [fight(1, name="Gift im Moor"), fight(2, "DEFEAT", name="Gift im Moor"), fight(3)]
+        stories = fightstats.story_stats(fights, extra, NOW)
+        self.assertEqual(len(stories), 1)
+        story = stories[0]
+        self.assertEqual((story["name"], story["n"], story["wins"]), ("Gift im Moor", 2, 1))
+        self.assertEqual([s["i"] for s in story["scenes"]], [1, 2, 3])
+        picks = story["scenes"][1]["picks"]
+        self.assertEqual(sorted((p["choice"], p["n"], p["wins"]) for p in picks),
+                         [("Springen", 1, 0), ("Warten", 1, 1)])
+        self.assertEqual(picks[0]["out"], round(100 * 193 / 4, 1))

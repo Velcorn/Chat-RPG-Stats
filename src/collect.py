@@ -52,9 +52,10 @@ def read_watchlist(path: Path) -> list[str]:
     return sorted({n for n in names if n})
 
 
-def snapshot(site: Site, watchlist: list[str], detail_after: int = 0) -> dict:
+def snapshot(site: Site, watchlist: list[str], detail_after: int = 0, compendium_day: str | None = None) -> dict:
     """Everything one run asks the site, in the site's own shapes. Fights newer than `detail_after` also cost one
-    request for their detail page (the archive's own numbers: who fell, roles, damage)."""
+    request for their detail page (the archive's own numbers: who fell, roles, damage). With `compendium_day` (the
+    date of the first run of a day) the game's reference page is read as well; it hardly ever changes."""
     snap: dict = {"guilds": {}, "watch": {}, "details": {}}
     for g in site.get("/api/guilds"):
         if g.get("members"):
@@ -72,6 +73,11 @@ def snapshot(site: Site, watchlist: list[str], detail_after: int = 0) -> dict:
     snap["live"] = site.get("/api/combat?kompakt=true")
     snap["channels"] = site.get("/api/channels")
     snap["rules"] = site.get("/api/rules")
+    if compendium_day:
+        try:
+            snap["compendium"], snap["compendium_day"] = site.get("/api/compendium"), compendium_day
+        except urllib.error.HTTPError as exc:  # an extra: a failing page must not cost the rest of the run
+            exc.close()
     for login in watchlist:
         try:
             snap["watch"][login] = site.get(f"/api/players/{quote(login)}")
@@ -94,6 +100,50 @@ def silver_value(text: str | None) -> int | None:
     return -value if m[1] != "+" else value
 
 
+def price_value(text: str | None) -> int | None:
+    """"4545 Gold 20 Silber" -> 454520 (silver), None when there is no price."""
+    m = re.fullmatch(r"\s*(?:(\d+) Gold)?\s*(?:(\d+) Silber)?\s*", text or "")
+    return int(m[1] or 0) * 100 + int(m[2] or 0) if m and (m[1] or m[2]) else None
+
+
+SCENE = re.compile(r"^Szene (\d+)/(\d+): (.*)$")
+CHOICE = re.compile(r"^Der Chat wählt \u201e(.+?)\u201c \((\d+) von (\d+)\): (.*)$")
+OUT = re.compile(r" ?Ausgeschieden: ([^.]*)\.")
+MORE = re.compile(r" und (\d+) weitere$")
+DANGER = re.compile(r" ?Die Gefahr steigt auf (\d+)\.")
+LIFE = re.compile(r" ?Alle verlieren (\d+) % Leben\.")
+PAY = re.compile(r" ?Je Kopf (\d+) Silber (weniger|mehr)(?: am Ende)?\.")
+
+
+def story_digest(log: list[str]) -> list[list] | None:
+    """The scenes of a story adventure from its log: [text, choice, votes, total, result, out, danger, life,
+    silver, fight] per scene. The names of those who dropped out are counted, never kept."""
+    scenes: list[list] = []
+    for line in log:
+        if m := SCENE.match(line):
+            scenes.append([m[3], None, 0, 0, "", 0, None, 0, 0, False])
+        elif (m := CHOICE.match(line)) and scenes:
+            text, row = m[4], scenes[-1]
+            if o := OUT.search(text):
+                names = o[1]
+                row[5] = (int(more[1]) if (more := MORE.search(names)) else 0) + \
+                    len(re.split(r", | und ", MORE.sub("", names)))
+                text = OUT.sub("", text)
+            if d := DANGER.search(text):
+                row[6] = int(d[1])
+                text = DANGER.sub("", text)
+            if lf := LIFE.search(text):
+                row[7] = int(lf[1])
+                text = LIFE.sub("", text)
+            if pay := PAY.search(text):
+                row[8] = int(pay[1]) * (1 if pay[2] == "mehr" else -1)
+                text = PAY.sub("", text)
+            if text.endswith("Kampf!"):
+                row[9], text = True, text[:-len("Kampf!")]
+            row[1:5] = [m[1], int(m[2]), int(m[3]), text.strip()]
+    return [r for r in scenes if r[1]] or None
+
+
 def detail_digest(d: dict) -> dict:
     """What one finished fight's detail page adds up to: sums and counts only, nothing per player."""
     n, dead, pay = [0, 0, 0], [0, 0, 0], {True: [], False: []}
@@ -106,9 +156,10 @@ def detail_digest(d: dict) -> dict:
             pay[bool(f.get("alive"))].append(v)
     tally = (d.get("crowd") or {}).get("tally") or {}
     mean = lambda xs: round(sum(xs) / len(xs)) if xs else None  # noqa: E731
-    return {"roles": n, "dead": dead, "dmg": tally.get("damage"), "taken": tally.get("taken"),
-            "heal": tally.get("healing"), "boost": tally.get("boosted"), "round": d.get("round"),
-            "rounds": d.get("maxRounds"), "hp": d.get("hp"), "maxhp": d.get("maxHp"),
+    story = story_digest(d.get("log") or []) if d.get("kind") == "ADVENTURE" else None
+    return {**({"story": story} if story else {}), "roles": n, "dead": dead, "dmg": tally.get("damage"),
+            "taken": tally.get("taken"), "heal": tally.get("healing"), "boost": tally.get("boosted"),
+            "round": d.get("round"), "rounds": d.get("maxRounds"), "hp": d.get("hp"), "maxhp": d.get("maxHp"),
             "pay": [mean(pay[True]), mean(pay[False])]}
 
 
@@ -122,15 +173,36 @@ def live_digest(e: dict) -> dict:
             "tanks": [b.get("tanksStanding"), b.get("tanksTotal")]}
 
 
+def compendium_state(c: dict) -> dict:
+    """The reference data worth showing: no icons, examples, intro texts or the stale Mythic fields."""
+    pick = lambda rows, *keys: [{k: r.get(k) for k in keys} for r in rows or []]  # noqa: E731
+    return {"potions": pick(c.get("potions"), "kind", "label", "description", "use"),
+            "tiers": pick(c.get("tiers"), "tier", "material", "templates", "sources"),
+            "bosses": [{**{k: b.get(k) for k in ("name", "lootTierMin", "lootTierMax", "gearTier", "recommendedGear",
+                                                 "hidden", "unlockedBy")},
+                        "hoard": pick(b.get("hoard"), "name", "slot")} for b in c.get("bosses") or []],
+            "fights": pick(c.get("fights"), "name", "kind", "kindLabel", "difficulty"),
+            "projects": pick(c.get("projects"), "project", "label", "description", "nextBattle")}
+
+
+def guild_state(page: dict) -> dict:
+    g, boss = page.get("guild") or {}, page.get("boss") or {}
+    buildings = {b["key"]: [b.get("level"), b.get("maxLevel"), b.get("label"), b.get("effect"),
+                            price_value(b.get("nextPrice"))] for b in page.get("buildings") or []}
+    bosses = {b["name"]: [b.get("highestWon"), b.get("nextPriceSilver"), b.get("nextRecommendedGear")]
+              for b in boss.get("bosses") or []}
+    return {"name": g.get("name"), "treasury": g.get("treasurySilver"), "members": g.get("members"),
+            "active": g.get("activeMembers"), "gear": g.get("gearScore"), "raid": g.get("raidLevel"),
+            "boss_wins": boss.get("wins"), "boss_losses": boss.get("losses"), "boss_gear": boss.get("averageGear"),
+            "buildings": buildings, "bosses": bosses}
+
+
 def state_from(snap: dict, prev: dict) -> dict:
     """The flat current state: compact values per player, guild, board and channel."""
     players: dict[str, dict] = {}
     guilds: dict[str, dict] = {}
     for glogin, page in snap["guilds"].items():
-        g, boss = page.get("guild") or {}, page.get("boss") or {}
-        guilds[glogin] = {"name": g.get("name"), "treasury": g.get("treasurySilver"), "members": g.get("members"),
-                          "active": g.get("activeMembers"), "gear": g.get("gearScore"), "raid": g.get("raidLevel"),
-                          "boss_wins": boss.get("wins"), "boss_losses": boss.get("losses")}
+        guilds[glogin] = guild_state(page)
         for m in page.get("members") or []:
             players[m["login"].lower()] = {"name": m.get("displayName"), "gear": m.get("gearScore"),
                                            "donated": m.get("donatedSilver"), "active": m.get("active"),
@@ -168,6 +240,9 @@ def state_from(snap: dict, prev: dict) -> dict:
             "channels": {c["login"]: bool(c.get("live")) for c in snap["channels"] if c.get("enabled")},
             "chat": {c["login"]: c.get("chatMode") for c in snap["channels"] if c.get("enabled")},
             "rules": {k: v for k, v in (snap.get("rules") or {}).items() if k != "playWindowOpenNow"},
+            "compendium": (compendium_state(snap["compendium"]) if snap.get("compendium")
+                           else prev.get("compendium", {})),
+            "compendium_day": snap.get("compendium_day") or prev.get("compendium_day"),
             "fight_last": max([prev.get("fight_last", 0), *(f.get("id", 0) for f in snap["fights"])]),
             "detail_last": max([prev.get("detail_last", 0), *snap.get("details", {})]),
             "live_seen": sorted({*prev.get("live_seen", []), *live_ids(snap)})[-30:]}
@@ -232,7 +307,9 @@ def main() -> int:
     state_file = args.data / "state.json"
     prev = json.loads(state_file.read_text("utf-8")) if state_file.exists() else {}
     try:
-        snap = snapshot(site, read_watchlist(args.watchlist), prev.get("detail_last", 0))
+        today = f"{now:%Y-%m-%d}"
+        snap = snapshot(site, read_watchlist(args.watchlist), prev.get("detail_last", 0),
+                        today if prev.get("compendium_day") != today else None)
     except (urllib.error.URLError, TimeoutError, ValueError) as exc:
         # The site is down or busy: skip this run instead of failing (and retrying) on every schedule.
         print(f"Seite nicht erreichbar, Lauf übersprungen: {exc}")

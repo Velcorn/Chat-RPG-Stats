@@ -61,6 +61,11 @@ def fallen(d: dict | None) -> dict:
     return {"dead": sum(d["dead"]), "death": pct(sum(d["dead"]), sum(d["roles"]))}
 
 
+def whose(d: dict | None) -> dict:
+    """The guild a fight was about, who summoned the boss and what the treasury lost (from its digest)."""
+    return {k: d[k] for k in ("gn", "by", "gc") if d and d.get(k) is not None}
+
+
 def summarize(fs: list[dict], extra: dict[int, dict]) -> dict:
     """One row for a set of fights: counts, win rate, and the digest numbers where there are any."""
     digests = [extra[f["id"]] for f in fs if "roles" in extra.get(f["id"], {})]
@@ -182,3 +187,27 @@ def story_stats(fights: list[dict], extra: dict[int, dict], now: float, days: in
                      "fighters": mean([f.get("fighters") for f, _ in rs]), "scenes": scene_rows,
                      "last": max(f["id"] for f, _ in rs)})
     return sorted(rows, key=lambda r: (-r["n"], r["name"] or ""))
+
+
+def guild_fights(fights: list[dict], extra: dict[int, dict], now: float, days: int = 30) -> list[dict]:
+    """Per guild, from the fights whose detail page names it: the raids on its treasury (how many it fended off and
+    what the treasury lost or won) and the bosses it summoned (how many it beat)."""
+    rows: dict[str, dict] = {}
+    for f in fights:
+        d = extra.get(f["id"], {})
+        t = iso_ts(f.get("endedAt"))
+        if not d.get("gn") or (t and t < now - days * DAY):
+            continue
+        row = rows.setdefault(d["gn"], {"guild": d["gn"], "raids": 0, "raid_wins": 0, "raid_known": 0, "lost": 0,
+                                        "won": 0, "bosses": 0, "boss_wins": 0})
+        win = f.get("outcome") == "VICTORY"
+        if f.get("kind") == "RAID":
+            row["raids"] += 1
+            row["raid_wins"] += win
+            if d.get("gc") is not None:
+                row["raid_known"] += 1
+                row["lost" if d["gc"] < 0 else "won"] += abs(d["gc"])
+        elif f.get("kind") == "BOSS" and d.get("by"):
+            row["bosses"] += 1
+            row["boss_wins"] += win
+    return sorted(rows.values(), key=lambda r: (-(r["raids"] + r["bosses"]), r["guild"]))

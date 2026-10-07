@@ -199,6 +199,8 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
                "eras": {"after": fightstats.fight_stats(h.fights, h.fightx, now, lo=fightstats.UPDATE),
                         "before": fightstats.fight_stats(h.fights, h.fightx, now, hi=fightstats.UPDATE)},
                "stories": fightstats.story_stats(h.fights, h.fightx, now),
+               "guild_fights": fightstats.guild_fights(h.fights, h.fightx, now),
+               "first_kills": state.get("first_kills", []),
                "channels": state.get("channels", {}),
                "channel_stats": channel_stats(h, state, summary_stats["channels"]),
                "rules": {"now": state.get("rules", {}), "log": h.rules_log[::-1][:60],
@@ -211,6 +213,7 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
         shutil.rmtree(target)
     (target / "p").mkdir(parents=True)
     write(target / "summary.json", summary)
+    write(target / "changelog.json", state.get("changelog", []))
     write(target / "players.json", sorted(([login, p.get("name") or login, p.get("gear"), p.get("guild")]
                                            for login, p in players.items() if p.get("gear") is not None),
                                           key=lambda r: -r[2]))
@@ -225,7 +228,8 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
 
 def recent_fights(h: History, n: int = 50) -> list[dict]:
     """The last fights, newest first, with the share that fell where the fight has a detail digest."""
-    return [{**f, **fightstats.fallen(h.fightx.get(f["id"]))} for f in h.fights[-n:][::-1]]
+    return [{**f, **fightstats.fallen(h.fightx.get(f["id"])), **fightstats.whose(h.fightx.get(f["id"]))}
+            for f in h.fights[-n:][::-1]]
 
 
 def channel_stats(h: History, state: dict, fights_by_channel: list[dict]) -> dict:

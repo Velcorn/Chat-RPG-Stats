@@ -2,7 +2,7 @@
 
 Runs every 15 minutes in GitHub Actions during the game's play window. Reads only public endpoints (no login,
 no cookies) and never sends anything but GETs. One run is about sixteen requests plus one per new fight, two
-seconds apart.
+seconds apart; once a day come the compendium and the first kills (one each) and the changelog (three).
 """
 from __future__ import annotations
 
@@ -36,13 +36,20 @@ class Site:
     def __init__(self, pause: float = PAUSE):
         self.pause, self.requests = pause, 0
 
-    def get(self, path: str):
+    def fetch(self, path: str, accept: str) -> bytes:
         if self.requests:
             time.sleep(self.pause)
         self.requests += 1
-        req = urllib.request.Request(BASE + path, headers={"User-Agent": user_agent(), "Accept": "application/json"})
+        req = urllib.request.Request(BASE + path, headers={"User-Agent": user_agent(), "Accept": accept})
         with urllib.request.urlopen(req, timeout=30) as resp:
-            return json.load(resp)
+            return resp.read()
+
+    def get(self, path: str):
+        return json.loads(self.fetch(path, "application/json"))
+
+    def text(self, path: str) -> str:
+        """A page or script of the site itself (not the JSON API)."""
+        return self.fetch(path, "*/*").decode("utf-8")
 
 
 def read_watchlist(path: Path) -> list[str]:
@@ -52,10 +59,53 @@ def read_watchlist(path: Path) -> list[str]:
     return sorted({n for n in names if n})
 
 
-def snapshot(site: Site, watchlist: list[str], detail_after: int = 0, compendium_day: str | None = None) -> dict:
+def parse_changelog(js: str) -> list[dict]:
+    """The changelog page's entries ([{date, title, groups: [{title, items}]}], newest first) from its script
+    chunk, where they sit as a JS literal with backtick strings and bare keys: turned into JSON piece by piece."""
+    start = js.find("[{date:`")
+    if start < 0:
+        raise ValueError("keine Changelog-Einträge im Skript")
+    out, code, depth, i = [], "", 0, start
+    while True:
+        c = js[i]
+        if c == "`":
+            end = i + 1
+            while js[end] != "`":
+                end += 2 if js[end] == "\\" else 1
+            out.append(re.sub(r"([{,])(\w+):", r'\1"\2":', code))  # bare keys, only outside strings
+            out.append(json.dumps(js[i + 1:end].replace("\\`", "`")))
+            code, i = "", end + 1
+            continue
+        code += c
+        depth += (c in "[{") - (c in "]}")
+        i += 1
+        if depth == 0:
+            out.append(re.sub(r"([{,])(\w+):", r'\1"\2":', code))
+            return json.loads("".join(out))
+
+
+def read_changelog(site: Site) -> list[dict]:
+    """The game's changelog. It has no API: it is built into the /changelog page's script, found via the router in
+    the site's entry script (three requests)."""
+    entry = re.search(r'<script[^>]+src="(/_nuxt/[\w.-]+\.js)"', site.text("/"))
+    router = site.text(entry[1]) if entry else ""
+    chunk = re.search(r"path:`/changelog`,component:\(\)=>\w+\(\(\)=>import\(`\./([\w.-]+\.js)`", router)
+    if not chunk:
+        raise ValueError("Changelog-Seite nicht gefunden")
+    return parse_changelog(site.text("/_nuxt/" + chunk[1]))
+
+
+# Reference data read once a day (on the first run of a day that has not got it): name -> how to read it.
+DAILY = {"compendium": lambda site: site.get("/api/compendium"),
+         "first_kills": lambda site: site.get("/api/guilds/first-kills"),
+         "changelog": read_changelog}
+
+
+def snapshot(site: Site, watchlist: list[str], detail_after: int = 0, daily: dict[str, str] | None = None) -> dict:
     """Everything one run asks the site, in the site's own shapes. Fights newer than `detail_after` also cost one
-    request for their detail page (the archive's own numbers: who fell, roles, damage). With `compendium_day` (the
-    date of the first run of a day) the game's reference page is read as well; it hardly ever changes."""
+    request for their detail page (the archive's own numbers: who fell, roles, damage). `daily` maps the reference
+    data that is due (the game's compendium, the guilds' first kills, its changelog; they hardly ever change) to
+    today's date; what was read lands in the snapshot with its date in `days`."""
     snap: dict = {"guilds": {}, "watch": {}, "details": {}}
     for g in site.get("/api/guilds"):
         if g.get("members"):
@@ -73,11 +123,14 @@ def snapshot(site: Site, watchlist: list[str], detail_after: int = 0, compendium
     snap["live"] = site.get("/api/combat?kompakt=true")
     snap["channels"] = site.get("/api/channels")
     snap["rules"] = site.get("/api/rules")
-    if compendium_day:
+    for name, day in (daily or {}).items():
         try:
-            snap["compendium"], snap["compendium_day"] = site.get("/api/compendium"), compendium_day
+            snap[name] = DAILY[name](site)
+            snap.setdefault("days", {})[name] = day
         except urllib.error.HTTPError as exc:  # an extra: a failing page must not cost the rest of the run
             exc.close()
+        except (urllib.error.URLError, TimeoutError, ValueError, IndexError):
+            pass
     for login in watchlist:
         try:
             snap["watch"][login] = site.get(f"/api/players/{quote(login)}")
@@ -157,7 +210,12 @@ def detail_digest(d: dict) -> dict:
     tally = (d.get("crowd") or {}).get("tally") or {}
     mean = lambda xs: round(sum(xs) / len(xs)) if xs else None  # noqa: E731
     story = story_digest(d.get("log") or []) if d.get("kind") == "ADVENTURE" else None
-    return {**({"story": story} if story else {}), "roles": n, "dead": dead, "dmg": tally.get("damage"),
+    # Whose fight it was: the guild it is about (a raid on its treasury, a boss it summoned), the summoner's channel
+    # and what the treasury lost or won (the game's text, parsed). Only what the page has.
+    guild = {k: v for k, v in (("gn", d.get("guildName")), ("by", d.get("summonedBy")),
+                               ("gc", silver_value(d.get("treasuryChange"))),
+                               ("go", True if d.get("guildOnly") else None)) if v is not None}
+    return {**({"story": story} if story else {}), **guild, "roles": n, "dead": dead, "dmg": tally.get("damage"),
             "taken": tally.get("taken"), "heal": tally.get("healing"), "boost": tally.get("boosted"),
             "round": d.get("round"), "rounds": d.get("maxRounds"), "hp": d.get("hp"), "maxhp": d.get("maxHp"),
             "pay": [mean(pay[True]), mean(pay[False])]}
@@ -182,13 +240,30 @@ def compendium_state(c: dict) -> dict:
                                                  "hidden", "unlockedBy")},
                         "hoard": pick(b.get("hoard"), "name", "slot")} for b in c.get("bosses") or []],
             "fights": pick(c.get("fights"), "name", "kind", "kindLabel", "difficulty"),
-            "projects": pick(c.get("projects"), "project", "label", "description", "nextBattle")}
+            "projects": pick(c.get("projects"), "project", "label", "description", "nextBattle"),
+            "workshop": workshop_state(c.get("workshop") or {})}
+
+
+def workshop_state(w: dict) -> dict:
+    """The Schmiede's levels (highest seal tier, the boss the guild must have beaten, seals per piece) and the
+    Lager's wares with the Lager level that unlocks them."""
+    pick = lambda rows, *keys: [{k: r.get(k) for k in keys} for r in rows or [] if isinstance(r, dict)]  # noqa: E731
+    return {"forge": pick(w.get("forge"), "level", "upTo", "upToTier", "requires", "sealsPerItem"),
+            "wares": pick(w.get("wares"), "kind", "label", "description", "level", "price"),
+            "sealSalePerTier": w.get("sealSalePerTier")}
+
+
+def first_kills_state(rows) -> list[list]:
+    """The guilds' first kills as [boss, level, guild login, guild name, time, boss order], in the game's order."""
+    return [[r.get("bossName"), r.get("level"), r.get("guildLogin"), r.get("guildName"), r.get("at"),
+             r.get("bossOrder")] for r in rows if isinstance(r, dict)] if isinstance(rows, list) else []
 
 
 def guild_state(page: dict) -> dict:
     g, boss = page.get("guild") or {}, page.get("boss") or {}
     buildings = {b["key"]: [b.get("level"), b.get("maxLevel"), b.get("label"), b.get("effect"),
-                            price_value(b.get("nextPrice"))] for b in page.get("buildings") or []}
+                            price_value(b.get("nextPrice")), b.get("nextEffect"), b.get("blocker")]
+                 for b in page.get("buildings") or []}
     bosses = {b["name"]: [b.get("highestWon"), b.get("nextPriceSilver"), b.get("nextRecommendedGear")]
               for b in boss.get("bosses") or []}
     return {"name": g.get("name"), "treasury": g.get("treasurySilver"), "members": g.get("members"),
@@ -242,7 +317,10 @@ def state_from(snap: dict, prev: dict) -> dict:
             "rules": {k: v for k, v in (snap.get("rules") or {}).items() if k != "playWindowOpenNow"},
             "compendium": (compendium_state(snap["compendium"]) if snap.get("compendium")
                            else prev.get("compendium", {})),
-            "compendium_day": snap.get("compendium_day") or prev.get("compendium_day"),
+            "first_kills": (first_kills_state(snap["first_kills"]) if "first_kills" in snap
+                            else prev.get("first_kills", [])),
+            "changelog": snap["changelog"] if snap.get("changelog") else prev.get("changelog", []),
+            "days": {**prev.get("days", {}), **snap.get("days", {})},
             "fight_last": max([prev.get("fight_last", 0), *(f.get("id", 0) for f in snap["fights"])]),
             "detail_last": max([prev.get("detail_last", 0), *snap.get("details", {})]),
             "live_seen": sorted({*prev.get("live_seen", []), *live_ids(snap)})[-30:]}
@@ -309,7 +387,7 @@ def main() -> int:
     try:
         today = f"{now:%Y-%m-%d}"
         snap = snapshot(site, read_watchlist(args.watchlist), prev.get("detail_last", 0),
-                        today if prev.get("compendium_day") != today else None)
+                        {n: today for n in DAILY if prev.get("days", {}).get(n) != today})
     except (urllib.error.URLError, TimeoutError, ValueError) as exc:
         # The site is down or busy: skip this run instead of failing (and retrying) on every schedule.
         print(f"Seite nicht erreichbar, Lauf übersprungen: {exc}")

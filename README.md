@@ -8,8 +8,8 @@
 Ranglisten, Verlauf und Prognosen für das Twitch-Chat-RPG [rpg.sola.rip](https://rpg.sola.rip): Wie schnell wächst
 deine Kampfkraft, wann erreichst du den nächsten Rang oder die Top 100, wie verteilen ähnlich starke Spieler ihre
 Werte, wo stehst du in deiner Gilde, welche Kämpfe gewinnt man meistens. Die Seite hat vier Bereiche mit
-Unterseiten: Ranglisten (Kampfkraft, Silber, Errungenschaften, Quests, Aufsteiger, Bonus-Formel), Gilden (Vergleich und eine Seite pro Gilde),
-Kämpfe (Kampfarten, Abenteuer, Überleben, Kampfkraft, Wann und wo, letzte Kämpfe) und Spiel (Wirtschaft, Regeln, Änderungen, Kompendium), dazu eine Seite pro Spieler
+Unterseiten: Ranglisten (Kampfkraft, Silber, Errungenschaften, Quests, Aufsteiger), Gilden (Vergleich mit den ersten Siegen über die Bosse und eine Seite pro Gilde),
+Kämpfe (Kampfarten, Abenteuer, Überleben, Kampfkraft, Wann und wo, Gilden, letzte Kämpfe) und Spiel (Wirtschaft, Regeln, Änderungen, Kompendium), dazu eine Seite pro Spieler
 mit Teilen-Knopf. Die Startseite zeigt Kennzahlen, die Spielersuche, die Top 5, die Aufsteiger, die Gilden und die Streamer mit Live-Status, Chat-Modus, Link zum Stream und Gildenstand.
 
 **Zur Seite: <https://velcorn.github.io/Chat-RPG-Stats/>**
@@ -35,7 +35,9 @@ zeigt:
 | Durchschnittliche Kampfkraft und Empfehlung des zuletzt angezeigten Kampfes | laufender Kampf | 1 |
 | Kanäle | Kanalliste, Live-Status, Chat-Modus | 1 |
 | Regeln des Spiels (für den Änderungsverlauf) | Regeln | 1 |
-| Nachschlagewerk: Tränke, Stufen, Bosse, Kämpfe | Kompendium | 1 pro Tag |
+| Nachschlagewerk: Stufen, Bosse, Kämpfe, Schmiede und Lager | Kompendium | 1 pro Tag |
+| Erste Siege der Gilden über jeden Boss | Erstkills | 1 pro Tag |
+| Änderungsprotokoll des Spiels | Skript der Changelog-Seite | 3 pro Tag |
 | Spieler auf der Beobachtungsliste | Spielerseite | 1 pro Spieler |
 
 Ein Lauf macht also etwa 16 Anfragen und eine pro neuem Kampf, im Abstand von 2 Sekunden. Bei 4 Läufen pro Stunde und

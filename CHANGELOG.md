@@ -3,6 +3,20 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.12.0 (07.10.2026)
+
+**Neu**
+- Gilden: Im Vergleich stehen die ersten Siege der Gilden über jeden Boss (Stufe, Gilde, Zeitpunkt), auf der Gildenseite die der eigenen Gilde. Das Lager ist als fünftes Gebäude dabei, die Werkstatt heißt wie im Spiel Schmiede; die Gebäude nennen Wirkung und Sperre der nächsten Stufe.
+- Kämpfe: neue Seite "Gilden" mit den Überfällen auf die Kasse jeder Gilde (abgewehrt, Silber verloren und gewonnen) und den beschworenen Bossen. Die letzten Kämpfe zeigen Gilde und Kassenänderung. Beides wird erst ab diesem Stand gesammelt.
+- Spiel: Das Kompendium zeigt die Schmiede-Stufen und die Waren des Lagers.
+- Spiel: Die Seite "Änderungen" zeigt jetzt auch das Änderungsprotokoll des Spiels, nach Tagen sortiert und zum Aufklappen, zwischen den gemessenen Regeländerungen.
+
+**Verbessert**
+- Das Kompendium nennt sechs Bosse und keine Tränke mehr, weil das Lager den Alchemisten ersetzt hat.
+
+**Entfernt**
+- Die Seite "Bonus-Formel" und die Spalte "Bonus" in der Kampfkraft-Rangliste: Seit dem Umbau der Talente am 04.10.2026 zählt die Rangliste nur noch ATK, DEF und SUP.
+
 ## 0.11.0 (04.10.2026)
 
 **Neu**

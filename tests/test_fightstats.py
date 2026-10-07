@@ -127,6 +127,30 @@ class StatsTests(unittest.TestCase):
         self.assertNotIn("death", s["total"])
 
 
+class WhoseTests(unittest.TestCase):
+    def test_digest_keeps_the_guild_the_summoner_and_the_treasury_change(self):
+        d = collect.detail_digest(detail(guildName="Karni", summonedBy="sola", guildOnly=True,
+                                         treasuryChange=f"{MINUS}12 Gold 50 Silber"))
+        self.assertEqual((d["gn"], d["by"], d["gc"], d["go"]), ("Karni", "sola", -1250, True))
+        plain = collect.detail_digest(detail(guildName=None, treasuryChange="was anderes", guildOnly=False))
+        self.assertFalse({"gn", "by", "gc", "go"} & set(plain))
+        self.assertEqual(fightstats.whose(d), {"gn": "Karni", "by": "sola", "gc": -1250})
+        self.assertEqual(fightstats.whose(None), {})
+
+    def test_guild_fights_count_raids_and_summoned_bosses_per_guild(self):
+        fights = [fight(1, kind="RAID"), fight(2, "DEFEAT", kind="RAID"), fight(3, "DEFEAT", kind="RAID"),
+                  fight(4, kind="BOSS"), fight(5, "DEFEAT", kind="BOSS"), fight(6, kind="BOSS"),
+                  fight(7, kind="RAID"), {**fight(8, kind="RAID"), "endedAt": "2026-08-01T10:00:00Z"}]
+        extra = {1: {"gn": "Karni", "gc": 300}, 2: {"gn": "Karni", "gc": -1000}, 3: {"gn": "Karni"},
+                 4: {"gn": "Karni", "by": "sola"}, 5: {"gn": "Karni", "by": "sola"}, 6: {"gn": "Karni"},
+                 7: {"gn": "Anders"}, 8: {"gn": "Karni", "gc": -9}}
+        rows = fightstats.guild_fights(fights, extra, NOW)
+        self.assertEqual(rows[0], {"guild": "Karni", "raids": 3, "raid_wins": 1, "raid_known": 2, "lost": 1000,
+                                   "won": 300, "bosses": 2, "boss_wins": 1})
+        self.assertEqual((rows[1]["guild"], rows[1]["raids"], rows[1]["raid_known"]), ("Anders", 1, 0))
+        self.assertEqual(fightstats.guild_fights(fights, {}, NOW), [])
+
+
 if __name__ == "__main__":
     unittest.main()
 

@@ -122,6 +122,13 @@
   .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
   .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
   .note { color: var(--text-secondary); font-size: 13px; margin: 6px 0 0; }
+  .log h3 { font-size: 14px; margin: 14px 0 6px; color: var(--text-secondary); font-weight: 600; }
+  .log details { border-top: 1px solid var(--border, #2a2a28); padding: 6px 0; }
+  .log summary { cursor: pointer; }
+  .log details ul { margin: 6px 0 4px; padding-left: 18px; color: var(--text-secondary); font-size: 13px; }
+  .log details li { margin-top: 3px; }
+  .log details h4 { margin: 8px 0 0; font-size: 13px; color: var(--text); }
+  .log .rule { font-size: 13px; color: var(--text-secondary); padding: 3px 0; }
   ul.note { padding-left: 18px; }
   ul.note li { margin-top: 6px; }
   footer { color: var(--text-muted); font-size: 12px; padding: 8px 0 20px; }
@@ -315,42 +322,6 @@ function chartCard(title, series, opts) {
 }
 
 // ---- views ----
-// Talent bonus = Kampfkraft minus the raw stats (the game shows no bonus itself).
-const talentBonus = (r) => [r.atk, r.def, r.sup].some((x) => x == null) ? null : r.board_gear - r.atk - r.def - r.sup;
-
-function viewFormula(s) {
-  const bonus = s.board.map(talentBonus).filter((b) => b != null).sort((a, b) => a - b);
-  const at = (q) => bonus[Math.min(bonus.length - 1, Math.floor(q * bonus.length))];
-  const p = (...t) => el("p", { class: "note" }, ...t);
-  return [
-    card("Kampfkraft und Talentbonus",
-      p("Kampfkraft = ATK + DEF + SUP + Talentbonus. Die Rangliste des Spiels sortiert seit dem 30.09.2026 danach. ",
-        "Den Bonus zeigt das Spiel nicht an; die Spalte \"Bonus\" in der Rangliste ist Kampfkraft minus ATK, DEF und SUP. ",
-        bonus.length ? `In den aktuellen Top 100: kleinster Bonus ${fmtInt(bonus[0])}, Median ${fmtInt(at(0.5))}, größter ${fmtInt(bonus[bonus.length - 1])}.` : ""),
-      p("Die Formel steht nur auf dem Server. Alles unten ist eine Schätzung, abgeleitet aus den öffentlichen Werten, keine Angabe des Spiels.")),
-    card("Geschätzte Formel (Stand 03.10.2026)",
-      el("ul", { class: "note" },
-        el("li", {}, el("b", {}, "Seit dem Kampf-Umbau am 01.10.2026"), " misst die Kampf-Engine des Spiels den Bonus. Die Formeln von vorher (Bonus etwa 225 + 0,32 x ATK - 0,63 x DEF + 0,28 x SUP) gelten nicht mehr, der Bonus eines Verteidigers fiel dabei um rund ein Fünftel (z. B. 192 auf 145)."),
-        el("li", {}, el("b", {}, "Zwei Änderungen am 03.10.2026"), ": Um 07:14 steht im Änderungsprotokoll des Spiels, der Bonus wachse nun gleichmäßig mit der Ausrüstung. Gegen 10:59 änderte er sich noch einmal ohne Eintrag: Bei gleicher Ausrüstung sprang der Bonus des gemessenen Verteidigers von 112 auf 179, und der Durchschnitt der Top 100 stieg im Lauf des Tages von etwa 123 auf 151. Alte Messungen und Gewichte sind damit überholt."),
-        el("li", {}, el("b", {}, "Einzige belastbare Messung"), " (ein Verteidiger mit vollem Bollwerk-Baum, 70 Ausrüstungszustände durch An- und Ablegen am 03.10.2026, nach beiden Änderungen): Kampfkraft etwa 3,0 x ATK + 0,8 x DEF + 2,7 x SUP - 14, Abweichung um 9. ",
-          "Der Bonus allein: etwa 2,0 x ATK - 0,2 x DEF + 1,7 x SUP - 14. ATK zählt also knapp viermal so viel wie DEF, SUP gut dreimal so viel."),
-        el("li", {}, el("b", {}, "Beispiel"), ": Stählerne Handschuhe mit 12 ATK, 5 DEF und 6 SUP statt goldener mit 8 / 25 / 0 haben 10 Punkte weniger Ausrüstung, aber gemessen 34 Punkte mehr Kampfkraft (448 auf 482). Wer nur auf die Summe der Werte schaut, übersieht das."),
-        el("li", {}, el("b", {}, "Knick bei der Verteidigung"), ": Der Zustand bestimmt die Kampfkraft eindeutig, und die Gewichte gelten fast linear. Ab etwa 120 DEF zählt jeder weitere Punkt nur noch etwa halb so viel (rund 0,5 statt 0,8). Das verbessert die Schätzung nur wenig (Abweichung in der Kreuzprüfung 10 statt 12), die Gewichte bleiben eine Faustregel für kleine Änderungen nahe dieser Ausrüstung."),
-        el("li", {}, el("b", {}, "Verteidigung"), " zählt für die Kampfkraft weniger als ATK und SUP, schützt aber im Kampf: \"Mindert Schaden\" ist genau 100 x DEF / (DEF + 80) Prozent (bei 80 DEF 50 %, bei 160 67 %), und flacht nach oben ab.")),
-      p("Eine Anpassung an den Ranglisten geht nicht mehr: Die Top 100 sind nach Kampfkraft ausgewählt, alle haben fast dieselbe Summe, und eine Regression darauf liefert Gewichte um null (der Bonus sieht dann fallend in jedem Wert aus). Die alte Anpassung aus den Ranglisten litt schon darunter.")),
-    card("Was über die Talente bekannt ist",
-      el("ul", { class: "note" },
-        el("li", {}, "Der Bonus kommt fast nur von wenigen Talenten; Füller wie Schildwall oder Zähigkeit brachten 0 bis 2 (gemessen vor dem Umbau, vermutlich weiter so)."),
-        el("li", {}, "Bei einem Verteidiger brachten Herausforderung (2 Punkte), Abhärtung (3) und Zweiter Atem (2) zusammen etwa 154 (vor dem Umbau). Die einzelnen Beiträge hängen von der Reihenfolge ab, sie addieren sich also nicht einfach."),
-        el("li", {}, "Zwei Spieler mit demselben Talentbaum haben unterschiedlichen Bonus; der Unterschied kommt von ihren Werten, nicht von den Talenten."))),
-    card("Grenzen",
-      el("ul", { class: "note" },
-        el("li", {}, "Die Gewichte stammen von einem einzigen Spieler und Talentbaum, nicht von der Gesamtheit."),
-        el("li", {}, "Die Top 100 sind eine Auswahl: die obersten Plätze haben genau deshalb hohe Werte. Schwächere Spieler können anders rechnen."),
-        el("li", {}, "Das Spiel kann die Formel jederzeit ändern, es gab schon Änderungen ohne Changelog (zuletzt der Kampf-Umbau am 01.10.2026)."))),
-  ];
-}
-
 function viewRanks(s, sub) {
   const scroll = (title, cols, rows) => [card(title, el("div", { class: "scroll" }, table(cols, rows)))];
   const valueBoard = (title, label, rows, fmt = fmtInt) => scroll(title, [
@@ -360,7 +331,6 @@ function viewRanks(s, sub) {
     { label: label, num: true, get: (r) => fmt(r.value) },
     { label: "24 h", num: true, get: (r) => delta(r.value_day) },
   ], rows);
-  if (sub === "formel") return viewFormula(s);
   if (sub === "silber") return valueBoard("Rangliste Silber (Top 100)", "Silber", s.silver);
   if (sub === "errungenschaften") return valueBoard("Rangliste Errungenschaften (Top 100)", "Errungenschaften", s.achievements);
   if (sub === "quests") return valueBoard("Rangliste Quests (Top 100)", "Quests", s.quests);
@@ -392,7 +362,6 @@ function viewRanks(s, sub) {
       { label: "ATK", num: true, get: (r) => fmtInt(r.atk) },
       { label: "DEF", num: true, get: (r) => fmtInt(r.def) },
       { label: "SUP", num: true, get: (r) => fmtInt(r.sup) },
-      { label: "Bonus", num: true, title: "Kampfkraft minus ATK, DEF und SUP: der Talentbonus (siehe Bonus-Formel)", get: (r) => fmtInt(talentBonus(r)) },
     ], s.board),
   ];
 }
@@ -532,7 +501,7 @@ async function viewPlayer(s, login) {
 }
 
 // ---- guild buildings and bosses ----
-const BUILDING_ORDER = ["WERKSTATT", "KONTOR", "KRIEGSKASSE", "WALL"];
+const BUILDING_ORDER = ["WERKSTATT", "LAGER", "KONTOR", "KRIEGSKASSE", "WALL"];
 const bossShort = (name) => name.replace(/^(Die|Der|Das|Verteidigung der) /, "").split(" ")[0];
 function bossNames(guilds) {
   const names = [];
@@ -541,18 +510,21 @@ function bossNames(guilds) {
 }
 function buildingsOf(g) {
   const b = g.buildings || {};
-  return BUILDING_ORDER.filter((k) => b[k]).map((k) => ({ key: k, label: b[k][2], level: b[k][0], max: b[k][1], effect: b[k][3], next: b[k][4] }))
-    .concat(Object.keys(b).filter((k) => !BUILDING_ORDER.includes(k)).map((k) => ({ key: k, label: b[k][2], level: b[k][0], max: b[k][1], effect: b[k][3], next: b[k][4] })));
+  const row = (k) => ({ key: k, label: b[k][2], level: b[k][0], max: b[k][1], effect: b[k][3], next: b[k][4], nextEffect: b[k][5], blocker: b[k][6] });
+  return BUILDING_ORDER.filter((k) => b[k]).map(row).concat(Object.keys(b).filter((k) => !BUILDING_ORDER.includes(k)).map(row));
 }
 function buildingsCard(g) {
   const rows = buildingsOf(g);
   if (!rows.length) return null;
-  return card("Gebäude", table([
+  const full = (r) => r.level >= r.max;
+  return card("Gebäude", el("div", { class: "scroll" }, table([
     { label: "Gebäude", get: (r) => r.label },
     { label: "Stufe", num: true, get: (r) => `${fmtInt(r.level)} / ${fmtInt(r.max)}` },
     { label: "Wirkung", get: (r) => r.effect },
-    { label: "Nächste Stufe", num: true, get: (r) => r.level >= r.max ? "voll ausgebaut" : fmtSilver(r.next) }], rows),
-  el("p", { class: "note" }, "Gebaut wird aus der Gildenkasse. Die Preise der nächsten Stufe zeigt das Spiel."));
+    { label: "Nächste Stufe bringt", get: (r) => full(r) ? "-" : r.nextEffect || "-" },
+    { label: "Kosten", num: true, get: (r) => full(r) ? "voll ausgebaut" : fmtSilver(r.next) },
+    { label: "Gesperrt", get: (r) => full(r) || !r.blocker ? "-" : r.blocker }], rows)),
+  el("p", { class: "note" }, "Gebaut wird aus der Gildenkasse. Die Preise der nächsten Stufe zeigt das Spiel. Die Schmiede wirkt nur bis zum letzten Boss, den die Gilde der Reihe nach besiegt hat."));
 }
 function bossesCard(g) {
   const rows = Object.entries(g.bosses || {}).map(([name, v]) => ({ name, won: v[0], price: v[1], rec: v[2] }));
@@ -608,7 +580,19 @@ function viewGuildRace(s) {
       tile("Größte Kasse", richest ? richest.login : "-", richest ? fmtSilver(richest.treasury) : "")),
     card("Alle Gilden nach Ø Kampfkraft", el("div", { class: "scroll" }, table(cols, ranked)),
       el("p", { class: "note" }, "Der Durchschnitt zählt nur aktive Mitglieder. Gilden mit weniger als 10 aktiven Mitgliedern stehen unten und gewinnen oben keine Kachel.")),
-    progressCard(ranked))];
+    progressCard(ranked), firstKillsCard(s))];
+}
+
+// The guilds' first kills (the game's list: per boss and level the guild that got there first).
+function firstKillsCard(s, login) {
+  let rows = (s.first_kills || []).filter((r) => r[2] && (!login || r[2] === login));
+  if (!rows.length) return null;
+  rows = [...rows].sort((a, b) => (a[5] ?? 99) - (b[5] ?? 99) || (a[1] ?? 0) - (b[1] ?? 0));
+  const cols = [{ label: "Boss", get: (r) => r[0] }, { label: "Stufe", num: true, get: (r) => r[1] ?? "-" }];
+  if (!login) cols.push({ label: "Gilde", get: (r) => el("a", { href: `#/gilden/${r[2]}` }, r[3] || r[2]) });
+  cols.push({ label: "Wann", get: (r) => r[4] ? fmtSince(iso(r[4])) : "-" });
+  return card("Erste Siege über die Bosse", el("div", { class: "scroll" }, table(cols, rows)),
+    el("p", { class: "note" }, "Welche Gilde einen Boss auf einer Stufe zuerst besiegt hat, so wie das Spiel es führt."));
 }
 
 function viewGuild(s, login) {
@@ -625,6 +609,7 @@ function viewGuild(s, login) {
       chartCard("Kasse", g.series.map((r) => [r[0], r[1]]), { fmt: fmtSilver, until: s.generated }),
       chartCard("Aktive Mitglieder", g.series.map((r) => [r[0], r[3]]), { until: s.generated })),
     el("div", { class: "grid two" }, buildingsCard(g), bossesCard(g)),
+    firstKillsCard(s, g.login),
     el("div", { class: "grid two" },
       card("Höchste Kampfkraft", table([
         { label: "Spieler", get: playerLink }, { label: "Kampfkraft", num: true, get: (r) => fmtInt(r.gear) },
@@ -713,7 +698,9 @@ const RECENT_COLS = (s) => [
   { label: "Ende", get: (f) => fmtTime(iso(f.endedAt)) },
   { label: "Kanal", get: (f) => "#" + f.channel },
   { label: "Kampf", get: (f) => gameLink(`/kampfbericht/${f.id}`, f.kind === "BOSS" ? fightLabel(f) : `${f.name} (${fightLabel(f)})`) },
+  { label: "Gilde", title: "Die Gilde, um die es im Kampf ging (Überfall auf ihre Kasse, beschworener Boss)", get: (f) => f.gn || "-" },
   { label: "Teilnehmer", num: true, get: (f) => fmtInt(f.fighters) },
+  { label: "Kasse", num: true, title: "Was die Gildenkasse im Kampf verloren (-) oder gewonnen (+) hat", get: (f) => f.gc == null ? "-" : el("span", { class: f.gc < 0 ? "down" : "up" }, signed(f.gc)) },
   { label: "Gefallen", num: true, title: "Anteil der Teilnehmer, die in diesem Kampf gefallen sind (nur bei Kämpfen mit Einzelheiten)", get: (f) => pctv(f.death) },
   { label: "Ausgang", get: (f) => f.outcome === "VICTORY" ? el("span", { class: "up" }, "gewonnen") : el("span", { class: "down" }, "verloren") },
 ];
@@ -872,12 +859,28 @@ function viewStories(s) {
     )];
 }
 
+function viewGuildFights(s) {
+  const rows = s.guild_fights || [];
+  const known = rows.reduce((n, r) => n + r.raid_known, 0), raids = rows.reduce((n, r) => n + r.raids, 0);
+  return [card("Überfälle und beschworene Bosse je Gilde (30 Tage)", rows.length ? el("div", { class: "scroll" }, table([
+      { label: "Gilde", get: (r) => r.guild },
+      { label: "Überfälle", num: true, get: (r) => fmtInt(r.raids) },
+      { label: "Abgewehrt", num: true, get: (r) => r.raids ? `${fmtInt(r.raid_wins)} (${pct(r.raid_wins, r.raids)})` : "-" },
+      { label: "Kasse verloren", num: true, title: "Silber, das die Gildenkasse in Überfällen verloren hat", get: (r) => r.raid_known ? fmtSilver(r.lost) : "-" },
+      { label: "Kasse gewonnen", num: true, get: (r) => r.raid_known ? fmtSilver(r.won) : "-" },
+      { label: "Bosse beschworen", num: true, get: (r) => fmtInt(r.bosses) },
+      { label: "Davon besiegt", num: true, get: (r) => r.bosses ? `${fmtInt(r.boss_wins)} (${pct(r.boss_wins, r.bosses)})` : "-" },
+    ], rows)) : el("p", { class: "note" }, "Noch keine Kämpfe mit Gildenangaben gesammelt."),
+    el("p", { class: "note" }, `Aus den Kampfberichten des Spiels, nur Kämpfe, deren Bericht eine Gilde nennt (seit 0.12.0 gesammelt). Die Kasse gilt bei ${fmtInt(known)} von ${fmtInt(raids)} Überfällen; wo der Bericht keine Kassenänderung nennt, fehlt sie.`))];
+}
+
 function viewFights(s, sub) {
   const since = s.since ? el("p", { class: "note" }, `Erfasst wird seit ${fmtSince(s.since)}, frühere Kämpfe fehlen.`) : null;
   if (sub === "abenteuer") return viewStories(s);
   if (sub === "ueberleben") return [eraBar(s), ...viewSurvival(s)];
   if (sub === "kraft") return [eraBar(s), ...viewPower(s)];
   if (sub === "zeit") return [eraBar(s), ...viewWhen(s)];
+  if (sub === "gilden") return viewGuildFights(s);
   if (sub === "letzte") return [
     card("Letzte Kämpfe", el("div", { class: "scroll" }, table(RECENT_COLS(s), s.fights.recent)),
       el("p", { class: "note" }, "Der Kampfname führt zum Bericht im Spiel; alle Kämpfe: ", gameLink("/kampf", "Kämpfe im Spiel"), "."), since)];
@@ -982,6 +985,21 @@ const ruleName = (key) => (RULE_INFO[key] || { label: key }).label;
 
 const POTION_USE = { FIGHT: "nächster Kampf", GROUP: "ganze Gruppe", BOSS: "nächster Bosskampf", FORGE: "Schmieden", UPGRADE: "Verbessern",
                      SOCKET: "Sockeln", MEAL: "Mahlzeit", QUEST: "nächste Quest" };
+function workshopCards(c) {
+  const w = c.workshop || {};
+  if (!(w.forge || []).length && !(w.wares || []).length) return [];
+  return [
+    (w.forge || []).length ? card("Schmiede der Gilde", table([
+      { label: "Stufe", num: true, get: (r) => r.level }, { label: "Siegel bis", get: (r) => `${r.upTo} (Stufe ${r.upToTier})` },
+      { label: "Dafür besiegt", get: (r) => r.requires || "-" },
+      { label: "Siegel je Stück", num: true, get: (r) => fmtInt(r.sealsPerItem) }], w.forge),
+      el("p", { class: "note" }, "Die Schmiede wirkt nur bis zum letzten Boss, den die Gilde der Reihe nach besiegt hat; geschmiedete Stücke sind gebunden.")) : null,
+    (w.wares || []).length ? card("Lager der Gilde", el("div", { class: "scroll" }, table([
+      { label: "Ware", get: (r) => r.label }, { label: "Ab Lagerstufe", num: true, get: (r) => r.level },
+      { label: "Preis", num: true, get: (r) => fmtSilver(r.price) }, { label: "Wirkung", get: (r) => r.description }], w.wares)),
+      el("p", { class: "note" }, "Das Lager ersetzt den Alchemisten: Tränke gibt es nur hier, und der eine Kampftrank wirkt je nach Rolle.")) : null];
+}
+
 function viewCompendium(s) {
   const c = s.compendium || {};
   if (!c.tiers || !c.tiers.length) return [card("Kompendium", el("p", { class: "note" }, "Das Kompendium wird gerade erst gesammelt."))];
@@ -1003,12 +1021,34 @@ function viewCompendium(s) {
         { label: "Schwierigkeit", num: true, get: (r) => r.difficulty }], c.fights)),
       card("Gildenprojekte", table([
         { label: "Projekt", get: (r) => r.label }, { label: "Wirkung", get: (r) => r.description }], c.projects))),
-    card("Tränke, Rollen und Verpflegung", el("div", { class: "scroll" }, table([
+    ...workshopCards(c),
+    ((c.workshop || {}).wares || []).length ? null : card("Tränke und Verpflegung", el("div", { class: "scroll" }, table([
       { label: "Name", get: (r) => r.label }, { label: "Wirkung", get: (r) => r.description },
       { label: "Wirkt auf", get: (r) => POTION_USE[r.use] || r.use }], c.potions))))];
 }
 
-function viewGame(s, sub) {
+// The game's changelog (read from its page once a day) and the rule changes the collector measured, by day.
+const berlinDay = (t) => new Date(t * 1000).toLocaleDateString("sv-SE", { timeZone: TZ });
+async function viewChanges(s) {
+  let changelog = [];
+  try { changelog = await load("changelog.json"); } catch { /* an old build has none */ }
+  const days = new Map();
+  const day = (k) => days.get(k) || days.set(k, { entries: [], rules: [] }).get(k);
+  for (const e of changelog) { const m = /^(\d+)\.(\d+)\.(\d+)$/.exec(e.date || ""); if (m) day(`${m[3]}-${m[2]}-${m[1]}`).entries.push(e); }
+  for (const r of s.rules.log) day(berlinDay(r[0])).rules.push(r);
+  const keys = [...days.keys()].sort().reverse();
+  const heading = (k) => k.split("-").reverse().join(".");
+  const entry = (e, open) => el("details", open ? { open: "" } : {}, el("summary", {}, el("b", {}, e.title || "Änderung")),
+    (e.groups || []).flatMap((g) => [el("h4", {}, g.title), el("ul", {}, (g.items || []).map((i) => el("li", {}, i)))]));
+  const rule = (r) => el("div", { class: "rule" }, `${fmtClock(r[0])} Uhr, Regel gemessen: ${ruleName(r[1])} ${ruleText(r[1], r[2])} -> ${ruleText(r[1], r[3])}`);
+  const intro = el("p", { class: "note" }, "Das Änderungsprotokoll des Spiels, einmal am Tag von seiner Seite gelesen, und dazwischen die Regeln, die sich beim Abfragen geändert haben (oft ohne Eintrag). ",
+    gameLink("/changelog", "Im Spiel"), ". ", s.rules.since ? `Regeln werden seit ${fmtSince(s.rules.since)} bei jedem Lauf geprüft.` : "Die Regeln werden gerade erst gesammelt.");
+  if (!keys.length) return [card("Änderungen", intro, el("p", { class: "note" }, s.rules.since ? "Seit Beginn der Aufzeichnung hat sich keine Regel geändert." : ""))];
+  return [card("Änderungen", intro, el("div", { class: "log" }, keys.flatMap((k, i) => [el("h3", {}, heading(k)),
+    ...days.get(k).entries.map((e, j) => entry(e, i === 0 && j === 0)), ...days.get(k).rules.map(rule)])))];
+}
+
+async function viewGame(s, sub) {
   if (sub === "kompendium") return viewCompendium(s);
   if (sub === "regeln") {
     const now = s.rules.now;
@@ -1025,15 +1065,7 @@ function viewGame(s, sub) {
           el("dt", {}, ruleName(k)),
           el("dd", {}, el("b", {}, ruleText(k, now[k])), (RULE_INFO[k] || {}).help ? el("span", { class: "muted" }, (RULE_INFO[k] || {}).help) : null)])))))];
   }
-  if (sub === "aenderungen") {
-    const log = s.rules.log;
-    return [card("Regeländerungen", log.length ? el("div", { class: "scroll" }, table([
-      { label: "Wann", get: (r) => fmtTime(r[0]) }, { label: "Regel", get: (r) => ruleName(r[1]) },
-      { label: "Vorher", num: true, get: (r) => ruleText(r[1], r[2]) }, { label: "Nachher", num: true, get: (r) => ruleText(r[1], r[3]) },
-    ], log)) : el("p", { class: "note" }, s.rules.since
-      ? `Seit ${fmtSince(s.rules.since)} hat sich keine Regel geändert. Die Regeln werden bei jedem Lauf geprüft.`
-      : "Die Regeln werden gerade erst gesammelt."))];
-  }
+  if (sub === "aenderungen") return viewChanges(s);
   const e = s.economy, now = e.series[e.series.length - 1];
   const treasury = e.series.map((p) => [p.t, p.treasury]);
   const top = e.series.filter((p) => p.top100 != null).map((p) => [p.t, p.top100]);
@@ -1055,12 +1087,12 @@ function viewGame(s, sub) {
 const SECTIONS = {
   start: { subs: () => [], render: viewStart },
   rangliste: { subs: () => [["kampfkraft", "Kampfkraft"], ["silber", "Silber"], ["errungenschaften", "Errungenschaften"],
-                            ["quests", "Quests"], ["aufsteiger", "Aufsteiger"], ["formel", "Bonus-Formel"]], render: viewRanks },
+                            ["quests", "Quests"], ["aufsteiger", "Aufsteiger"]], render: viewRanks },
   gilden: { subs: (s) => [["vergleich", "Vergleich"], ...s.guilds.map((g) => [g.login, g.login])], render: viewGuild },
   spiel: { subs: () => [["wirtschaft", "Wirtschaft"], ["regeln", "Regeln"], ["aenderungen", "Änderungen"], ["kompendium", "Kompendium"]],
            render: viewGame },
   kaempfe: { subs: () => [["arten", "Kampfarten"], ["abenteuer", "Abenteuer"], ["ueberleben", "Überleben"], ["kraft", "Kampfkraft"],
-                          ["zeit", "Wann und wo"], ["letzte", "Letzte Kämpfe"]],
+                          ["zeit", "Wann und wo"], ["gilden", "Gilden"], ["letzte", "Letzte Kämpfe"]],
              render: viewFights },
 };
 async function route() {

@@ -43,12 +43,14 @@ def digest_totals(digests: list[dict]) -> dict:
     """Pooled numbers over fights that have a detail digest: every fighter counts once."""
     people = sum(sum(d["roles"]) for d in digests)
     dead = sum(sum(d["dead"]) for d in digests)
+    # Adventures without a fight (the chat's story ends before one) have an all-zero tally: they would only pull
+    # the averages down.
+    fought = [d for d in digests if d.get("dmg")]
+
+    def per_head(key):
+        return mean([d[key] / sum(d["roles"]) for d in fought if d.get(key) is not None and sum(d["roles"])])
     return {"people": people, "dead": dead, "death": pct(dead, people),
-            "dmg": mean([d["dmg"] / sum(d["roles"]) for d in digests if d.get("dmg") is not None and sum(d["roles"])]),
-            "taken": mean([d["taken"] / sum(d["roles"]) for d in digests
-                           if d.get("taken") is not None and sum(d["roles"])]),
-            "heal": mean([d["heal"] / sum(d["roles"]) for d in digests
-                          if d.get("heal") is not None and sum(d["roles"])]),
+            "dmg": per_head("dmg"), "taken": per_head("taken"), "heal": per_head("heal"), "boost": per_head("boost"),
             "rounds": mean([d["round"] for d in digests if d.get("round") and (d.get("rounds") or 0) > 1], 1),
             "pay_alive": mean([d["pay"][0] for d in digests if d.get("pay")]),
             "pay_dead": mean([d["pay"][1] for d in digests if d.get("pay")])}
@@ -124,6 +126,13 @@ def fight_stats(fights: list[dict], extra: dict[int, dict], now: float, days: in
     role_dead = [sum(extra[f["id"]]["dead"][i] for f in won) for i in range(3)]
     roles = [{"role": ROLE_NAMES[i], "share": pct(role_people[i], sum(role_people)),
               "death": pct(role_dead[i], role_people[i])} for i in range(3)] if won else []
+    # What each role did, per head and fight (every fight with a role split, won or lost; the sums exist only for
+    # fights collected since they were added).
+    fought = [extra[f["id"]] for f in detailed if extra[f["id"]].get("rsum") and extra[f["id"]].get("dmg")]
+    for i, row in enumerate(roles):
+        heads = sum(d["roles"][i] for d in fought)
+        row.update({key: round(sum(d["rsum"][i][j] for d in fought) / heads) if heads else None
+                    for j, key in enumerate(("dmg", "taken", "heal", "boost"))})
 
     with_power = [(extra[f["id"]], f) for f in window if extra.get(f["id"], {}).get("power")]
     margins = []

@@ -31,7 +31,7 @@ zeigt:
 | Kampfkraft, Spenden und Aktivität aller Gildenmitglieder | Gildenliste und Gildenseiten | 1 + 1 pro Gilde |
 | Top 100 nach Ausrüstungswert (mit ATK/DEF/SUP), Silber, Errungenschaften und Quests | Ranglisten | 4 |
 | Die letzten 20 Kämpfe aller Kanäle | Kampfarchiv | 1 |
-| Gefallene, Rollen und Schaden jedes neuen Kampfes (nur Summen) | Kampfbericht | 1 pro neuem Kampf, etwa 3 pro Lauf |
+| Gefallene, Rollen, Schaden, Heilung und Verstärkung jedes neuen Kampfes (nur Summen) | Kampfbericht | 1 pro neuem Kampf, etwa 3 pro Lauf |
 | Durchschnittliche Kampfkraft und Empfehlung des zuletzt angezeigten Kampfes | laufender Kampf | 1 |
 | Kanäle | Kanalliste, Live-Status, Chat-Modus | 1 |
 | Regeln des Spiels (für den Änderungsverlauf) | Regeln | 1 |

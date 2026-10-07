@@ -9,14 +9,15 @@ MINUS = chr(0x2212)  # the game writes a real minus sign
 NOW = datetime(2026, 10, 2, 22, 0, tzinfo=UTC).timestamp()
 
 
-def fighter(role, alive, gold):
-    return {"role": role, "alive": alive, "gold": gold, "login": "geheim"}
+def fighter(role, alive, gold, **numbers):
+    return {"role": role, "alive": alive, "gold": gold, "login": "geheim", **numbers}
 
 
 def detail(**extra):
-    return {"fighters": [fighter("TANK", True, "+2 Gold 10 Silber"),
-                         fighter("FIGHTER", False, f"{MINUS}3 Gold 36 Silber"),
-                         fighter("FIGHTER", True, "+4 Gold 90 Silber"), fighter("SUPPORT", False, f"{MINUS}1 Gold")],
+    return {"fighters": [fighter("TANK", True, "+2 Gold 10 Silber", damage=50, damageTaken=60),
+                         fighter("FIGHTER", False, f"{MINUS}3 Gold 36 Silber", damage=150, damageTaken=10),
+                         fighter("FIGHTER", True, "+4 Gold 90 Silber", damage=190, damageTaken=6),
+                         fighter("SUPPORT", False, f"{MINUS}1 Gold", damage=10, damageTaken=4, healing=20, boosted=8)],
             "crowd": {"tally": {"damage": 400, "taken": 80, "healing": 20, "boosted": 8}},
             "round": 7, "maxRounds": 39, "hp": 0, "maxHp": 1000, **extra}
 
@@ -40,6 +41,7 @@ class DigestTests(unittest.TestCase):
         self.assertEqual(d["dead"], [0, 1, 1])
         self.assertEqual((d["dmg"], d["taken"], d["heal"], d["boost"]), (400, 80, 20, 8))
         self.assertEqual(d["pay"], [round((210 + 490) / 2), round((-336 - 100) / 2)])
+        self.assertEqual(d["rsum"], [[50, 60, 0, 0], [340, 16, 0, 0], [10, 4, 20, 8]])
         self.assertNotIn("geheim", str(d))
 
     def test_live_digest_takes_the_engine_numbers(self):
@@ -93,6 +95,18 @@ class StatsTests(unittest.TestCase):
         self.assertEqual(s["roles"][1]["share"], 50.0)
         self.assertEqual(s["roles"][1]["death"], 50.0)  # won fights only: the lost fight 2 would make it 66.7
         self.assertEqual(s["total"]["dmg"], 100)
+
+    def test_what_each_role_did_per_head(self):
+        s = self.stats()
+        self.assertEqual([(r["dmg"], r["taken"], r["heal"], r["boost"]) for r in s["roles"]],
+                         [(50, 60, 0, 0), (170, 8, 0, 0), (10, 4, 20, 8)])
+        self.assertEqual(s["total"]["boost"], 2)
+
+    def test_fights_without_a_tally_do_not_pull_the_averages_down(self):
+        self.extra[4] = collect.detail_digest(detail(crowd={"tally": {"damage": 0, "taken": 0, "healing": 0,
+                                                                      "boosted": 0}}))
+        s = self.stats()
+        self.assertEqual((s["detail"], s["total"]["dmg"], s["total"]["boost"]), (4, 100, 2))
 
     def test_fallen_per_fight_and_for_the_power_list(self):
         self.assertEqual(fightstats.fallen(self.extra[2]), {"dead": 4, "death": 100.0})

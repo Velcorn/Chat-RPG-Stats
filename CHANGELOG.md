@@ -3,6 +3,15 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.14.0 (07.10.2026)
+
+**Neu**
+- Kämpfe, Überleben: Die Tabelle nach Kampfart zeigt jetzt auch Heilung und Verstärkung (der Schaden, den Unterstützer anderen dazugeben), die Kennzahlen dazu die Verstärkung.
+- Neue Karte "Was jede Rolle leistet": Schaden, erlittener Schaden, Heilung und Verstärkung je Rolle. Sie füllt sich mit den Kämpfen, die ab jetzt gesammelt werden.
+
+**Behoben**
+- Die Durchschnitte für Schaden, erlittenen Schaden und Heilung zählten Geschichten mit, in denen es nicht zum Kampf kam (alle Werte 0). Sie waren dadurch zu niedrig.
+
 ## 0.13.0 (07.10.2026)
 
 **Geändert**

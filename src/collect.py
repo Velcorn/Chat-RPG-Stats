@@ -200,11 +200,14 @@ def story_digest(log: list[str]) -> list[list] | None:
 def detail_digest(d: dict) -> dict:
     """What one finished fight's detail page adds up to: sums and counts only, nothing per player."""
     n, dead, pay = [0, 0, 0], [0, 0, 0], {True: [], False: []}
+    by_role = [[0, 0, 0, 0] for _ in ROLES]  # per role: damage, taken, healing, boosted
     for f in d.get("fighters") or []:
         if f.get("role") in ROLES:
             i = ROLES.index(f["role"])
             n[i] += 1
             dead[i] += not f.get("alive")
+            for j, key in enumerate(("damage", "damageTaken", "healing", "boosted")):
+                by_role[i][j] += f.get(key) or 0
         if (v := silver_value(f.get("gold"))) is not None:
             pay[bool(f.get("alive"))].append(v)
     tally = (d.get("crowd") or {}).get("tally") or {}
@@ -215,8 +218,9 @@ def detail_digest(d: dict) -> dict:
     guild = {k: v for k, v in (("gn", d.get("guildName")), ("by", d.get("summonedBy")),
                                ("gc", silver_value(d.get("treasuryChange"))),
                                ("go", True if d.get("guildOnly") else None)) if v is not None}
-    return {**({"story": story} if story else {}), **guild, "roles": n, "dead": dead, "dmg": tally.get("damage"),
-            "taken": tally.get("taken"), "heal": tally.get("healing"), "boost": tally.get("boosted"),
+    return {**({"story": story} if story else {}), **guild, "roles": n, "dead": dead, "rsum": by_role,
+            "dmg": tally.get("damage"), "taken": tally.get("taken"), "heal": tally.get("healing"),
+            "boost": tally.get("boosted"),
             "round": d.get("round"), "rounds": d.get("maxRounds"), "hp": d.get("hp"), "maxhp": d.get("maxHp"),
             "pay": [mean(pay[True]), mean(pay[False])]}
 

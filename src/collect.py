@@ -297,7 +297,7 @@ def state_from(snap: dict, prev: dict) -> dict:
     watch: dict[str, dict] = {}
     for login, p in snap["watch"].items():
         slots = {s["slot"]: [s.get("label"), i.get("name"), i.get("tier"), i.get("attack"), i.get("defense"),
-                             i.get("support"), bool(i.get("damaged"))] if (i := s.get("item")) else [s.get("label")]
+                             i.get("support"), i.get("durability")] if (i := s.get("item")) else [s.get("label")]
                  for s in p.get("slots") or []}
         watch[login] = {"survival": p.get("survivalPercent"), "life": p.get("life"),
                         "ach": p.get("achievementsUnlocked"), "stats": p.get("stats") or {}, "slots": slots}

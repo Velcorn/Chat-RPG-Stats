@@ -3,6 +3,12 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.12.1 (07.10.2026)
+
+**Geändert**
+- Der Wert aus der Rangliste heißt auf der ganzen Seite wieder Ausrüstungswert statt Kampfkraft (Ranglisten, Gilden, Start, Spielerseite). "Kampfkraft" bleibt nur auf den Kampfseiten, wo es den Durchschnitt aus Ausrüstung und Talenten gegen die Empfehlung meint.
+- Spielerseite, Ausrüstung: Die Markierung "schwächstes" ist weg. Statt "beschädigt" steht die Haltbarkeit in Prozent, sobald ein Stück unter 100 % liegt.
+
 ## 0.12.0 (07.10.2026)
 
 **Neu**

@@ -104,10 +104,14 @@
   .chart { position: relative; }
   .chart svg { display: block; width: 100%; height: 220px; overflow: visible; }
   .chart .axis text { fill: var(--text-muted); font-size: 11px; }
-  .chart .gridline { stroke: var(--grid); stroke-width: 1; }
-  .chart .line { fill: none; stroke: var(--series-1); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .chart .gridline { stroke: var(--grid); stroke-width: 1; stroke-dasharray: 2 5; }
+  .chart .line { fill: none; stroke: var(--series-1); stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
   .chart .end { fill: var(--series-1); stroke: var(--surface-1); stroke-width: 2; }
-  .chart .endlabel { fill: var(--text-primary); font-size: 12px; font-weight: 600; }
+  .chart .halo { fill: var(--series-1); opacity: .22; }
+  .chart .pill { fill: var(--series-1); }
+  .chart .endlabel { fill: #fff; font-size: 12px; font-weight: 700; }
+  .chart .band { fill: var(--series-1); }
+  .chart .bandlabel { fill: var(--text-muted); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; }
   .chart .hair { stroke: var(--text-muted); stroke-width: 1; }
   .chart .empty { fill: var(--text-muted); font-size: 13px; }
   .tip { position: absolute; pointer-events: none; background: var(--surface-2); border: 1px solid var(--border);
@@ -123,6 +127,7 @@
   .grow.head .atk { color: var(--atk); } .grow.head .def { color: var(--def); } .grow.head .sup { color: var(--sup); }
   .grow.sum { border-top: 1px solid var(--border); font-weight: 600; }
   .grow.sum .lead { grid-column: 1 / 4; }
+  .grow .kk { display: block; font-size: 12px; font-weight: 400; color: var(--text-secondary); }
   .grow .chip { justify-self: start; min-width: 30px; text-align: center; font-size: 12px; font-weight: 700; padding: 2px 0;
                 border-radius: 6px; background: color-mix(in srgb, var(--accent) var(--t, 0%), var(--surface-2)); }
   .grow .piece { min-width: 0; overflow-wrap: anywhere; }
@@ -294,7 +299,7 @@ function lineChart(box, points, { label, fmt = fmtInt, invert = false, until, em
   if (until && points.length && until > points[points.length - 1].t) points = [...points, { t: until, v: points[points.length - 1].v }];
   const lastPt = points.filter((p) => p.v != null).pop();
   const endText = lastPt ? (invert ? "#" + lastPt.v : fmt(lastPt.v)) : "";
-  const W = Math.max(220, box.clientWidth), H = 220, m = { l: 60, r: 16 + endText.length * 7.5, t: 10, b: 22 };
+  const W = Math.max(220, box.clientWidth), H = 220, m = { l: 60, r: 28 + endText.length * 7.6, t: 10, b: 22 };
   const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": label });
   box.append(svg);
   const pts = points.filter((p) => p.v != null);
@@ -323,17 +328,40 @@ function lineChart(box, points, { label, fmt = fmtInt, invert = false, until, em
       (t1 - t0) > 2 * 86400 ? new Date(t * 1000).toLocaleDateString("de-DE", { timeZone: TZ, day: "2-digit", month: "2-digit" }) : fmtClock(t)));
   }
   svg.append(axis);
-  let d = "", prev = null;
-  for (const p of points) {
-    if (p.v == null) { prev = null; continue; }
-    d += prev == null ? `M${x(p.t).toFixed(1)},${y(p.v).toFixed(1)}`
-      : `L${x(p.t).toFixed(1)},${y(prev).toFixed(1)}L${x(p.t).toFixed(1)},${y(p.v).toFixed(1)}`;
-    prev = p.v;
+  // Step line (a value holds until the next snapshot); gaps (e.g. rank outside the top 100) break it. The area
+  // runs toward the better side (up for ranks), so more fill is always better. Ranks get Top 10/25/50 bands.
+  const runs = []; let cur = null;
+  for (const p of points) { if (p.v == null) { cur = null; continue; } if (!cur) runs.push(cur = []); cur.push(p); }
+  const base = invert ? m.t : H - m.b;
+  const gid = "g" + Math.random().toString(36).slice(2, 7);
+  const grad = sv("linearGradient", { id: gid, x1: 0, x2: 0, y1: invert ? 1 : 0, y2: invert ? 0 : 1 });
+  grad.append(sv("stop", { offset: "0%", "stop-color": "var(--series-1)", "stop-opacity": ".34" }),
+    sv("stop", { offset: "100%", "stop-color": "var(--series-1)", "stop-opacity": "0" }));
+  const defs = sv("defs"); defs.append(grad); svg.append(defs);
+  if (invert) {
+    [[1, 10, "Top 10", .07], [10, 25, "Top 25", .11], [25, 50, "Top 50", .07]].forEach(([from, to, name, opacity]) => {
+      const ya = y(Math.max(lo, from)), yb = y(Math.min(hi, to));
+      if (to < lo || from > hi || yb <= ya) return;
+      svg.insertBefore(sv("rect", { x: m.l, y: ya, width: W - m.l - m.r, height: yb - ya, class: "band", opacity }), axis);
+      svg.append(sv("text", { x: m.l + 8, y: ya + 14, class: "bandlabel" }, name));
+    });
   }
+  let d = "", area = "";
+  for (const run of runs) {
+    let seg = "";
+    run.forEach((p, i) => { const px = x(p.t).toFixed(1), py = y(p.v).toFixed(1); seg += i === 0 ? `M${px},${py}` : `H${px}V${py}`; });
+    d += seg;
+    area += `${seg}L${x(run[run.length - 1].t).toFixed(1)},${base}L${x(run[0].t).toFixed(1)},${base}Z`;
+  }
+  svg.append(sv("path", { d: area, fill: `url(#${gid})` }));
   svg.append(sv("path", { d, class: "line" }));
   const last = pts[pts.length - 1];
-  svg.append(sv("circle", { cx: x(last.t), cy: y(last.v), r: 4, class: "end" }));
-  svg.append(sv("text", { x: x(last.t) + 8, y: y(last.v) + 4, class: "endlabel" }, endText));
+  svg.append(sv("circle", { cx: x(last.t), cy: y(last.v), r: 9, class: "halo" }));
+  svg.append(sv("circle", { cx: x(last.t), cy: y(last.v), r: 4.5, class: "end" }));
+  const endLabel = endText, pillW = endLabel.length * 7.6 + 12;
+  svg.append(sv("rect", { x: x(last.t) + 12, y: y(last.v) - 11, width: pillW, height: 22, rx: 11, class: "pill" }));
+  svg.append(sv("text", { x: x(last.t) + 18, y: y(last.v) + 4, class: "endlabel" }, endLabel));
+
   const hair = sv("line", { y1: m.t, y2: H - m.b, class: "hair", visibility: "hidden" });
   const dot = sv("circle", { r: 4, class: "end", visibility: "hidden" });
   const hit = sv("rect", { x: m.l, y: 0, width: W - m.l - m.r, height: H, fill: "transparent" });
@@ -421,7 +449,7 @@ const STAT_ROWS = [
 const FIGHT_KINDS = [["ADVENTURE", "Abenteuer", "adventures", "adventuresWon"], ["RAID", "Überfälle", "raids", "raidsWon"],
                      ["BOSS", "Bosse", "bosses", "bossesWon"]];
 
-function gearCard(slots) {
+function gearCard(slots, power) {
   const rows = Object.values(slots);
   const stat = (v, k, max) => el("span", { class: `s ${k}${v ? "" : " zero"}`, "data-l": k.toUpperCase() }, fmtInt(v), el("i", { style: `width:${Math.max(6, 100 * v / max)}%` }));
   const max = Math.max(1, ...rows.flatMap((v) => [v[3], v[4], v[5]]));
@@ -436,7 +464,9 @@ function gearCard(slots) {
       stat(v[3], "atk", max), stat(v[4], "def", max), stat(v[5], "sup", max));
   });
   const tot = [3, 4, 5].map((i) => rows.reduce((a, v) => a + (v[1] ? v[i] : 0), 0));
-  const sum = el("div", { class: "grow sum" }, el("span", { class: "lead" }, `Gesamt: Ausrüstungswert ${fmtInt(tot[0] + tot[1] + tot[2])}`),
+  const sum = el("div", { class: "grow sum" }, el("span", { class: "lead" }, `Gesamt: Ausrüstungswert ${fmtInt(tot[0] + tot[1] + tot[2])}`,
+      power == null ? null : el("span", { class: "kk", title: "Ausrüstung plus Talente; der Rang zählt nur die Ausrüstung" },
+        `Kampfkraft ${fmtInt(power)}${power > tot[0] + tot[1] + tot[2] ? `, davon ${fmtInt(power - tot[0] - tot[1] - tot[2])} aus Talenten` : ""}`)),
     ...["atk", "def", "sup"].map((k, i) => el("span", { class: `s sum ${k}`, "data-l": k.toUpperCase() }, fmtInt(tot[i]))));
   return card("Ausrüstung", el("div", { class: "gear" }, head, ...lines, sum));
 }
@@ -539,7 +569,7 @@ async function viewPlayer(s, login) {
       card("Statistik", el("dl", { class: "facts" },
         el("dt", {}, "Schadensminderung"), el("dd", {}, `${fmtInt(p.watch.survival)} %, Leben ${fmtInt(p.watch.life)}`),
         STAT_ROWS.flatMap(([name, fn]) => [el("dt", {}, name), el("dd", {}, fn(st))])))));
-    if (p.watch.slots && Object.keys(p.watch.slots).length) out.push(gearCard(p.watch.slots));
+    if (p.watch.slots && Object.keys(p.watch.slots).length) out.push(gearCard(p.watch.slots, p.power));
   } else {
     out.push(card("Mehr Statistik", el("p", { class: "note" }, "Ausrüstung je Platz, Kampfquoten, Markt und Verlosungen gibt es für Spieler auf der ",
       el("a", { href: WATCH_FORM }, "Beobachtungsliste"), ". Eintragen geht über ein kurzes Formular auf GitHub, nur für den eigenen Namen.")));

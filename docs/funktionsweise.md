@@ -75,7 +75,7 @@ Eine Startseite und vier Bereiche mit einer zweiten Tab-Zeile, damit keine Seite
 - **Ranglisten Silber, Errungenschaften, Quests:** Rang und Wert wie in der Rangliste des Spiels; "24 h" ist die
   Änderung dieses Werts seit gestern (beim Silber kann sie auch negativ sein, wenn jemand etwas ausgibt).
 - **Ausrüstung** (nur Beobachtungsliste): eine Zeile je Stück mit Haltbarkeit (D), Stufe (T), Name und ATK/DEF/SUP, darunter die
-  Summe. Die Zahlen tragen die Farben des Spiels (ATK rot, DEF blau, SUP grün) mit einem kurzen Balken im Verhältnis zum
+  Summe und die Kampfkraft (mit dem Anteil aus Talenten). Die Zahlen tragen die Farben des Spiels (ATK rot, DEF blau, SUP grün) mit einem kurzen Balken im Verhältnis zum
   stärksten Wert; eine Haltbarkeit unter 50 % ist gelb, unter 25 % rot. Auf dem Handy rutschen die Werte unter den Namen.
 - **Siegquote** (nur Beobachtungsliste): gewonnene von den Kämpfen, an denen der Spieler teilgenommen hat, je Art
   (Abenteuer, Überfälle, Bosse), aus den Gesamtwerten seit Spielbeginn. Dazu Fallquote und Schaden pro Kampf.

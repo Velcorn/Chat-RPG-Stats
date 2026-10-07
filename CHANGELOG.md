@@ -3,6 +3,12 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.17.0 (07.10.2026)
+
+**Oberfläche**
+- Die Verlaufsdiagramme sehen neu aus: eine Stufenlinie (ein Wert gilt, bis der nächste kommt) mit Fläche darunter, gestrichelten Hilfslinien und einem Wertschild am Ende. Im Rangdiagramm sind die Bereiche Top 10, Top 25 und Top 50 hinterlegt.
+- Die Ausrüstung auf der Spielerseite nennt unter der Summe auch die Kampfkraft, mit dem Anteil aus Talenten.
+
 ## 0.16.0 (07.10.2026)
 
 **Oberfläche**

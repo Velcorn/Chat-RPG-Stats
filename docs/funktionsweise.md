@@ -65,7 +65,7 @@ Eine Startseite und vier Bereiche mit einer zweiten Tab-Zeile, damit keine Seite
   Grenze (Median der Plätze 90 bis 100), denn die Grenze steigt mit.
 - **Vergleich mit ähnlichen Spielern:** Mittel von ATK/DEF/SUP der Spieler mit bekannter Verteilung (Top 100 und
   Beobachtungsliste), deren Wert höchstens 5 % (mindestens 10 Punkte) von deinem abweicht; sind das weniger als 8, die
-  8 nächsten.
+  8 nächsten. Angriff ist rot, Verteidigung blau, Unterstützung grün; deine Werte sind kräftig, das Mittel der anderen blass.
 - **Gilde:** Mitglied seit (Beitrittsdatum aus der Gildenliste), Platz bei Ausrüstungswert und Spenden innerhalb der Gilde,
   Anteil der Kampfkraft am Gildenwert, Abstand zur nächsten Spende und Anteil an allen Spenden der Gilde.
 - **Quest-Fehlerquote (Beobachtungsliste):** gescheiterte Quests geteilt durch alle Quests (geschafft plus gescheitert),
@@ -74,8 +74,9 @@ Eine Startseite und vier Bereiche mit einer zweiten Tab-Zeile, damit keine Seite
   der Anteil des eingehenden Schadens, den die Verteidigung abfängt.
 - **Ranglisten Silber, Errungenschaften, Quests:** Rang und Wert wie in der Rangliste des Spiels; "24 h" ist die
   Änderung dieses Werts seit gestern (beim Silber kann sie auch negativ sein, wenn jemand etwas ausgibt).
-- **Ausrüstung je Platz** (nur Beobachtungsliste): Stück, Stufe und ATK/DEF/SUP je Platz. Ein Stück unter 100 % Haltbarkeit trägt seine
-  Haltbarkeit als Prozentwert.
+- **Ausrüstung** (nur Beobachtungsliste): eine Zeile je Stück mit Haltbarkeit (D), Stufe (T), Name und ATK/DEF/SUP, darunter die
+  Summe. Die Zahlen tragen die Farben des Spiels (ATK rot, DEF blau, SUP grün) mit einem kurzen Balken im Verhältnis zum
+  stärksten Wert; eine Haltbarkeit unter 50 % ist gelb, unter 25 % rot. Auf dem Handy rutschen die Werte unter den Namen.
 - **Siegquote** (nur Beobachtungsliste): gewonnene von den Kämpfen, an denen der Spieler teilgenommen hat, je Art
   (Abenteuer, Überfälle, Bosse), aus den Gesamtwerten seit Spielbeginn. Dazu Fallquote und Schaden pro Kampf.
 - **Silber:** Silber über die Zeit (Top 100 und Beobachtungsliste).

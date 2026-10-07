@@ -22,6 +22,9 @@
     --good: #2fae6d;
     --warning: #d99a1c;
     --critical: #e5534b;
+    --atk: #e5534b;
+    --def: #3987e5;
+    --sup: #2fae6d;
   }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
@@ -111,15 +114,54 @@
          border-radius: 6px; padding: 6px 9px; font-size: 12px; white-space: nowrap; display: none; z-index: 2; }
   .tip strong { display: block; font-size: 14px; }
   .tip .key { display: inline-block; width: 12px; height: 2px; background: var(--series-1); vertical-align: middle; margin-right: 6px; }
+  .gear { display: grid; }
+  .grow { display: grid; grid-template-columns: 44px 34px minmax(0, 1fr) repeat(3, 62px); gap: 0 12px; align-items: center;
+          padding: 8px 0; border-top: 1px solid var(--grid); }
+  .grow.head { border-top: 0; padding: 0 0 6px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+               color: var(--text-muted); }
+  .grow.head .s, .grow.sum .s { text-align: right; }
+  .grow.head .atk { color: var(--atk); } .grow.head .def { color: var(--def); } .grow.head .sup { color: var(--sup); }
+  .grow.sum { border-top: 1px solid var(--border); font-weight: 600; }
+  .grow.sum .lead { grid-column: 1 / 4; }
+  .grow .chip { justify-self: start; min-width: 30px; text-align: center; font-size: 12px; font-weight: 700; padding: 2px 0;
+                border-radius: 6px; background: color-mix(in srgb, var(--accent) var(--t, 0%), var(--surface-2)); }
+  .grow .piece { min-width: 0; overflow-wrap: anywhere; }
+  .grow .dur { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+  .grow .dur.worn { color: var(--warning); } .grow .dur.broken { color: var(--critical); }
+  .grow .dur.full { color: var(--text-muted); }
+  .grow .s { text-align: right; font-variant-numeric: tabular-nums; }
+  .grow .s i { display: block; height: 3px; margin: 3px 0 0 auto; border-radius: 2px; background: var(--c); }
+  .grow .s.zero { color: var(--text-muted); } .grow .s.zero i { display: none; }
+  .grow .s.atk { --c: var(--atk); } .grow .s.def { --c: var(--def); } .grow .s.sup { --c: var(--sup); }
+  .grow .s.sum { font-size: 15px; color: var(--c); }
+  @media (max-width: 600px) {
+    .grow { grid-template-columns: 34px repeat(3, minmax(0, 1fr)) 48px; row-gap: 5px; }
+    .grow.head { display: none; }
+    .grow .chip { grid-column: 1; grid-row: 1; }
+    .grow .piece { grid-column: 2 / 6; grid-row: 1; }
+    .grow .dur { grid-column: 5; grid-row: 2; text-align: right; }
+    .grow .dur::before { content: "D "; font-size: 10px; letter-spacing: .08em; color: var(--text-muted); }
+    .grow .s { grid-column: auto; text-align: left; }
+    .grow .s i { margin-left: 0; }
+    .grow .s.atk { grid-column-start: 2; }
+    .grow .s::before { content: attr(data-l); font-size: 10px; letter-spacing: .08em; color: var(--c); margin-right: 5px; }
+    .grow.sum .lead { grid-column: 1 / 6; }
+  }
   .facts { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0; }
   .facts dt { color: var(--text-secondary); } .facts dd { margin: 0; font-variant-numeric: tabular-nums; }
   .bars { display: grid; gap: 8px; }
   .bar { display: grid; grid-template-columns: 100px 1fr 80px; gap: 8px; align-items: center; font-size: 13px; }
   .bar .track { position: relative; height: 18px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
-  .bar .fill { position: absolute; left: 0; top: 0; height: 9px; background: var(--series-1); }
-  .bar .peer { position: absolute; left: 0; bottom: 0; height: 9px; background: var(--series-2); }
+  .bar .fill { position: absolute; left: 0; top: 0; height: 9px; background: var(--c, var(--series-1)); }
+  .bar .peer { position: absolute; left: 0; bottom: 0; height: 9px; background: color-mix(in srgb, var(--c, var(--series-2)) 38%, transparent); }
+  .bar.atk { --c: var(--atk); } .bar.def { --c: var(--def); } .bar.sup { --c: var(--sup); }
+  .bar .name { display: flex; align-items: center; gap: 7px; }
+  .bar .name::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex: none; }
   .bar .val { text-align: right; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
   .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+  .legend .you { background: linear-gradient(90deg, var(--atk) 33%, var(--def) 33% 66%, var(--sup) 66%); }
+  .legend .peers { background: linear-gradient(90deg, color-mix(in srgb, var(--atk) 38%, transparent) 33%,
+                    color-mix(in srgb, var(--def) 38%, transparent) 33% 66%, color-mix(in srgb, var(--sup) 38%, transparent) 66%); }
   .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
   .note { color: var(--text-secondary); font-size: 13px; margin: 6px 0 0; }
   .log h3 { font-size: 14px; margin: 14px 0 6px; color: var(--text-secondary); font-weight: 600; }
@@ -380,13 +422,23 @@ const FIGHT_KINDS = [["ADVENTURE", "Abenteuer", "adventures", "adventuresWon"], 
                      ["BOSS", "Bosse", "bosses", "bossesWon"]];
 
 function gearCard(slots) {
-  const rows = Object.entries(slots).map(([slot, v]) => ({ slot, label: v[0], name: v[1], tier: v[2], v }));
-  return card("Ausrüstung", el("div", { class: "scroll" }, table([
-    { label: "Platz", get: (r) => r.label },
-    { label: "Stück", get: (r) => r.name ? el("span", {}, r.name, r.v[6] != null && r.v[6] < 100 ? el("span", { class: "tag" }, `${fmtInt(r.v[6])} %`) : null) : el("span", { class: "muted" }, "leer") },
-    { label: "Stufe", num: true, get: (r) => r.name ? r.tier : "-" },
-    { label: "ATK / DEF / SUP", num: true, get: (r) => r.name ? `${fmtInt(r.v[3])} / ${fmtInt(r.v[4])} / ${fmtInt(r.v[5])}` : "-" },
-  ], rows)));
+  const rows = Object.values(slots);
+  const stat = (v, k, max) => el("span", { class: `s ${k}${v ? "" : " zero"}`, "data-l": k.toUpperCase() }, fmtInt(v), el("i", { style: `width:${Math.max(6, 100 * v / max)}%` }));
+  const max = Math.max(1, ...rows.flatMap((v) => [v[3], v[4], v[5]]));
+  const head = el("div", { class: "grow head" }, el("span", { title: "Haltbarkeit" }, "D"), el("span", { title: "Stufe" }, "T"), el("span", {}, "Gegenstand"),
+    el("span", { class: "s atk" }, "ATK"), el("span", { class: "s def" }, "DEF"), el("span", { class: "s sup" }, "SUP"));
+  const lines = rows.map((v) => {
+    if (!v[1]) return el("div", { class: "grow" }, el("span", { class: "dur" }), el("span", { class: "chip" }, "-"), el("span", { class: "piece muted" }, `${v[0]}: leer`));
+    const d = v[6];
+    return el("div", { class: "grow" }, el("span", { class: `dur ${d == null ? "" : d < 25 ? "broken" : d < 50 ? "worn" : d >= 100 ? "full" : ""}` }, d == null ? "" : `${fmtInt(d)} %`),
+      el("span", { class: "chip", style: `--t:${Math.round(Math.min(v[2], 11) * 6)}%` }, v[2]),
+      el("span", { class: "piece", title: v[1] }, v[1].charAt(0).toUpperCase() + v[1].slice(1)),
+      stat(v[3], "atk", max), stat(v[4], "def", max), stat(v[5], "sup", max));
+  });
+  const tot = [3, 4, 5].map((i) => rows.reduce((a, v) => a + (v[1] ? v[i] : 0), 0));
+  const sum = el("div", { class: "grow sum" }, el("span", { class: "lead" }, `Gesamt: Ausrüstungswert ${fmtInt(tot[0] + tot[1] + tot[2])}`),
+    ...["atk", "def", "sup"].map((k, i) => el("span", { class: `s sum ${k}`, "data-l": k.toUpperCase() }, fmtInt(tot[i]))));
+  return card("Ausrüstung", el("div", { class: "gear" }, head, ...lines, sum));
 }
 
 function fightCard(st) {
@@ -449,13 +501,13 @@ async function viewPlayer(s, login) {
     const mine = p.split.atk != null ? p.split : null;
     const max = Math.max(1, ...["atk", "def", "sup"].flatMap((k) => [p.peers[k], mine ? mine[k] : 0]));
     for (const [k, name] of [["atk", "Angriff"], ["def", "Verteidigung"], ["sup", "Unterstützung"]]) {
-      split.append(el("div", { class: "bar" }, el("span", {}, name),
+      split.append(el("div", { class: `bar ${k}` }, el("span", { class: "name" }, name),
         el("div", { class: "track" }, mine ? el("div", { class: "fill", style: `width:${100 * mine[k] / max}%` }) : null,
           el("div", { class: "peer", style: `width:${100 * p.peers[k] / max}%` })),
         el("span", { class: "val" }, mine ? `${fmtInt(mine[k])} / ${fmtInt(p.peers[k])}` : fmtInt(p.peers[k]))));
     }
-    split.append(el("div", { class: "legend" }, mine ? el("span", {}, el("i", { style: "background:var(--series-1)" }), p.name) : null,
-      el("span", {}, el("i", { style: "background:var(--series-2)" }), `Mittel von ${p.peers.n} Spielern um ${fmtInt(p.peers.gear)} Punkte`)));
+    split.append(el("div", { class: "legend" }, mine ? el("span", {}, el("i", { class: "you" }), p.name) : null,
+      el("span", {}, el("i", { class: "peers" }), `Mittel von ${p.peers.n} Spielern um ${fmtInt(p.peers.gear)} Punkte`)));
   } else split.append(el("p", { class: "note" }, "Noch keine vergleichbaren Spieler."));
 
   const guild = g ? el("dl", { class: "facts" },

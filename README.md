@@ -50,7 +50,7 @@ Wie gerechnet wird (Rang, Tempo, Prognose, Vergleich) und wie die Daten liegen: 
 
 ## Beobachtungsliste
 
-Ausrüstung je Platz, Siegquoten, Schadensminderung, Markt und Verlosungen gibt es für Spieler auf der Beobachtungsliste. Die Streamer der Kanäle stehen standardmäßig auf der Liste. Eintragen oder austragen
+Ausrüstung, Siegquoten, Schadensminderung, Markt und Verlosungen gibt es für Spieler auf der Beobachtungsliste. Die Streamer der Kanäle stehen standardmäßig auf der Liste. Eintragen oder austragen
 geht über das Issue-Formular ["Auf die Beobachtungsliste"](https://github.com/Velcorn/Chat-RPG-Stats/issues/new?template=watchlist.yml);
 eine Action prüft den Namen, trägt ihn ein und schließt das Issue. Bitte nur den eigenen Namen. Die Liste ist auf 150
 Spieler begrenzt, weil jeder Eintrag eine Anfrage pro Lauf kostet.

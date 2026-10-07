@@ -3,6 +3,12 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.16.0 (07.10.2026)
+
+**Oberfläche**
+- Die Ausrüstung auf der Spielerseite ist neu gestaltet: eine Zeile je Stück mit Haltbarkeit (D), Stufe (T), Name und ATK/DEF/SUP in Rot, Blau und Grün mit kurzen Balken, dazu eine Summenzeile. Auf dem Handy stehen die Werte unter dem Namen.
+- Der Vergleich mit ähnlichen Spielern nutzt dieselben Farben (Angriff rot, Verteidigung blau, Unterstützung grün); deine Werte sind kräftig, das Mittel der anderen blass.
+
 ## 0.15.0 (07.10.2026)
 
 **Inkompatibel**

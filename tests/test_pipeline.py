@@ -215,6 +215,16 @@ class BuildEdgeTests(unittest.TestCase):
         page = json.loads((out / "p" / "p050.json").read_text())
         self.assertIsNone(page["forecast"]["top100_gap"])  # already in
 
+    def test_the_board_gear_score_stays_apart_from_the_guild_pages_power(self):
+        pipe = Pipeline()
+        board = [(f"p{i:03d}", 500 - i, 10, 10, 10) for i in range(100)]
+        members = [member(lo, g + 30) for lo, g, *_ in board]  # the guild pages carry gear plus talents
+        pipe.run(snap({"karni": members}, board=board), T0)
+        summary, out = pipe.build(T0)
+        self.assertEqual(summary["top100"]["gear"], 500 - 99 + 30)
+        page = json.loads((out / "p" / "p000.json").read_text())
+        self.assertEqual((page["gear"], page["board_gear"]), (530, 500))
+
     def test_a_player_in_no_guild(self):
         pipe = Pipeline()
         pipe.run(snap({"karni": [member("a", 100)]}, board=[("solo", 40, 1, 1, 1)]), T0)

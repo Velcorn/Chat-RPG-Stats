@@ -132,7 +132,9 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
     board_gear = dict(state["boards"].get("gear", []))
     board = list(board_gear)
     ranks_24h = {login: value_at(h.rank[login], now - DAY) for login in board}
-    top100_gear = board_gear[board[-1]] if len(board) >= 100 else None
+    # The guild pages give Kampfkraft (gear plus talents), the board the plain gear score: the border the forecast
+    # measures against must be on the same scale as the player's own value, so it is the 100th's Kampfkraft.
+    top100_gear = players.get(board[-1], {}).get("gear") if len(board) >= 100 else None
     tail_paces = [paces[x] for x in board[89:100] if paces.get(x) is not None]
     top100_pace = statistics.median(tail_paces) if tail_paces else None
 
@@ -313,6 +315,7 @@ def player_page(login, h, state, now, rank, paces, with_split, top100_gear, top1
     standing = {"better": rounded(100 * bisect.bisect_left(gear_sorted, g) / len(gear_sorted), 1),
                 "of": len(gear_sorted)}
     return {"login": login, "standing": standing, "name": p.get("name") or login, "gear": g, "guild": guild,
+            "board_gear": dict(state["boards"].get("gear", [])).get(login),
             "active": p.get("active"),
             "pace": rounded(my_pace), "day": change(h.gear[login], now, DAY),
             "week": change(h.gear[login], now, 7 * DAY), "forecast": forecast,

@@ -3,6 +3,13 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.13.0 (07.10.2026)
+
+**Geändert**
+- Die Werte von den Gildenseiten heißen jetzt wieder Kampfkraft statt Ausrüstungswert: Verlauf, Tempo, Aufsteiger, Gilden, Start und Spielerseiten. Das Spiel liefert dort Ausrüstung plus Talente (bei einem Spieler mit Ausrüstungswert 328 sind es 360), nicht den reinen Ausrüstungswert.
+- Den reinen Ausrüstungswert gibt es nur für die Top 100: In der Rangliste steht die Kampfkraft jetzt als eigene Spalte daneben, auf der Spielerseite steht er als Zeile unter "Prognose".
+- Die Grenze zur Top 100 in der Prognose ist die Kampfkraft des Spielers auf Platz 100, damit der Abstand zur eigenen Kampfkraft passt.
+
 ## 0.12.1 (07.10.2026)
 
 **Geändert**

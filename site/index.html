@@ -135,9 +135,11 @@
   .grow .chip { justify-self: start; min-width: 30px; text-align: center; font-size: 12px; font-weight: 700; padding: 2px 0; position: relative;
                 border-radius: 6px; color: var(--text-primary); background: color-mix(in srgb, var(--c, var(--accent)) 62%, var(--surface-2));
                 border: 1px solid color-mix(in srgb, var(--c, var(--accent)) 90%, transparent); text-shadow: 0 1px 2px rgba(0, 0, 0, .55); }
-  .grow .chip.bound::before, .grow .chip.bound::after { content: ""; position: absolute; }
-  .grow .chip.bound::after { left: -4px; top: -2px; width: 8px; height: 6px; border-radius: 1.5px; background: var(--text-primary); }
-  .grow .chip.bound::before { top: -7px; width: 4px; height: 5px; border: 1.5px solid var(--text-primary); border-bottom: 0; border-radius: 4px 4px 0 0; left: -2px; }
+  .grow .chip .ico { position: absolute; top: -6px; width: 12px; height: 12px; filter: drop-shadow(0 0 1px rgba(0, 0, 0, .9)); }
+  .grow .chip .ico svg { display: block; width: 100%; height: 100%; }
+  .grow .chip .lock { left: -4px; color: var(--text-primary); }
+  .grow .chip .gem { right: -3px; }
+  .grow .chip .gem.atk { color: var(--atk); } .grow .chip .gem.def { color: var(--def); } .grow .chip .gem.sup { color: var(--sup); }
   .grow .piece { min-width: 0; overflow-wrap: anywhere; }
   .grow .dur { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--text-secondary); }
   .grow .dur.worn { color: var(--warning); } .grow .dur.broken { color: var(--critical); }
@@ -462,10 +464,15 @@ const FIGHT_KINDS = [["ADVENTURE", "Abenteuer", "adventures", "adventuresWon"], 
 const TIERS = [null, ["Holz", "#91443d"], ["Kupfer", "#a37f53"], ["Eisen", "#7e7b8c"], ["Stahl", "#8a8585"], ["Silber", "#d3d2d2"],
   ["Gold", "#e0b539"], ["Platin", "#83c4af"], ["Kobalt", "#4d5f85"], ["Purpur", "#9f322f"], ["Adamant", "#6aae56"],
   ["Himmlisch", "#d9a074"], ["Schicksal", "#24768d"], ["Altair", "#c98b27"], ["Nova", "#99553b"]];  // colors sampled from the item icons
-function tierChip(tier, bound) {
+const LOCK_SVG = '<svg viewBox="0 0 12 12"><path d="M3.2 5.5V3.8a2.8 2.8 0 0 1 5.6 0v1.7" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="1.5" y="5.2" width="9" height="6.3" rx="1.5" fill="currentColor"/></svg>';
+const GEM_SVG = '<svg viewBox="0 0 12 12"><path d="M3 1h6l3 3.6L6 11.5 0 4.6z" fill="currentColor"/><path d="M0 4.6h12M4 4.6 6 1l2 3.6M4 4.6l2 6.9 2-6.9" fill="none" stroke="rgba(255,255,255,.55)" stroke-width=".7"/></svg>';
+const icon = (cls, svg, title) => { const n = el("span", { class: `ico ${cls}`, title }); n.innerHTML = svg; return n; };
+function tierChip(tier, bound, socket) {
   const t = TIERS[tier];
-  return el("span", { class: "chip" + (bound ? " bound" : ""), style: t ? `--c:${t[1]}` : "",
-    title: t ? `Stufe ${tier}, ${t[0]}` + (bound ? ", gebunden: nicht für den Markt" : "") : "" }, tier);
+  const focus = socket ? (/^Angriff/.test(socket) ? "atk" : /^Verteidigung/.test(socket) ? "def" : "sup") : null;
+  return el("span", { class: "chip", style: t ? `--c:${t[1]}` : "", title: t ? `Stufe ${tier}, ${t[0]}` : "" }, tier,
+    bound ? icon("lock", LOCK_SVG, "Gebunden: nicht für den Markt") : null,
+    focus ? icon(`gem ${focus}`, GEM_SVG, `Stein: ${socket}`) : null);
 }
 function gearCard(slots, power) {
   const rows = Object.values(slots);
@@ -477,7 +484,7 @@ function gearCard(slots, power) {
     if (!v[1]) return el("div", { class: "grow" }, el("span", { class: "dur" }), el("span", { class: "chip" }, "-"), el("span", { class: "piece muted" }, `${v[0]}: leer`));
     const d = v[6];
     return el("div", { class: "grow" }, el("span", { class: `dur ${d == null ? "" : d < 25 ? "broken" : d < 50 ? "worn" : d >= 100 ? "full" : ""}` }, d == null ? "" : `${fmtInt(d)} %`),
-      tierChip(v[2], v[7]),
+      tierChip(v[2], v[7], v[8]),
       el("span", { class: "piece", title: v[1] }, v[1].charAt(0).toUpperCase() + v[1].slice(1)),
       stat(v[3], "atk", max), stat(v[4], "def", max), stat(v[5], "sup", max));
   });

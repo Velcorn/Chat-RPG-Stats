@@ -6,7 +6,7 @@ Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 ## 0.18.0 (08.10.2026)
 
 **Oberfläche**
-- Die Stufe in der Ausrüstung ist nach dem Material des Stücks eingefärbt (von Holz bis Nova, die Farben stammen aus den Item-Symbolen des Spiels). Ein kleines Schloss am Stufenfeld zeigt gebundene Stücke (Händler, Schmiede, Siegel, eigener Laden), die nicht auf den Markt dürfen.
+- Die Stufe in der Ausrüstung ist nach dem Material des Stücks eingefärbt (von Holz bis Nova, die Farben stammen aus den Item-Symbolen des Spiels). Am Stufenfeld zeigt oben links ein kleines Schloss gebundene Stücke (Händler, Schmiede, Siegel, eigener Laden), die nicht auf den Markt dürfen, und oben rechts ein Edelstein ein gefasstes Stück, in der Farbe des Werts (Angriff rot, Verteidigung blau, Unterstützung grün).
 
 ## 0.17.0 (07.10.2026)
 

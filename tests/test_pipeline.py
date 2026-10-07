@@ -266,7 +266,7 @@ class BuildEdgeTests(unittest.TestCase):
     def test_watch_data(self):
         pipe = Pipeline()
         item = {"name": "Helm", "tier": 6, "attack": 1, "defense": 9, "support": 2, "durability": 73,
-                "source": "TRADER"}
+                "source": "TRADER", "socket": "Angriff +4"}
         watch = {"a": {"displayName": "A", "attack": 1, "defense": 2, "support": 3, "silver": 9, "survivalPercent": 70,
                        "life": 1, "achievementsUnlocked": 4, "questHistory": [{"at": "x", "line": "y"}],
                        "stats": {"fights": 2, "marketSilverEarned": 500, "marketSilverSpent": 200},
@@ -279,7 +279,8 @@ class BuildEdgeTests(unittest.TestCase):
         page = json.loads((out / "p" / "a.json").read_text())
         self.assertEqual(page["watch"]["survival"], 70)
         self.assertNotIn("quests", page["watch"])
-        self.assertEqual(page["watch"]["slots"], {"HELMET": ["Helm", "Helm", 6, 1, 9, 2, 73, 1], "BOOTS": ["Stiefel"]})
+        self.assertEqual(page["watch"]["slots"],
+                         {"HELMET": ["Helm", "Helm", 6, 1, 9, 2, 73, 1, "Angriff +4"], "BOOTS": ["Stiefel"]})
         self.assertEqual(page["split"]["atk"], 1)
 
     def test_guild_average_counts_active_members_only(self):

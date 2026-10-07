@@ -6,7 +6,7 @@
 [![license: MIT](https://img.shields.io/github/license/Velcorn/Chat-RPG-Stats)](LICENSE)
 
 Ranglisten, Verlauf und Prognosen für das Twitch-Chat-RPG [rpg.sola.rip](https://rpg.sola.rip): Wie schnell wächst
-deine Kampfkraft, wann erreichst du den nächsten Rang oder die Top 100, wie verteilen ähnlich starke Spieler ihre
+dein Ausrüstungswert, wann erreichst du den nächsten Rang oder die Top 100, wie verteilen ähnlich starke Spieler ihre
 Werte, wo stehst du in deiner Gilde, welche Kämpfe gewinnt man meistens. Die Seite hat vier Bereiche mit
 Unterseiten: Ranglisten (Ausrüstungswert, Silber, Errungenschaften, Quests, Aufsteiger), Gilden (Vergleich mit den ersten Siegen über die Bosse und eine Seite pro Gilde),
 Kämpfe (Kampfarten, Abenteuer, Überleben, Kampfkraft, Wann und wo, Gilden, letzte Kämpfe) und Spiel (Wirtschaft, Regeln, Änderungen, Kompendium), dazu eine Seite pro Spieler
@@ -29,6 +29,7 @@ zeigt:
 | Daten | Quelle | Anfragen pro Lauf |
 |---|---|---|
 | Kampfkraft, Spenden und Aktivität aller Gildenmitglieder | Gildenliste und Gildenseiten | 1 + 1 pro Gilde |
+| Ausrüstungswert (Angriff + Verteidigung + Unterstützung) der aktiven Mitglieder außerhalb der Top 100, jeder etwa einmal am Tag | Spielerseite | rund 55 |
 | Top 100 nach Ausrüstungswert (mit ATK/DEF/SUP), Silber, Errungenschaften und Quests | Ranglisten | 4 |
 | Die letzten 20 Kämpfe aller Kanäle | Kampfarchiv | 1 |
 | Gefallene, Rollen, Schaden, Heilung und Verstärkung jedes neuen Kampfes (nur Summen) | Kampfbericht | 1 pro neuem Kampf, etwa 3 pro Lauf |
@@ -40,8 +41,8 @@ zeigt:
 | Änderungsprotokoll des Spiels | Skript der Changelog-Seite | 3 pro Tag |
 | Spieler auf der Beobachtungsliste | Spielerseite | 1 pro Spieler |
 
-Ein Lauf macht also etwa 16 Anfragen und eine pro neuem Kampf, im Abstand von 2 Sekunden. Bei 4 Läufen pro Stunde und
-17 Stunden Spielzeit sind das rund 1.200 Anfragen am Tag, egal wie viele Leute die Seite ansehen: Besucher lesen nur fertige Dateien. Die Seite nennt diese Zahl
+Ein Lauf macht also etwa 70 Anfragen und eine pro neuem Kampf, im Abstand von 2 Sekunden. Bei 4 Läufen pro Stunde und
+17 Stunden Spielzeit sind das rund 4.900 Anfragen am Tag, egal wie viele Leute die Seite ansehen: Besucher lesen nur fertige Dateien. Die Seite nennt diese Zahl
 im Fuß (gemessen am letzten Lauf, mal 68 Läufe am Tag). Jede Anfrage nennt
 das Projekt im User-Agent. Ist die Seite nicht erreichbar, fällt der Lauf aus. Gespeichert wird nur, was sich geändert hat.
 

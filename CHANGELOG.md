@@ -3,6 +3,19 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.15.0 (07.10.2026)
+
+**Inkompatibel**
+- Rang, Verlauf, Tempo, Aufsteiger, Prognose, Gilden-Durchschnitt und Spielerseiten rechnen jetzt mit dem Ausrüstungswert (Angriff + Verteidigung + Unterstützung) statt mit der Kampfkraft. Der Verlauf beginnt dadurch neu, Tempo und Aufsteiger gibt es erst nach einem halben bis einem Tag wieder.
+- Spieler, die laut Gilde nicht aktiv sind, haben keinen Ausrüstungswert und fehlen deshalb in Rang, Suche und Prognose.
+
+**Neu**
+- Der Sammler liest einmal am Tag das Profil jedes aktiven Gildenmitglieds (rund 55 Anfragen mehr je Lauf, etwa 4.900 statt 1.200 am Tag). Der Vergleich mit ähnlichen Spielern zeigt dadurch für alle die eigene Verteilung.
+- Die Grenze zur Top 100 ist der Ausrüstungswert des Spielers auf Platz 100; die Kampfkraft steht als Zeile auf der Spielerseite.
+
+**Hinweis**
+- Am ersten Tag nach der Umstellung sind noch nicht alle aktiven Spieler gelesen, der Rang fällt dann etwas zu gut aus.
+
 ## 0.14.0 (07.10.2026)
 
 **Neu**

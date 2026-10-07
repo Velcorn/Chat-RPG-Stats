@@ -19,8 +19,9 @@ def member(login, gear, donated=0, active=True):
             "active": active, "joinedAt": "2026-09-27T09:44:24.158Z"}
 
 
-def snap(members: dict, board=None, fights=(), watch=None, treasury=1000) -> dict:
-    """members: guild -> [member, ...]; board: [(login, gear, atk, def, sup), ...]."""
+def snap(members: dict, board=None, fights=(), watch=None, treasury=1000, sweep=True) -> dict:
+    """members: guild -> [member, ...]; board: [(login, gear, atk, def, sup), ...]. With `sweep` the active members
+    off the board get a profile whose attack alone is their gear score (what the collector's sweep would read)."""
     guilds = {g: {"guild": {"name": g.upper(), "treasurySilver": treasury, "members": len(ms),
                             "activeMembers": sum(1 for m in ms if m["active"]),
                             "gearScore": sum(m["gearScore"] for m in ms), "raidLevel": 2},
@@ -30,7 +31,11 @@ def snap(members: dict, board=None, fights=(), watch=None, treasury=1000) -> dic
     return {"guilds": guilds, "boards": {b: rows for b in collect.BOARD_FIELDS}, "fights": list(fights),
             "channels": [{"login": "sola", "live": True,
                                                                           "enabled": True}],
-            "watch": watch or {}}
+            "watch": watch or {},
+            "sweep": {m["login"]: {"attack": m["gearScore"], "defense": 0, "support": 0, "silver": 7}
+                      for ms in members.values() for m in ms
+                      if sweep and m["active"] and m["login"] not in {lo for lo, *_ in board or []}
+                      and m["login"] not in (watch or {})}}
 
 
 class Pipeline:
@@ -66,7 +71,7 @@ class CollectTests(unittest.TestCase):
         first = pipe.run(snap({"karni": [member("a", 100), member("b", 90)]}), T0)
         self.assertEqual(set(first["players"]), {"a", "b"})
         again = pipe.run(snap({"karni": [member("a", 100), member("b", 95)]}), T0 + 900)
-        self.assertEqual(again["players"], {"b": {"gear": 95}})  # only the field that changed
+        self.assertEqual(again["players"], {"b": {"gear": 95, "gs": 95}})  # only the fields that changed
         self.assertEqual(again["guilds"], {"karni": {"gear": 195}})
         self.assertNotIn("channels", again)  # unchanged
 
@@ -177,10 +182,10 @@ class BuildTests(unittest.TestCase):
         top = json.loads((self.out / "p" / "top.json").read_text())
         self.assertEqual((top["board_rank"], top["forecast"]["exact"]), (1, True))
 
-    def test_peers_need_a_known_split(self):
+    def test_peers_are_the_other_players_with_a_known_split(self):
         fast = json.loads((self.out / "p" / "fast.json").read_text())
-        self.assertEqual(fast["peers"]["n"], 2)  # only the two board players have a split
-        self.assertIsNone(fast["split"]["atk"])
+        self.assertEqual(fast["peers"]["n"], 2)  # top and slow
+        self.assertEqual(fast["split"]["atk"], 170)  # read from its own profile
 
     def test_fight_groups(self):
         groups = self.summary["stats"]["types"]
@@ -215,15 +220,28 @@ class BuildEdgeTests(unittest.TestCase):
         page = json.loads((out / "p" / "p050.json").read_text())
         self.assertIsNone(page["forecast"]["top100_gap"])  # already in
 
-    def test_the_board_gear_score_stays_apart_from_the_guild_pages_power(self):
+    def test_the_gear_score_comes_from_the_profile_and_the_board_not_from_the_guild_pages_power(self):
         pipe = Pipeline()
         board = [(f"p{i:03d}", 500 - i, 10, 10, 10) for i in range(100)]
         members = [member(lo, g + 30) for lo, g, *_ in board]  # the guild pages carry gear plus talents
-        pipe.run(snap({"karni": members}, board=board), T0)
+        members.append(member("swept", 460))  # plain 430 in its profile
+        s = snap({"karni": members}, board=board)
+        s["sweep"]["swept"] = {"attack": 400, "defense": 20, "support": 10}
+        pipe.run(s, T0)
         summary, out = pipe.build(T0)
-        self.assertEqual(summary["top100"]["gear"], 500 - 99 + 30)
-        page = json.loads((out / "p" / "p000.json").read_text())
-        self.assertEqual((page["gear"], page["board_gear"]), (530, 500))
+        self.assertEqual(summary["top100"]["gear"], 500 - 99)
+        page = json.loads((out / "p" / "swept.json").read_text())
+        self.assertEqual((page["gear"], page["power"], page["forecast"]["rank"]), (430, 460, 71))
+        self.assertEqual(json.loads((out / "p" / "p000.json").read_text())["gear"], 500)
+
+    def test_a_player_not_read_this_run_keeps_the_last_gear_score(self):
+        pipe = Pipeline()
+        s = snap({"karni": [member("a", 100)]})
+        pipe.run(s, T0)
+        s2 = snap({"karni": [member("a", 130)]})
+        s2["sweep"] = {}
+        pipe.run(s2, T0 + 900)
+        self.assertEqual((pipe.prev["players"]["a"]["gs"], pipe.prev["players"]["a"]["gear"]), (100, 130))
 
     def test_a_player_in_no_guild(self):
         pipe = Pipeline()

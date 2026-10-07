@@ -342,12 +342,12 @@ function viewRanks(s, sub) {
       riserBox.replaceChildren(rows.length ? table([
         { label: "Spieler", get: playerLink },
         { label: "Gilde", get: (r) => r.guild || "-" },
-        { label: "Kampfkraft", num: true, get: (r) => fmtInt(r.gear) },
+        { label: "Ausrüstungswert", num: true, get: (r) => fmtInt(r.gear) },
         { label: span === "day" ? "24 Stunden" : "7 Tage", num: true, get: (r) => delta(r[span]) },
       ], rows) : el("p", { class: "note" }, span === "day" ? "Aufsteiger gibt es nach einem Tag Datensammlung." : "Aufsteiger der Woche gibt es nach sieben Tagen Datensammlung."));
     };
     renderRisers();
-    return [el("section", { class: "card" }, el("div", { class: "head" }, el("h2", {}, "Aufsteiger (Kampfkraft)"),
+    return [el("section", { class: "card" }, el("div", { class: "head" }, el("h2", {}, "Aufsteiger (Ausrüstungswert)"),
       seg([["day", "24 Stunden"], ["week", "7 Tage"]], span, (k) => { span = k; renderRisers(); })), riserBox)];
   }
   return [
@@ -356,10 +356,9 @@ function viewRanks(s, sub) {
       { label: "", title: "Plätze seit gestern", get: (r) => r.rank_change ? delta(r.rank_change) : "" },
       { label: "Spieler", get: playerLink },
       { label: "Gilde", get: (r) => r.guild || "-" },
-      { label: "Ausrüstungswert", num: true, title: "Wert laut Rangliste des Spiels (hinkt der Gildenseite ein paar Minuten nach)", get: (r) => fmtInt(r.board_gear) },
-      { label: "Kampfkraft", num: true, title: "Ausrüstung plus Talente, wie sie die Gildenseite des Spiels zeigt", get: (r) => fmtInt(r.gear) },
-      { label: "24 h", num: true, title: "Änderung der Kampfkraft", get: (r) => delta(r.day) },
-      { label: "Pro Tag", num: true, title: "Kampfkraft, Durchschnitt der letzten 7 Tage", get: (r) => r.pace == null ? "-" : fmtDec(r.pace) },
+      { label: "Ausrüstungswert", num: true, get: (r) => fmtInt(r.gear) },
+      { label: "24 h", num: true, title: "Änderung des Ausrüstungswerts", get: (r) => delta(r.day) },
+      { label: "Pro Tag", num: true, title: "Ausrüstungswert, Durchschnitt der letzten 7 Tage", get: (r) => r.pace == null ? "-" : fmtDec(r.pace) },
       { label: "ATK", num: true, get: (r) => fmtInt(r.atk) },
       { label: "DEF", num: true, get: (r) => fmtInt(r.def) },
       { label: "SUP", num: true, get: (r) => fmtInt(r.sup) },
@@ -404,7 +403,7 @@ function fightCard(st) {
 
 function shareText(p, login) {
   const f = p.forecast, g = p.guild;
-  return [`${p.name}: Kampfkraft ${fmtInt(p.gear)}` + (p.day == null ? "" : ` (${signed(p.day)} in 24 Stunden)`),
+  return [`${p.name}: Ausrüstungswert ${fmtInt(p.gear)}` + (p.day == null ? "" : ` (${signed(p.day)} in 24 Stunden)`),
     `${f.exact ? "Rang" : "etwa Rang"} ${fmtInt(f.rank)}, stärker als ${fmtDec(p.standing.better, 1)} % der Spieler` + (g ? `, Gilde ${g.name}` : ""),
     `${location.origin}${location.pathname}#/spieler/${encodeURIComponent(login)}`].join("\n");
 }
@@ -423,12 +422,12 @@ async function viewPlayer(s, login) {
   let p;
   try { p = await load(`p/${encodeURIComponent(login)}.json`); }
   catch {
-    return [card("Nicht gefunden", el("p", { class: "note" }, `"${login}" ist nicht erfasst. Erfasst sind alle Gildenmitglieder und die Top 100; Spieler ohne Gilde kommen über die `,
+    return [card("Nicht gefunden", el("p", { class: "note" }, `"${login}" ist nicht erfasst. Erfasst sind alle aktiven Gildenmitglieder und die Top 100; Spieler ohne Gilde kommen über die `,
       el("a", { href: WATCH_FORM }, "Beobachtungsliste"), " dazu."))];
   }
   const f = p.forecast, g = p.guild;
   const tiles = el("div", { class: "grid tiles" },
-    tile("Kampfkraft", fmtInt(p.gear), p.day == null ? "Änderung: nach einem Tag Verlauf" : `${signed(p.day)} in 24 Stunden`),
+    tile("Ausrüstungswert", fmtInt(p.gear), p.day == null ? "Änderung: nach einem Tag Verlauf" : `${signed(p.day)} in 24 Stunden`),
     tile("Rang", f.exact ? `#${f.rank}` : `etwa #${fmtInt(f.rank)}`, f.exact ? "in der Rangliste des Spiels" : "unter allen erfassten Spielern"),
     tile("Tempo", p.pace == null ? "-" : `${signed(p.pace, 1)} / Tag`, p.pace == null ? "nach 12 Stunden Verlauf" : "Durchschnitt der letzten 7 Tage"),
     tile("Nächster Rang", f.next_gap == null ? "Platz 1" : count(f.next_gap, "Punkt", "Punkte"), f.next_days ? `bei deinem Tempo ${inDays(f.next_days)}` : ""));
@@ -439,7 +438,7 @@ async function viewPlayer(s, login) {
     : p.pace == null ? "" : ", bei diesem Tempo holst du sie nicht ein (sie steigt mindestens so schnell)");
   const forecast = el("dl", { class: "facts" },
     el("dt", {}, "Vergleich"), el("dd", {}, `Stärker als ${fmtDec(p.standing.better, 1)} % der ${fmtInt(p.standing.of)} erfassten Spieler.`),
-    p.board_gear != null ? [el("dt", {}, "Ausrüstungswert"), el("dd", {}, `${fmtInt(p.board_gear)} laut Rangliste des Spiels, ohne Talente (die Kampfkraft oben schließt sie ein)`)] : null,
+    p.power != null ? [el("dt", {}, "Kampfkraft"), el("dd", {}, `${fmtInt(p.power)} mit Talenten (der Ausrüstungswert zählt sie nicht und entscheidet über den Rang)`)] : null,
     el("dt", {}, "Top 100"), el("dd", {}, top100),
     el("dt", {}, "Tempo"), el("dd", {}, p.peers && p.peers.pace != null && p.pace != null
       ? `Spieler mit ähnlichem Wert legen im Mittel ${signed(p.peers.pace, 1)} pro Tag zu, du ${signed(p.pace, 1)}.`
@@ -457,13 +456,12 @@ async function viewPlayer(s, login) {
     }
     split.append(el("div", { class: "legend" }, mine ? el("span", {}, el("i", { style: "background:var(--series-1)" }), p.name) : null,
       el("span", {}, el("i", { style: "background:var(--series-2)" }), `Mittel von ${p.peers.n} Spielern um ${fmtInt(p.peers.gear)} Punkte`)));
-    if (!mine) split.append(el("p", { class: "note" }, "Die eigene Verteilung ist nur für die Top 100 und die Beobachtungsliste bekannt."));
   } else split.append(el("p", { class: "note" }, "Noch keine vergleichbaren Spieler."));
 
   const guild = g ? el("dl", { class: "facts" },
     el("dt", {}, "Name"), el("dd", {}, el("a", { href: `#/gilden/${g.login}` }, g.name), ` (${count(g.members, "Mitglied", "Mitglieder")})`),
     g.joined ? [el("dt", {}, "Mitglied seit"), el("dd", {}, new Date(g.joined).toLocaleDateString("de-DE", { timeZone: TZ }))] : null,
-    el("dt", {}, "Kampfkraft"), el("dd", {}, `#${fmtInt(g.gear_rank)} von ${fmtInt(g.members)}, ${fmtDec(g.gear_share, 2)} % des Gesamtwerts der Gilde`),
+    el("dt", {}, "Ausrüstungswert"), el("dd", {}, `#${fmtInt(g.gear_rank)} von ${fmtInt(g.members)}` + (g.gear_share == null ? "" : `, deine Kampfkraft macht ${fmtDec(g.gear_share, 2)} % der ganzen Gilde aus`)),
     el("dt", {}, "Spendenrang"), el("dd", {}, `#${fmtInt(g.donation_rank)} mit ${fmtSilver(g.donated)}` + (g.donation_gap ? `, bis zum nächsten Platz fehlen ${fmtSilver(g.donation_gap)}` : "")),
     g.donation_share != null ? [el("dt", {}, "Anteil an den Spenden"), el("dd", {}, `${fmtDec(g.donation_share, 2)} % aller Spenden der Gilde`)] : null)
     : el("p", { class: "note" }, "In keiner Gilde.");
@@ -473,7 +471,7 @@ async function viewPlayer(s, login) {
       p.active === false ? el("span", { class: "tag" }, "laut Gilde inaktiv") : null,
       gameLink(`/spieler/${login}`, "Im Spiel"), shareButton(p, login)),
     tiles,
-    el("div", { class: "grid two" }, chartCard("Kampfkraft", p.series.gear, { until: s.generated }),
+    el("div", { class: "grid two" }, chartCard("Ausrüstungswert", p.series.gear, { until: s.generated }),
       card("Verteilung gegenüber ähnlichen Spielern", split)),
     el("div", { class: "grid two" }, card("Gilde", guild), card("Prognose", forecast)),
   ];
@@ -552,7 +550,7 @@ function viewGuildRace(s) {
   const cols = [
     { label: "Gilde", get: (g) => el("a", { href: `#/gilden/${g.login}` }, g.name) },
     { label: "Mitglieder", num: true, get: (g) => `${fmtInt(g.members)} (${fmtInt(g.active)} aktiv)` },
-    { label: "Ø Kampfkraft", num: true, title: "Durchschnitt der aktiven Mitglieder", get: (g) => fmtDec(g.avg_gear, 1) },
+    { label: "Ø Ausrüstungswert", num: true, title: "Durchschnitt der aktiven Mitglieder", get: (g) => fmtDec(g.avg_gear, 1) },
     { label: "24 h", num: true, title: "Kampfkraft der ganzen Gilde", get: (g) => delta(g.day) },
     { label: "7 Tage", num: true, title: "Kampfkraft der ganzen Gilde", get: (g) => delta(g.week) },
     { label: "7 Tage je Mitglied", num: true, get: (g) => delta(per(g, g.week), 1) },
@@ -571,11 +569,11 @@ function viewGuildRace(s) {
   return [el("section", { class: "grid" },
     el("div", { class: "head" }, el("h1", {}, "Gilden im Vergleich")),
     el("div", { class: "grid tiles" },
-      tile("Höchste Ø Kampfkraft", strongest ? strongest.login : "-", strongest ? `${fmtDec(strongest.avg_gear, 1)} je aktivem Mitglied` : ""),
+      tile("Höchster Ø Ausrüstungswert", strongest ? strongest.login : "-", strongest ? `${fmtDec(strongest.avg_gear, 1)} je aktivem Mitglied` : ""),
       tile("Meiste Mitglieder", largest ? largest.login : "-", largest ? `${fmtInt(largest.members)}, davon ${fmtInt(largest.active)} aktiv` : ""),
       tile("Schnellster Aufstieg", climber ? climber.login : "-", climber ? `${signed(per(climber, climber.day), 1)} je Mitglied in 24 Stunden` : "nach einem Tag Verlauf"),
       tile("Größte Kasse", richest ? richest.login : "-", richest ? fmtSilver(richest.treasury) : "")),
-    card("Alle Gilden nach Ø Kampfkraft", el("div", { class: "scroll" }, table(cols, ranked)),
+    card("Alle Gilden nach Ø Ausrüstungswert", el("div", { class: "scroll" }, table(cols, ranked)),
       el("p", { class: "note" }, "Der Durchschnitt zählt nur aktive Mitglieder. Gilden mit weniger als 10 aktiven Mitgliedern stehen unten und gewinnen oben keine Kachel.")),
     progressCard(ranked), firstKillsCard(s))];
 }
@@ -600,7 +598,7 @@ function viewGuild(s, login) {
     el("div", { class: "grid tiles" },
       tile("Kasse", fmtSilver(g.treasury), `gespendet insgesamt: ${fmtSilver(g.donated)}`),
       tile("Mitglieder", fmtInt(g.members), `${fmtInt(g.active)} aktiv (${pct(g.active, g.members)})`),
-      tile("Ø Kampfkraft", fmtDec(g.avg_gear, 1), "aktive Mitglieder"),
+      tile("Ø Ausrüstungswert", fmtDec(g.avg_gear, 1), "aktive Mitglieder"),
       tile("Bosse", `${fmtInt(g.boss_wins)} Siege`, `${count(g.boss_losses, "Niederlage", "Niederlagen")}, Überfallstufe ${fmtInt(g.raid)}`)),
     el("div", { class: "grid two" },
       chartCard("Kasse", g.series.map((r) => [r[0], r[1]]), { fmt: fmtSilver, until: s.generated }),
@@ -608,8 +606,8 @@ function viewGuild(s, login) {
     el("div", { class: "grid two" }, buildingsCard(g), bossesCard(g)),
     firstKillsCard(s, g.login),
     el("div", { class: "grid two" },
-      card("Höchste Kampfkraft", table([
-        { label: "Spieler", get: playerLink }, { label: "Kampfkraft", num: true, get: (r) => fmtInt(r.gear) },
+      card("Höchster Ausrüstungswert", table([
+        { label: "Spieler", get: playerLink }, { label: "Ausrüstungswert", num: true, get: (r) => fmtInt(r.gear) },
         { label: "24 h", num: true, get: (r) => delta(r.day) }], g.top)),
       card("Größte Spender", table([
         { label: "Spieler", get: playerLink }, { label: "Gespendet", num: true, get: (r) => fmtSilver(r.donated) }], g.donors))))];
@@ -645,7 +643,7 @@ function viewStart(s) {
     g ? el("div", { class: "lines" },
       el("div", {}, el("span", { class: "muted" }, "Mitglieder"), `${fmtInt(g.members)} (${fmtInt(g.active)} aktiv)`),
       el("div", {}, el("span", { class: "muted" }, "Kasse"), fmtSilver(g.treasury)),
-      el("div", {}, el("span", { class: "muted" }, "Ø Kampfkraft (aktive)"), fmtDec(g.avg_gear, 1)),) : null,
+      el("div", {}, el("span", { class: "muted" }, "Ø Ausrüstungswert (aktive)"), fmtDec(g.avg_gear, 1)),) : null,
     channelLines(s.channel_stats[login]),
     el("div", { class: "head" }, el("a", { href: `#/spieler/${login}` }, "Spielerseite"),
       el("a", { href: `https://www.twitch.tv/${login}`, target: "_blank", rel: "noopener" }, "Zum Stream auf Twitch"))));
@@ -656,19 +654,19 @@ function viewStart(s) {
   return [
     el("div", { class: "grid tiles" },
       tile("Spieler erfasst", fmtInt(s.players), `${fmtInt(s.active)} davon aktiv`),
-      tile("Höchste Kampfkraft", top[0] ? fmtInt(top[0].gear) : "-", top[0] ? top[0].name || top[0].login : ""),
+      tile("Höchster Ausrüstungswert", top[0] ? fmtInt(top[0].gear) : "-", top[0] ? top[0].name || top[0].login : ""),
       tile("Kämpfe", fmtInt(t.n), t.n ? `${fmtInt(t.wins)} gewonnen, letzte ${fmtInt(s.stats.days)} Tage` : ""),
       tile("Gilden", fmtInt(s.guilds.length), `${fmtInt(s.guilds.reduce((n, g) => n + g.members, 0))} Mitglieder`)),
-    card("Spieler suchen", el("div", { id: "hero-search" }), el("p", { class: "note" }, "Erfasst sind alle Gildenmitglieder und die Top 100.")),
+    card("Spieler suchen", el("div", { id: "hero-search" }), el("p", { class: "note" }, "Erfasst sind alle aktiven Gildenmitglieder und die Top 100.")),
     el("div", { class: "grid two" },
-      card("Top 5 nach Kampfkraft", top.length ? [table([
+      card("Top 5 nach Ausrüstungswert", top.length ? [table([
         { label: "#", num: true, get: (r) => fmtInt(r.rank) },
         { label: "Spieler", get: playerLink },
-        { label: "Kampfkraft", num: true, get: (r) => fmtInt(r.gear) },
+        { label: "Ausrüstungswert", num: true, get: (r) => fmtInt(r.gear) },
       ], top), more("#/rangliste/kampfkraft", "Ganze Bestenliste")] : el("p", { class: "note" }, "Noch keine Daten.")),
       card("Aufsteiger der letzten 24 Stunden", risers.length ? [table([
         { label: "Spieler", get: playerLink },
-        { label: "Kampfkraft", num: true, get: (r) => fmtInt(r.gear) },
+        { label: "Ausrüstungswert", num: true, get: (r) => fmtInt(r.gear) },
         { label: "24 h", num: true, get: (r) => delta(r.day) },
       ], risers), more("#/rangliste/aufsteiger", "Alle Aufsteiger")]
         : el("p", { class: "note" }, "Aufsteiger gibt es nach einem Tag Datensammlung."))),
@@ -676,7 +674,7 @@ function viewStart(s) {
       card("Gilden", guilds.length ? [table([
         { label: "Gilde", get: (g) => el("a", { href: `#/gilden/${g.login}` }, g.login) },
         { label: "Aktive", num: true, get: (g) => fmtInt(g.active) },
-        { label: "Ø Kampfkraft", num: true, get: (g) => fmtDec(g.avg_gear, 1) },
+        { label: "Ø Ausrüstungswert", num: true, get: (g) => fmtDec(g.avg_gear, 1) },
       ], guilds), more("#/gilden/vergleich", "Gilden im Vergleich")] : el("p", { class: "note" }, "Noch keine Gilden mit mindestens 10 aktiven Mitgliedern.")),
       card("Zuletzt", el("dl", { class: "facts" },
         el("dt", {}, "Regeländerung"), el("dd", {}, lastRule

@@ -32,7 +32,7 @@ class History:
     """Change points per player, guild and board, rebuilt from the day files."""
 
     def __init__(self, records):
-        self.gear: dict[str, list] = defaultdict(list)       # login -> [[t, gear], ...] (only changes)
+        self.gs: dict[str, list] = defaultdict(list)         # login -> [[t, gear score], ...] (only changes)
         self.guild: dict[str, list] = defaultdict(list)      # login -> [[t, guild login or None], ...]
         self.details: dict[str, list] = defaultdict(list)    # login -> [[t, {atk, def, sup, silver, quests}], ...]
         self.rank: dict[str, list] = defaultdict(list)       # login -> [[t, rank on the gear board or None], ...]
@@ -54,7 +54,7 @@ class History:
             self.last, self.runs = t, self.runs + 1
             self.requests = rec.get("req", self.requests)
             for login, p in rec.get("players", {}).items():
-                for series, key in ((self.gear, "gear"), (self.guild, "guild")):
+                for series, key in ((self.gs, "gs"), (self.guild, "guild")):
                     if key in p and (p[key] is not None or key == "guild"):  # a record only has changed fields
                         put(series[login], t, p[key])
             for login, d in rec.get("details", {}).items():
@@ -120,27 +120,24 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
     state = json.loads((data / "state.json").read_text("utf-8"))
     now = now or h.last or time.time()
     players, details, guilds = state["players"], state["details"], state["guilds"]
-    gear = {login: p["gear"] for login, p in players.items() if p.get("gear") is not None}
+    gear = {login: p["gs"] for login, p in players.items() if p.get("gs") is not None}
     order = sorted(gear.values(), reverse=True)
 
     def rank(g):  # ties share a rank
         return bisect.bisect_left([-x for x in order], -g) + 1
 
-    paces = {login: pace(h.gear[login], now) for login in gear}
-    day = {login: change(h.gear[login], now, DAY) for login in gear}
-    week = {login: change(h.gear[login], now, 7 * DAY) for login in gear}
-    board_gear = dict(state["boards"].get("gear", []))
-    board = list(board_gear)
+    paces = {login: pace(h.gs[login], now) for login in gear}
+    day = {login: change(h.gs[login], now, DAY) for login in gear}
+    week = {login: change(h.gs[login], now, 7 * DAY) for login in gear}
+    board = [login for login, _ in state["boards"].get("gear", [])]
     ranks_24h = {login: value_at(h.rank[login], now - DAY) for login in board}
-    # The guild pages give Kampfkraft (gear plus talents), the board the plain gear score: the border the forecast
-    # measures against must be on the same scale as the player's own value, so it is the 100th's Kampfkraft.
-    top100_gear = players.get(board[-1], {}).get("gear") if len(board) >= 100 else None
+    top100_gear = gear.get(board[-1]) if len(board) >= 100 else None
     tail_paces = [paces[x] for x in board[89:100] if paces.get(x) is not None]
     top100_pace = statistics.median(tail_paces) if tail_paces else None
 
     def row(login):
         p = players[login]
-        return {"login": login, "name": p.get("name") or login, "gear": p.get("gear"), "guild": p.get("guild"),
+        return {"login": login, "name": p.get("name") or login, "gear": p.get("gs"), "guild": p.get("guild"),
                 "day": day.get(login), "week": week.get(login), "pace": rounded(paces.get(login))}
 
     def risers(changes):
@@ -151,7 +148,6 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
     for i, login in enumerate(board):
         prev = ranks_24h.get(login)
         board_rows.append({**row(login), "rank": i + 1, "rank_change": None if prev is None else prev - (i + 1),
-                           "board_gear": board_gear[login],
                            **{k: details.get(login, {}).get(k) for k in ("atk", "def", "sup")}})
 
     def value_board(name: str, key: str):
@@ -171,16 +167,16 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
     guild_rows = []
     for g, info in guilds.items():
         members = guild_members.get(g, [])
-        active_gear = [players[m]["gear"] for m in members
-                       if players[m].get("active") and players[m].get("gear") is not None]
+        active_gear = [players[m]["gs"] for m in members
+                       if players[m].get("active") and players[m].get("gs") is not None]
         gear_series = [[r[0], r[4]] for r in h.guilds.get(g, []) if r[4] is not None]
         treasury_series = [[r[0], r[1]] for r in h.guilds.get(g, []) if r[1] is not None]
-        guild_rows.append({"login": g, **info, "day": sum(day.get(m) or 0 for m in members),
+        guild_rows.append({"login": g, **info, "day": change(gear_series, now, DAY),
                            "week": change(gear_series, now, 7 * DAY),
                            "treasury_week": change(treasury_series, now, 7 * DAY),
                            "avg_gear": rounded(statistics.mean(active_gear), 1) if active_gear else None,
                            "donated": sum(players[m].get("donated") or 0 for m in members),
-                           "top": [row(m) for m in sorted(members, key=lambda m: -(players[m].get("gear") or 0))[:10]],
+                           "top": [row(m) for m in sorted(members, key=lambda m: -(players[m].get("gs") or 0))[:10]],
                            "donors": [{**row(m), "donated": players[m].get("donated")}
                                       for m in sorted(members, key=lambda m: -(players[m].get("donated") or 0))[:10]],
                            "series": h.guilds.get(g, [])})
@@ -188,7 +184,8 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
     summary_stats = fightstats.fight_stats(h.fights, h.fightx, now)
     summary = {"generated": int(now), "since": h.first, "runs": h.runs,
                "load": {"per_run": h.requests, "runs_per_day": (collect.PLAY_TO - collect.PLAY_FROM) * 4},
-               "players": len(gear),
+               "players": len(players),
+               "ranked": len(gear),
                "active": sum(1 for p in players.values() if p.get("active")),
                "board": board_rows, "quests": quest_rows, "silver": silver_rows,
                "achievements": achievement_rows,
@@ -216,8 +213,8 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
     (target / "p").mkdir(parents=True)
     write(target / "summary.json", summary)
     write(target / "changelog.json", state.get("changelog", []))
-    write(target / "players.json", sorted(([login, p.get("name") or login, p.get("gear"), p.get("guild")]
-                                           for login, p in players.items() if p.get("gear") is not None),
+    write(target / "players.json", sorted(([login, p.get("name") or login, p["gs"], p.get("guild")]
+                                           for login, p in players.items() if p.get("gs") is not None),
                                           key=lambda r: -r[2]))
     with_split = [x for x in gear if all(details.get(x, {}).get(k) is not None for k in ("atk", "def", "sup"))]
     gear_sorted = sorted(gear.values())
@@ -271,9 +268,9 @@ def player_page(login, h, state, now, rank, paces, with_split, top100_gear, top1
                 gear_sorted) -> dict:
     players, details = state["players"], state["details"]
     p = players[login]
-    g = p["gear"]
+    g = p["gs"]
     my_pace = paces.get(login)
-    higher = sorted({x["gear"] for x in players.values() if x.get("gear") is not None and x["gear"] > g})
+    higher = sorted({x["gs"] for x in players.values() if x.get("gs") is not None and x["gs"] > g})
     next_gap = higher[0] - g + 1 if higher else None
     on_board = h.rank[login][-1][1] if h.rank.get(login) else None
     forecast = {"rank": on_board or rank(g), "exact": on_board is not None, "next_gap": next_gap,
@@ -286,13 +283,13 @@ def player_page(login, h, state, now, rank, paces, with_split, top100_gear, top1
         forecast["top100_days"] = rounded(gap / edge, 1) if edge and edge > 0 else None
 
     # Peers: players with a known split and a similar gear score (the nearest ones, at least PEERS_MIN).
-    others = sorted((x for x in with_split if x != login), key=lambda x: abs(players[x]["gear"] - g))
-    close = [x for x in others if abs(players[x]["gear"] - g) <= max(10, g * 0.05)]
+    others = sorted((x for x in with_split if x != login), key=lambda x: abs(players[x]["gs"] - g))
+    close = [x for x in others if abs(players[x]["gs"] - g) <= max(10, g * 0.05)]
     peers = close if len(close) >= PEERS_MIN else others[:PEERS_MIN]
     split = None
     if peers:
         split = {k: round(statistics.mean(details[x][k] for x in peers), 1) for k in ("atk", "def", "sup")}
-        split["n"], split["gear"] = len(peers), round(statistics.mean(players[x]["gear"] for x in peers))
+        split["n"], split["gear"] = len(peers), round(statistics.mean(players[x]["gs"] for x in peers))
         split["pace"] = rounded(statistics.median(known)) if (known := [paces[x] for x in peers
                                                                           if paces.get(x) is not None]) else None
 
@@ -301,7 +298,7 @@ def player_page(login, h, state, now, rank, paces, with_split, top100_gear, top1
         members = sorted(guild_members[p["guild"]], key=lambda m: -(players[m].get("donated") or 0))
         pos = members.index(login)
         above = players[members[pos - 1]].get("donated") or 0 if pos else None
-        by_gear = sorted(guild_members[p["guild"]], key=lambda m: -(players[m].get("gear") or 0))
+        by_gear = sorted(guild_members[p["guild"]], key=lambda m: -(players[m].get("gs") or 0))
         info = state["guilds"].get(p["guild"], {})
         total = sum(players[m].get("donated") or 0 for m in members)
         guild = {"login": p["guild"], "name": info.get("name"), "members": len(members), "joined": p.get("joined"),
@@ -309,20 +306,21 @@ def player_page(login, h, state, now, rank, paces, with_split, top100_gear, top1
                  "donation_share": rounded(100 * (p.get("donated") or 0) / total, 2) if total else None,
                  "donation_gap": above - (p.get("donated") or 0) + 1 if above is not None else None,
                  "gear_rank": by_gear.index(login) + 1,
-                 "gear_share": rounded(100 * g / info["gear"], 3) if info.get("gear") else None}
+                 "gear_share": (rounded(100 * p["gear"] / info["gear"], 3)
+                                if info.get("gear") and p.get("gear") else None)}
 
     watch = state.get("watch", {}).get(login)
     standing = {"better": rounded(100 * bisect.bisect_left(gear_sorted, g) / len(gear_sorted), 1),
                 "of": len(gear_sorted)}
-    return {"login": login, "standing": standing, "name": p.get("name") or login, "gear": g, "guild": guild,
-            "board_gear": dict(state["boards"].get("gear", [])).get(login),
+    return {"login": login, "standing": standing, "name": p.get("name") or login, "gear": g, "power": p.get("gear"),
+            "guild": guild,
             "active": p.get("active"),
-            "pace": rounded(my_pace), "day": change(h.gear[login], now, DAY),
-            "week": change(h.gear[login], now, 7 * DAY), "forecast": forecast,
+            "pace": rounded(my_pace), "day": change(h.gs[login], now, DAY),
+            "week": change(h.gs[login], now, 7 * DAY), "forecast": forecast,
             "board_rank": on_board,
             "split": {k: details.get(login, {}).get(k) for k in ("atk", "def", "sup", "silver", "quests")},
             "peers": split,
-            "series": {"gear": h.gear[login], "rank": h.rank.get(login, []),
+            "series": {"gear": h.gs[login], "rank": h.rank.get(login, []),
                        "silver": [[t, d.get("silver")] for t, d in h.details.get(login, [])
                                   if d.get("silver") is not None]},
             "watch": watch or None}

@@ -91,6 +91,29 @@ class SnapshotTests(unittest.TestCase):
         self.assertEqual(list(s["watch"]), ["sola"])
         self.assertEqual(site.requests, 12)
 
+    def test_the_active_players_off_the_board_are_read_in_slices(self):
+        names = [f"p{i:02d}" for i in range(7)]
+        page = {"guild": {"name": "Karni"},
+                "members": [member(n, 100) for n in names] + [member("old", 1, active=False)]}
+        profiles = {f"/api/players/{n}": {"attack": 1, "defense": 2, "support": 3} for n in names}
+        site = FakeSite(answers(**{"/api/guilds/karni": page, **profiles, "/api/players/p01": 404}))
+        one = collect.snapshot(site, ["p00"])  # 6 candidates (the board has "a", the list p00): one slice is one
+        self.assertEqual((one["sweep"], one["sweep_after"]), ({}, "p01"))  # profile; a 404 is skipped
+        two = collect.snapshot(site, ["p00"], sweep_after="p01")
+        self.assertEqual((list(two["sweep"]), two["sweep_after"]), (["p02"], "p02"))
+        self.assertEqual(collect.sweep_batch(names, "p03", runs=3), ["p04", "p05", "p06"])
+        self.assertEqual(collect.sweep_batch(names, "p05", runs=3), ["p06", "p00", "p01"])
+        self.assertEqual(collect.sweep_batch(names, "", runs=60), ["p00"])
+
+    def test_a_failing_profile_ends_the_sweep_but_not_the_run(self):
+        page = {"guild": {"name": "Karni"}, "members": [member(n, 100) for n in ("x1", "x2", "x3")]}
+        profile = {"attack": 1, "defense": 2, "support": 3}
+        site = FakeSite(answers(**{"/api/guilds/karni": page, "/api/players/x1": profile, "/api/players/x2": 503,
+                                   "/api/players/x3": profile}))
+        s = collect.snapshot(site, [])
+        self.assertEqual((list(s["sweep"]), s["sweep_after"]), (["x1"], "x1"))
+        self.assertIn("/api/rules", site.paths)
+
     def test_other_http_errors_are_raised(self):
         with self.assertRaises(urllib.error.HTTPError):
             collect.snapshot(FakeSite(answers(**{"/api/players/sola": 500})), ["sola"])
@@ -215,7 +238,7 @@ class MainTests(unittest.TestCase):
         patches = [mock.patch.object(collect, "datetime", mock.Mock(now=lambda tz: now)),
                    mock.patch.object(collect, "Site", lambda: mock.Mock(requests=7)),
                    mock.patch.object(collect, "snapshot", snapshot or (
-                       lambda site, wl, after=0, daily=None: snap({"karni": [member("a", 100)]}))),
+                       lambda site, wl, after=0, daily=None, sweep_after="": snap({"karni": [member("a", 100)]}))),
                    mock.patch("sys.argv", ["collect.py", "--data", str(data), "--watchlist", str(data / "none.txt"),
                                            *args]),
                    mock.patch.dict(os.environ, {"GITHUB_OUTPUT": str(out)})]
@@ -244,7 +267,7 @@ class MainTests(unittest.TestCase):
     def test_the_reference_data_is_asked_for_once_a_day_each(self):
         asked = []
 
-        def fake(site, wl, after=0, daily=None):
+        def fake(site, wl, after=0, daily=None, sweep_after=""):
             asked.append(daily)
             got = {n: [] for n in daily if n != "changelog"}  # the changelog page is down
             return {**snap({"karni": [member("a", 100)]}), **got, "days": {n: d for n, d in daily.items() if n in got}}
@@ -260,11 +283,12 @@ class MainTests(unittest.TestCase):
                 mock.patch.object(collect, "datetime", mock.Mock(now=lambda tz: self.NOON)), \
                 mock.patch.object(collect, "Site", lambda: mock.Mock(requests=7)), \
                 mock.patch.object(collect, "snapshot",
-                                  lambda site, wl, after=0, daily=None: snap({"karni": [member("a", 105)]})), \
+                                  lambda site, wl, after=0, daily=None, sweep_after="":
+                                  snap({"karni": [member("a", 105)]})), \
                 redirect_stdout(io.StringIO()):
             collect.main()
         lines = (data / "days" / "2026-09-30.jsonl").read_text().splitlines()
-        self.assertEqual(json.loads(lines[1])["players"], {"a": {"gear": 105}})
+        self.assertEqual(json.loads(lines[1])["players"], {"a": {"gear": 105, "gs": 105}})
 
     def test_nothing_happens_outside_the_play_window(self):
         code, data, out, printed = self.run_main(now=self.NIGHT)
@@ -279,7 +303,7 @@ class MainTests(unittest.TestCase):
         self.assertTrue(out.exists())
 
     def test_site_down_skips_the_run_without_failing(self):
-        def down(site, wl, after=0, daily=None):
+        def down(site, wl, after=0, daily=None, sweep_after=""):
             raise TimeoutError("timed out")
 
         code, data, out, printed = self.run_main(now=self.NOON, snapshot=down)

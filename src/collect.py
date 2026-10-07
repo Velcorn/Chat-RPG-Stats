@@ -1,8 +1,9 @@
 """Collector: one snapshot of the game's public data, stored as the changes since the last one.
 
 Runs every 15 minutes in GitHub Actions during the game's play window. Reads only public endpoints (no login,
-no cookies) and never sends anything but GETs. One run is about sixteen requests plus one per new fight, two
-seconds apart; once a day come the compendium and the first kills (one each) and the changelog (three).
+no cookies) and never sends anything but GETs. One run is about sixteen requests plus one per new fight and a
+slice of the active players' profiles (about 55, so every active player is read about once a day), two seconds
+apart; once a day come the compendium and the first kills (one each) and the changelog (three).
 """
 from __future__ import annotations
 
@@ -23,6 +24,7 @@ BASE = "https://rpg.sola.rip"
 BERLIN = ZoneInfo("Europe/Berlin")
 PLAY_FROM, PLAY_TO = 7, 24  # the game's play window (Berlin time); nothing changes outside it
 PAUSE = 2.0
+SWEEP_RUNS = 60  # the active players' profiles are read in this many slices, so each one about once a day
 # The site's four rankings (`by=` value -> the value they rank by). Others (silver, level) just return the gear board.
 BOARD_FIELDS = {"gear": "gearScore", "gold": "silver", "errungenschaften": "achievements", "quests": "quests"}
 
@@ -101,12 +103,23 @@ DAILY = {"compendium": lambda site: site.get("/api/compendium"),
          "changelog": read_changelog}
 
 
-def snapshot(site: Site, watchlist: list[str], detail_after: int = 0, daily: dict[str, str] | None = None) -> dict:
+def sweep_batch(logins: list[str], after: str, runs: int = SWEEP_RUNS) -> list[str]:
+    """The next slice of `logins` (sorted) after the login the last run ended with; wraps around at the end."""
+    ordered = sorted(set(logins))
+    size = -(-len(ordered) // runs)
+    rest = [x for x in ordered if x > after]
+    return (rest + [x for x in ordered if x <= after])[:size]
+
+
+def snapshot(site: Site, watchlist: list[str], detail_after: int = 0, daily: dict[str, str] | None = None,
+             sweep_after: str = "") -> dict:
     """Everything one run asks the site, in the site's own shapes. Fights newer than `detail_after` also cost one
     request for their detail page (the archive's own numbers: who fell, roles, damage). `daily` maps the reference
     data that is due (the game's compendium, the guilds' first kills, its changelog; they hardly ever change) to
-    today's date; what was read lands in the snapshot with its date in `days`."""
-    snap: dict = {"guilds": {}, "watch": {}, "details": {}}
+    today's date; what was read lands in the snapshot with its date in `days`. The board (top 100) and the watchlist
+    give the plain gear score anyway; of the other active guild members a slice (after the login `sweep_after`) gets
+    its profile read, since only the profile (attack + defense + support) has it."""
+    snap: dict = {"guilds": {}, "watch": {}, "details": {}, "sweep": {}}
     for g in site.get("/api/guilds"):
         if g.get("members"):
             snap["guilds"][g["login"]] = site.get(f"/api/guilds/{quote(g['login'])}")
@@ -138,6 +151,19 @@ def snapshot(site: Site, watchlist: list[str], detail_after: int = 0, daily: dic
             exc.close()
             if exc.code != 404:
                 raise
+    known = {r["login"].lower() for r in snap["boards"]["gear"]} | set(watchlist)
+    due = sweep_batch([m["login"].lower() for page in snap["guilds"].values() for m in page.get("members") or []
+                       if m.get("active") and m["login"].lower() not in known], sweep_after)
+    for login in due:  # an extra: a failing page must not cost the rest of the run
+        try:
+            snap["sweep"][login] = site.get(f"/api/players/{quote(login)}")
+        except urllib.error.HTTPError as exc:
+            exc.close()
+            if exc.code != 404:
+                break
+        except (urllib.error.URLError, TimeoutError, ValueError):
+            break
+        snap["sweep_after"] = login
     return snap
 
 
@@ -298,6 +324,9 @@ def state_from(snap: dict, prev: dict) -> dict:
             if login not in players:  # on the board but in no guild
                 players[login] = {"name": r.get("displayName"), "gear": r.get("gearScore"), "donated": None,
                                   "active": None, "guild": None}
+    for login, p in snap.get("sweep", {}).items():
+        details[login] = {**prev.get("details", {}).get(login, {}), "atk": p.get("attack"), "def": p.get("defense"),
+                          "sup": p.get("support"), "silver": p.get("silver")}
     watch: dict[str, dict] = {}
     for login, p in snap["watch"].items():
         slots = {s["slot"]: [s.get("label"), i.get("name"), i.get("tier"), i.get("attack"), i.get("defense"),
@@ -310,6 +339,17 @@ def state_from(snap: dict, prev: dict) -> dict:
         if login not in players:
             players[login] = {**prev.get("players", {}).get(login, {}), "name": p.get("displayName"),
                               "guild": (p.get("guild") or {}).get("login")}
+    # The plain gear score (attack + defense + support): the profiles give it, the board its own value for the
+    # top 100 (so its order makes sense); a player not read this run keeps the last one.
+    scores: dict[str, int] = {}
+    for login, p in {**snap.get("sweep", {}), **snap["watch"]}.items():
+        if all(p.get(k) is not None for k in ("attack", "defense", "support")):
+            scores[login] = p["attack"] + p["defense"] + p["support"]
+    scores.update({r["login"].lower(): r["gearScore"] for r in snap["boards"].get("gear", [])
+                   if r.get("gearScore") is not None})
+    for login, p in players.items():
+        if (gs := scores.get(login, prev.get("players", {}).get(login, {}).get("gs"))) is not None:
+            p["gs"] = gs
     # Seen before but in no guild and on no board now: left their guild. The last gear score stays known.
     for login, old in prev.get("players", {}).items():
         if login not in players:
@@ -326,6 +366,7 @@ def state_from(snap: dict, prev: dict) -> dict:
             "changelog": snap["changelog"] if snap.get("changelog") else prev.get("changelog", []),
             "days": {**prev.get("days", {}), **snap.get("days", {})},
             "fight_last": max([prev.get("fight_last", 0), *(f.get("id", 0) for f in snap["fights"])]),
+            "sweep_after": snap.get("sweep_after", prev.get("sweep_after", "")),
             "detail_last": max([prev.get("detail_last", 0), *snap.get("details", {})]),
             "live_seen": sorted({*prev.get("live_seen", []), *live_ids(snap)})[-30:]}
 
@@ -391,7 +432,8 @@ def main() -> int:
     try:
         today = f"{now:%Y-%m-%d}"
         snap = snapshot(site, read_watchlist(args.watchlist), prev.get("detail_last", 0),
-                        {n: today for n in DAILY if prev.get("days", {}).get(n) != today})
+                        {n: today for n in DAILY if prev.get("days", {}).get(n) != today},
+                        prev.get("sweep_after", ""))
     except (urllib.error.URLError, TimeoutError, ValueError) as exc:
         # The site is down or busy: skip this run instead of failing (and retrying) on every schedule.
         print(f"Seite nicht erreichbar, Lauf übersprungen: {exc}")

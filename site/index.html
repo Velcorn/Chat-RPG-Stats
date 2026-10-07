@@ -464,9 +464,9 @@ function gearCard(slots, power) {
       stat(v[3], "atk", max), stat(v[4], "def", max), stat(v[5], "sup", max));
   });
   const tot = [3, 4, 5].map((i) => rows.reduce((a, v) => a + (v[1] ? v[i] : 0), 0));
-  const sum = el("div", { class: "grow sum" }, el("span", { class: "lead" }, `Gesamt: Ausrüstungswert ${fmtInt(tot[0] + tot[1] + tot[2])}`,
+  const sum = el("div", { class: "grow sum" }, el("span", { class: "lead" }, "Gesamt:", el("br"), `Ausrüstungswert ${fmtInt(tot[0] + tot[1] + tot[2])}`,
       power == null ? null : el("span", { class: "kk", title: "Ausrüstung plus Talente; der Rang zählt nur die Ausrüstung" },
-        `Kampfkraft ${fmtInt(power)}${power > tot[0] + tot[1] + tot[2] ? `, davon ${fmtInt(power - tot[0] - tot[1] - tot[2])} aus Talenten` : ""}`)),
+        `Kampfkraft ${fmtInt(power)}`)),
     ...["atk", "def", "sup"].map((k, i) => el("span", { class: `s sum ${k}`, "data-l": k.toUpperCase() }, fmtInt(tot[i]))));
   return card("Ausrüstung", el("div", { class: "gear" }, head, ...lines, sum));
 }

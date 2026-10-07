@@ -7,7 +7,7 @@ Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
 **Oberfläche**
 - Die Verlaufsdiagramme sehen neu aus: eine Stufenlinie (ein Wert gilt, bis der nächste kommt) mit Fläche darunter, gestrichelten Hilfslinien und einem Wertschild am Ende. Im Rangdiagramm sind die Bereiche Top 10, Top 25 und Top 50 hinterlegt.
-- Die Ausrüstung auf der Spielerseite nennt unter der Summe auch die Kampfkraft; die Kachel des Ausrüstungswerts zeigt sie klein oben neben dem Titel, das Wort über der Zahl.
+- Die Ausrüstung auf der Spielerseite nennt unter der Summe auch die Kampfkraft; die Kachel des Ausrüstungswerts zeigt sie neben der Zahl: das Wort in der Titelzeile, die Zahl halb so groß und oben bündig mit dem Ausrüstungswert.
 
 ## 0.16.0 (07.10.2026)
 

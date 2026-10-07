@@ -54,12 +54,14 @@
   .two { grid-template-columns: repeat(auto-fit, minmax(min(460px, 100%), 1fr)); }
   .tile { padding: 10px 12px; }
   .tile .label { color: var(--text-secondary); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
-  .tile .lp { display: flex; align-items: flex-start; gap: 4px 12px; flex-wrap: wrap; }
-  .tile .pw { display: flex; flex-direction: column; text-transform: none; letter-spacing: 0; line-height: 1.25; }
+  .tile.kk { display: grid; grid-template-columns: auto 1fr; column-gap: 12px; align-content: start; }
+  .tile.kk .sub { grid-column: 1 / -1; }
+  .tile .pwl { text-transform: none; letter-spacing: 0; }
+  .tile .pwv { align-self: start; margin-top: 8px; font-size: 13px; font-weight: 650; line-height: 1.2; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
   .tile .value { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; margin: 2px 0; white-space: nowrap;
                  overflow: hidden; text-overflow: ellipsis; }
   .tile .sub { color: var(--text-muted); font-size: 13px; font-variant-numeric: tabular-nums; }
-  @media (max-width: 600px) { .tile .value { font-size: 20px; } }
+  @media (max-width: 600px) { .tile .value { font-size: 20px; } .tile .pwv { font-size: 10px; margin-top: 6px; } .tile.kk { grid-column: 1 / -1; } }
   input, button { font: inherit; color: var(--text-primary); background: var(--surface-2);
                   border: 1px solid var(--border); border-radius: 6px; padding: 6px 12px; }
   button { cursor: pointer; } button:hover { border-color: var(--text-muted); }
@@ -255,10 +257,9 @@ function load(path) {
 }
 
 function tile(label, value, sub, power) {
-  const head = power == null ? label : el("span", {}, label);
-  return el("div", { class: "card tile" }, el("div", { class: "label" + (power == null ? "" : " lp") }, head,
-    power == null ? null : el("span", { class: "pw", title: "Ausrüstung plus Talente; der Rang zählt nur die Ausrüstung" },
-      el("span", {}, "Kampfkraft"), el("span", {}, fmtInt(power)))), el("div", { class: "value", title: value }, value),
+  return el("div", { class: "card tile" + (power == null ? "" : " kk") },
+    el("div", { class: "label" }, label), power == null ? null : el("div", { class: "label pwl", title: "Ausrüstung plus Talente; der Rang zählt nur die Ausrüstung" }, "Kampfkraft"),
+    el("div", { class: "value", title: value }, value), power == null ? null : el("div", { class: "pwv" }, fmtInt(power)),
     el("div", { class: "sub" }, sub ?? ""));
 }
 function card(title, ...body) { return el("section", { class: "card" }, title ? el("h2", {}, title) : null, ...body); }

@@ -132,8 +132,12 @@
   .grow.sum { border-top: 1px solid var(--border); font-weight: 600; }
   .grow.sum .lead { grid-column: 1 / 4; }
   .grow .kk { display: block; font-size: 12px; font-weight: 400; color: var(--text-secondary); }
-  .grow .chip { justify-self: start; min-width: 30px; text-align: center; font-size: 12px; font-weight: 700; padding: 2px 0;
-                border-radius: 6px; background: color-mix(in srgb, var(--accent) var(--t, 0%), var(--surface-2)); }
+  .grow .chip { justify-self: start; min-width: 30px; text-align: center; font-size: 12px; font-weight: 700; padding: 2px 0; position: relative;
+                border-radius: 6px; color: var(--text-primary); background: color-mix(in srgb, var(--c, var(--accent)) 62%, var(--surface-2));
+                border: 1px solid color-mix(in srgb, var(--c, var(--accent)) 90%, transparent); text-shadow: 0 1px 2px rgba(0, 0, 0, .55); }
+  .grow .chip.bound::before, .grow .chip.bound::after { content: ""; position: absolute; }
+  .grow .chip.bound::after { left: -4px; top: -2px; width: 8px; height: 6px; border-radius: 1.5px; background: var(--text-primary); }
+  .grow .chip.bound::before { top: -7px; width: 4px; height: 5px; border: 1.5px solid var(--text-primary); border-bottom: 0; border-radius: 4px 4px 0 0; left: -2px; }
   .grow .piece { min-width: 0; overflow-wrap: anywhere; }
   .grow .dur { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--text-secondary); }
   .grow .dur.worn { color: var(--warning); } .grow .dur.broken { color: var(--critical); }
@@ -455,6 +459,14 @@ const STAT_ROWS = [
 const FIGHT_KINDS = [["ADVENTURE", "Abenteuer", "adventures", "adventuresWon"], ["RAID", "Überfälle", "raids", "raidsWon"],
                      ["BOSS", "Bosse", "bosses", "bossesWon"]];
 
+const TIERS = [null, ["Holz", "#91443d"], ["Kupfer", "#a37f53"], ["Eisen", "#7e7b8c"], ["Stahl", "#8a8585"], ["Silber", "#d3d2d2"],
+  ["Gold", "#e0b539"], ["Platin", "#83c4af"], ["Kobalt", "#4d5f85"], ["Purpur", "#9f322f"], ["Adamant", "#6aae56"],
+  ["Himmlisch", "#d9a074"], ["Schicksal", "#24768d"], ["Altair", "#c98b27"], ["Nova", "#99553b"]];  // colors sampled from the item icons
+function tierChip(tier, bound) {
+  const t = TIERS[tier];
+  return el("span", { class: "chip" + (bound ? " bound" : ""), style: t ? `--c:${t[1]}` : "",
+    title: t ? `Stufe ${tier}, ${t[0]}` + (bound ? ", gebunden: nicht für den Markt" : "") : "" }, tier);
+}
 function gearCard(slots, power) {
   const rows = Object.values(slots);
   const stat = (v, k, max) => el("span", { class: `s ${k}${v ? "" : " zero"}`, "data-l": k.toUpperCase() }, fmtInt(v), el("i", { style: `width:${Math.max(6, 100 * v / max)}%` }));
@@ -465,7 +477,7 @@ function gearCard(slots, power) {
     if (!v[1]) return el("div", { class: "grow" }, el("span", { class: "dur" }), el("span", { class: "chip" }, "-"), el("span", { class: "piece muted" }, `${v[0]}: leer`));
     const d = v[6];
     return el("div", { class: "grow" }, el("span", { class: `dur ${d == null ? "" : d < 25 ? "broken" : d < 50 ? "worn" : d >= 100 ? "full" : ""}` }, d == null ? "" : `${fmtInt(d)} %`),
-      el("span", { class: "chip", style: `--t:${Math.round(Math.min(v[2], 11) * 6)}%` }, v[2]),
+      tierChip(v[2], v[7]),
       el("span", { class: "piece", title: v[1] }, v[1].charAt(0).toUpperCase() + v[1].slice(1)),
       stat(v[3], "atk", max), stat(v[4], "def", max), stat(v[5], "sup", max));
   });

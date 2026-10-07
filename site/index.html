@@ -54,6 +54,8 @@
   .two { grid-template-columns: repeat(auto-fit, minmax(min(460px, 100%), 1fr)); }
   .tile { padding: 10px 12px; }
   .tile .label { color: var(--text-secondary); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+  .tile .lp { display: flex; align-items: flex-start; gap: 4px 12px; flex-wrap: wrap; }
+  .tile .pw { display: flex; flex-direction: column; text-transform: none; letter-spacing: 0; line-height: 1.25; }
   .tile .value { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; margin: 2px 0; white-space: nowrap;
                  overflow: hidden; text-overflow: ellipsis; }
   .tile .sub { color: var(--text-muted); font-size: 13px; font-variant-numeric: tabular-nums; }
@@ -252,8 +254,11 @@ function load(path) {
   return cache[path];
 }
 
-function tile(label, value, sub) {
-  return el("div", { class: "card tile" }, el("div", { class: "label" }, label), el("div", { class: "value", title: value }, value),
+function tile(label, value, sub, power) {
+  const head = power == null ? label : el("span", {}, label);
+  return el("div", { class: "card tile" }, el("div", { class: "label" + (power == null ? "" : " lp") }, head,
+    power == null ? null : el("span", { class: "pw", title: "Ausrüstung plus Talente; der Rang zählt nur die Ausrüstung" },
+      el("span", {}, "Kampfkraft"), el("span", {}, fmtInt(power)))), el("div", { class: "value", title: value }, value),
     el("div", { class: "sub" }, sub ?? ""));
 }
 function card(title, ...body) { return el("section", { class: "card" }, title ? el("h2", {}, title) : null, ...body); }
@@ -509,7 +514,7 @@ async function viewPlayer(s, login) {
   }
   const f = p.forecast, g = p.guild;
   const tiles = el("div", { class: "grid tiles" },
-    tile("Ausrüstungswert", fmtInt(p.gear), p.day == null ? "Änderung: nach einem Tag Verlauf" : `${signed(p.day)} in 24 Stunden`),
+    tile("Ausrüstungswert", fmtInt(p.gear), p.day == null ? "Änderung: nach einem Tag Verlauf" : `${signed(p.day)} in 24 Stunden`, p.power),
     tile("Rang", f.exact ? `#${f.rank}` : `etwa #${fmtInt(f.rank)}`, f.exact ? "in der Rangliste des Spiels" : "unter allen erfassten Spielern"),
     tile("Tempo", p.pace == null ? "-" : `${signed(p.pace, 1)} / Tag`, p.pace == null ? "nach 12 Stunden Verlauf" : "Durchschnitt der letzten 7 Tage"),
     tile("Nächster Rang", f.next_gap == null ? "Platz 1" : count(f.next_gap, "Punkt", "Punkte"), f.next_days ? `bei deinem Tempo ${inDays(f.next_days)}` : ""));

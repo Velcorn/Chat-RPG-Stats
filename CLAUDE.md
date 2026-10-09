@@ -7,7 +7,7 @@ Public, read-only stats dashboard for the Twitch chat RPG at rpg.sola.rip. A Git
 
 - **Read-only, public data only.** No login, no cookies, never anything but GETs. Nothing automated in the game or chat.
 - **Keep requests low.** One collector for everyone; visitors only read the published files. Don't add endpoints or
-  per-player requests without need; the watchlist is capped (opt-in for players; the channel owners are on it by default). The board's top 100 also get the watchlist data, but only in slices over the day (`TOP_WATCH`, once a day each; the operator's decision, 09.10.2026). The site's operator can ask us to stop at any time.
+  per-player requests without need; the watchlist is capped (opt-in for players; the channel owners are on it by default). The board's top 100 also get the watchlist data, but in one pass a day, on the first run of the day (`TOP_WATCH`, about 100 requests at 7 Uhr; the operator's decision, 09.10.2026). The site's operator can ask us to stop at any time.
 - **No activity logs per player.** Store values and their changes (gear, silver, stat totals), never a player's
   individual quests or fights with times and channels: that would show when and where someone plays.
 - The README's request table must match what `collect.snapshot` actually does.

@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.19.1 (09.10.2026)
+
+**Verbessert**
+- Die Top 100 werden jeden Tag im ersten Lauf (um 7 Uhr) alle auf einmal aktualisiert, statt über den Tag verteilt. Ihre Ausrüstung und Kampfquoten sind damit zur gleichen Zeit gleich alt.
+
 ## 0.19.0 (09.10.2026)
 
 **Neu**

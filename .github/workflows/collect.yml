@@ -6,6 +6,11 @@ on:
     # Off the full hour, when GitHub's scheduler is least busy.
     - cron: "0,15,30,45 4-22 * * *"
   workflow_dispatch:
+    inputs:
+      full_top:
+        description: Das ganze Top 100 in diesem Lauf lesen
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths: ["site/**", "src/**", ".github/workflows/collect.yml"]
@@ -41,7 +46,7 @@ jobs:
       - name: Sammeln
         id: collect
         if: github.event_name != 'push'
-        run: uv run --no-dev python src/collect.py --data data ${{ github.event_name == 'workflow_dispatch' && '--force' || '' }}
+        run: uv run --no-dev python src/collect.py --data data ${{ github.event_name == 'workflow_dispatch' && '--force' || '' }} ${{ inputs.full_top && '--full-top' || '' }}
       - name: Daten sichern
         if: steps.collect.outputs.collected == 'true'
         working-directory: data

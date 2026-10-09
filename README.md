@@ -40,7 +40,7 @@ zeigt:
 | Erste Siege der Gilden über jeden Boss | Erstkills | 1 pro Tag |
 | Änderungsprotokoll des Spiels | Skript der Changelog-Seite | 3 pro Tag |
 | Spieler auf der Beobachtungsliste | Spielerseite | 1 pro Spieler |
-| Top 100 der Rangliste (ohne Liste) | Spielerseite | etwa 2, jeder Spieler einmal am Tag |
+| Top 100 der Rangliste (ohne Liste) | Spielerseite | 100, alle einmal am Tag um 7 Uhr |
 
 Ein Lauf macht also etwa 70 Anfragen und eine pro neuem Kampf, im Abstand von 2 Sekunden. Bei 4 Läufen pro Stunde und
 17 Stunden Spielzeit sind das rund 4.900 Anfragen am Tag, egal wie viele Leute die Seite ansehen: Besucher lesen nur fertige Dateien. Die Seite nennt diese Zahl

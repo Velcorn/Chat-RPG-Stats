@@ -57,8 +57,13 @@ class SnapshotTests(unittest.TestCase):
         site = FakeSite(answers())
         s = collect.snapshot(site, [])
         self.assertEqual(list(s["guilds"]), ["karni"])  # a guild without members costs no request
+        self.assertEqual((site.requests, s["watch"], "days" in s), (10, {}, False))  # the top is not due
+
+    def test_the_top_100_is_read_in_full_on_the_day_s_first_run(self):
+        site = FakeSite(answers())
+        s = collect.snapshot(site, [], top_day="2026-10-09")
         self.assertEqual(site.requests, 11)  # the board's one player included
-        self.assertEqual(list(s["watch"]), ["a"])  # the board's top 100 are read like the watchlist
+        self.assertEqual((list(s["watch"]), s["days"]), (["a"], {"top": "2026-10-09"}))  # read like the watchlist
 
     def test_the_daily_reference_data_is_read_on_request_and_a_failing_page_costs_nothing(self):
         site = FakeSite(answers(**{"/api/compendium": {"potions": []}, "/api/guilds/first-kills": [{"level": 1}],
@@ -67,7 +72,7 @@ class SnapshotTests(unittest.TestCase):
         s = collect.snapshot(site, [], daily=day)
         self.assertEqual((s["compendium"], s["first_kills"], s["changelog"], s["days"]),
                          ({"potions": []}, [{"level": 1}], CHANGELOG, day))
-        self.assertEqual(site.requests, 11 + 1 + 1 + 3)
+        self.assertEqual(site.requests, 10 + 1 + 1 + 3)
         for name in day:
             self.assertNotIn(name, collect.snapshot(FakeSite(answers()), []))
         broken = collect.snapshot(FakeSite(answers(**{"/api/compendium": 503, "/api/guilds/first-kills": 503,
@@ -88,8 +93,8 @@ class SnapshotTests(unittest.TestCase):
     def test_watchlist_costs_one_request_each_and_skips_unknown_players(self):
         site = FakeSite(answers(**{"/api/players/sola": {"displayName": "Sola"}, "/api/players/weg": 404}))
         s = collect.snapshot(site, ["sola", "weg"])
-        self.assertEqual(list(s["watch"]), ["sola", "a"])
-        self.assertEqual(site.requests, 13)
+        self.assertEqual(list(s["watch"]), ["sola"])
+        self.assertEqual(site.requests, 12)
 
     def test_the_active_players_off_the_board_are_read_in_slices(self):
         names = [f"p{i:02d}" for i in range(7)]
@@ -238,7 +243,7 @@ class MainTests(unittest.TestCase):
         patches = [mock.patch.object(collect, "datetime", mock.Mock(now=lambda tz: now)),
                    mock.patch.object(collect, "Site", lambda: mock.Mock(requests=7)),
                    mock.patch.object(collect, "snapshot", snapshot or (
-                       lambda site, wl, after=0, daily=None, sweep_after="", top_after="":
+                       lambda site, wl, after=0, daily=None, sweep_after="", top_day="":
                        snap({"karni": [member("a", 100)]}))),
                    mock.patch("sys.argv", ["collect.py", "--data", str(data), "--watchlist", str(data / "none.txt"),
                                            *args]),
@@ -268,7 +273,7 @@ class MainTests(unittest.TestCase):
     def test_the_reference_data_is_asked_for_once_a_day_each(self):
         asked = []
 
-        def fake(site, wl, after=0, daily=None, sweep_after="", top_after=""):
+        def fake(site, wl, after=0, daily=None, sweep_after="", top_day=""):
             asked.append(daily)
             got = {n: [] for n in daily if n != "changelog"}  # the changelog page is down
             return {**snap({"karni": [member("a", 100)]}), **got, "days": {n: d for n, d in daily.items() if n in got}}
@@ -284,7 +289,7 @@ class MainTests(unittest.TestCase):
                 mock.patch.object(collect, "datetime", mock.Mock(now=lambda tz: self.NOON)), \
                 mock.patch.object(collect, "Site", lambda: mock.Mock(requests=7)), \
                 mock.patch.object(collect, "snapshot",
-                                  lambda site, wl, after=0, daily=None, sweep_after="", top_after="":
+                                  lambda site, wl, after=0, daily=None, sweep_after="", top_day="":
                                   snap({"karni": [member("a", 105)]})), \
                 redirect_stdout(io.StringIO()):
             collect.main()
@@ -304,7 +309,7 @@ class MainTests(unittest.TestCase):
         self.assertTrue(out.exists())
 
     def test_site_down_skips_the_run_without_failing(self):
-        def down(site, wl, after=0, daily=None, sweep_after="", top_after=""):
+        def down(site, wl, after=0, daily=None, sweep_after="", top_day=""):
             raise TimeoutError("timed out")
 
         code, data, out, printed = self.run_main(now=self.NOON, snapshot=down)

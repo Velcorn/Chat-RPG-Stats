@@ -26,7 +26,7 @@ PLAY_FROM, PLAY_TO = 7, 24  # the game's play window (Berlin time); nothing chan
 PAUSE = 2.0
 BOUND_SOURCES = ("PERSONAL_SHOP", "AUCTION", "TRADER", "SEALED")  # bound to the player, not for the market
 SWEEP_RUNS = 60  # the active players' profiles are read in this many slices, so each one about once a day
-TOP_WATCH = 100  # the board's top players get the watchlist's detailed profile data, once a day (in SWEEP_RUNS slices)
+TOP_WATCH = 100  # the board's top players get the watchlist's detailed profile data, all in the day's first run
 # The site's four rankings (`by=` value -> the value they rank by). Others (silver, level) just return the gear board.
 BOARD_FIELDS = {"gear": "gearScore", "gold": "silver", "errungenschaften": "achievements", "quests": "quests"}
 
@@ -114,15 +114,15 @@ def sweep_batch(logins: list[str], after: str, runs: int = SWEEP_RUNS) -> list[s
 
 
 def snapshot(site: Site, watchlist: list[str], detail_after: int = 0, daily: dict[str, str] | None = None,
-             sweep_after: str = "", top_after: str = "") -> dict:
+             sweep_after: str = "", top_day: str = "") -> dict:
     """Everything one run asks the site, in the site's own shapes. Fights newer than `detail_after` also cost one
     request for their detail page (the archive's own numbers: who fell, roles, damage). `daily` maps the reference
     data that is due (the game's compendium, the guilds' first kills, its changelog; they hardly ever change) to
     today's date; what was read lands in the snapshot with its date in `days`. The board (top 100) and the watchlist
     give the plain gear score anyway; of the other active guild members a slice (after the login `sweep_after`) gets
     its profile read, since only the profile (attack + defense + support) has it. The detail data of the watchlist
-    (gear per slot, stats) is also read for the board's top 100, a slice (after `top_after`) per run, so each about once
-    a day."""
+    (gear per slot, stats) is also read for the board's top 100, all at once on the first run of a day
+    (`top_day` is today's date then), so every one of them is as old as the same morning."""
     snap: dict = {"guilds": {}, "watch": {}, "details": {}, "sweep": {}}
     for g in site.get("/api/guilds"):
         if g.get("members"):
@@ -157,7 +157,7 @@ def snapshot(site: Site, watchlist: list[str], detail_after: int = 0, daily: dic
                 raise
     top = [r["login"].lower() for r in snap["boards"]["gear"][:TOP_WATCH]]
     snap["top"] = top
-    for login in sweep_batch([x for x in top if x not in watchlist], top_after):
+    for login in ([x for x in top if x not in watchlist] if top_day else []):
         try:  # an extra: a failing page must not cost the rest of the run
             snap["watch"][login] = site.get(f"/api/players/{quote(login)}")
         except urllib.error.HTTPError as exc:
@@ -166,7 +166,9 @@ def snapshot(site: Site, watchlist: list[str], detail_after: int = 0, daily: dic
                 break
         except (urllib.error.URLError, TimeoutError, ValueError):
             break
-        snap["top_after"] = login
+    else:
+        if top_day:
+            snap.setdefault("days", {})["top"] = top_day
     known = {r["login"].lower() for r in snap["boards"]["gear"]} | set(watchlist)
     due = sweep_batch([m["login"].lower() for page in snap["guilds"].values() for m in page.get("members") or []
                        if m.get("active") and m["login"].lower() not in known], sweep_after)
@@ -387,7 +389,6 @@ def state_from(snap: dict, prev: dict) -> dict:
             "days": {**prev.get("days", {}), **snap.get("days", {})},
             "fight_last": max([prev.get("fight_last", 0), *(f.get("id", 0) for f in snap["fights"])]),
             "sweep_after": snap.get("sweep_after", prev.get("sweep_after", "")),
-            "top_after": snap.get("top_after", prev.get("top_after", "")),
             "detail_last": max([prev.get("detail_last", 0), *snap.get("details", {})]),
             "live_seen": sorted({*prev.get("live_seen", []), *live_ids(snap)})[-30:]}
 
@@ -442,6 +443,7 @@ def main() -> int:
     ap.add_argument("--data", type=Path, default=Path("data"))
     ap.add_argument("--watchlist", type=Path, default=Path("watchlist.txt"))
     ap.add_argument("--force", action="store_true", help="also outside the play window")
+    ap.add_argument("--full-top", action="store_true", help="read the top 100 in this run even if it was read today")
     args = ap.parse_args()
     now = datetime.now(BERLIN)
     if not args.force and not in_play_window(now):
@@ -454,7 +456,8 @@ def main() -> int:
         today = f"{now:%Y-%m-%d}"
         snap = snapshot(site, read_watchlist(args.watchlist), prev.get("detail_last", 0),
                         {n: today for n in DAILY if prev.get("days", {}).get(n) != today},
-                        prev.get("sweep_after", ""), prev.get("top_after", ""))
+                        prev.get("sweep_after", ""),
+                        today if args.full_top or prev.get("days", {}).get("top") != today else "")
     except (urllib.error.URLError, TimeoutError, ValueError) as exc:
         # The site is down or busy: skip this run instead of failing (and retrying) on every schedule.
         print(f"Seite nicht erreichbar, Lauf übersprungen: {exc}")

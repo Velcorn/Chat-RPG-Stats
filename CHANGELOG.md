@@ -3,6 +3,18 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.21.0 (10.10.2026)
+
+**Neu**
+- Spiel -> Regeln: Oben steht, wann sich zuletzt eine Regel geändert hat und wann zuletzt geprüft wurde; bei jeder Regel, deren Änderung gemessen wurde, steht ihr Zeitpunkt.
+
+**Verbessert**
+- Die Erklärungen aller Regeln neu geschrieben, nach dem Handbuch und den Seiten des Spiels statt nach Vermutung. Mehrere stimmten nicht: Schriftrollen (je Versuch, nicht je drei Stufen), die Wartezeit zum Zurückziehen eines Angebots (für das eigene Angebot, nicht für Käufe), Quests bis zum Kampf (davor zieht man als Begleiter mit), das Aktivitätsfenster (gilt für Truhen) und der Händlerpreis (Richtpreis, nicht fest).
+- Kompendium: Hinweis, dass die dort geführten Abenteuer die von vor dem 04.10. sind.
+
+**Behoben**
+- Abenteuer-Geschichten heißen nicht mehr "Abenteuer Schwierigkeit 3" und tragen die 3 nicht mehr im Titel: Alle Geschichten kommen seit dem 04.10. mit Schwierigkeit 3, die Zahl sagt nichts.
+
 ## 0.20.2 (09.10.2026)
 
 **Oberfläche**

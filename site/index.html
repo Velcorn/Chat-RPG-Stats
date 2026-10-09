@@ -265,8 +265,12 @@ const pct = (a, b) => b ? `${fmtDec(100 * a / b, 0)} %` : "-";
 // "in weniger als einem Tag" / "in etwa 3 Tagen"
 const inDays = (d) => d < 1 ? "in weniger als einem Tag" : `in etwa ${count(Math.ceil(d), "Tag", "Tagen")}`;
 const KINDS = { BOSS: "Boss", ADVENTURE: "Abenteuer", RAID: "Überfall" };
-const fightLabel = (f) => f.kind === "BOSS" ? `Boss ${f.name || ""}, Stufe ${f.level ?? f.bossLevel ?? "?"}`
-  : `${KINDS[f.kind] || f.kind} Schwierigkeit ${f.level ?? f.difficulty ?? "?"}`;
+// Every story adventure since 04.10.2026 arrives with difficulty 3 (a placeholder, not a measure): not shown.
+const fightLabel = (f) => {
+  if (f.kind === "BOSS") return `Boss ${f.name || ""}, Stufe ${f.level ?? f.bossLevel ?? "?"}`;
+  const d = f.level ?? f.difficulty ?? "?";
+  return f.kind === "ADVENTURE" && d === 3 ? "Abenteuer" : `${KINDS[f.kind] || f.kind} Schwierigkeit ${d}`;
+};
 // The repo behind the page (user.github.io/repo), for the watchlist form and the footer.
 const REPO = location.hostname.endsWith(".github.io")
   ? `${location.hostname.split(".")[0]}/${location.pathname.split("/")[1]}` : "Velcorn/Chat-RPG-Stats";
@@ -978,7 +982,7 @@ function viewStories(s) {
   if (!s.stories.length) return [card("Abenteuer", el("p", { class: "note" }, "Noch keine Abenteuer seit dem Update gesammelt."))];
   return [
     el("p", { class: "note" }, "Seit dem Update 04.10.2026 sind Abenteuer Geschichten, bei denen der Chat jede Szene abstimmt. Hier siehst du, was gewählt wurde und wie die Läufe ausgingen. Wenige Läufe sagen noch wenig."),
-    ...s.stories.map((st) => card(`${st.name} (Schwierigkeit ${st.difficulty ?? "?"})`,
+    ...s.stories.map((st) => card(st.difficulty && st.difficulty !== 3 ? `${st.name} (Schwierigkeit ${st.difficulty})` : st.name,
       el("p", { class: "note" }, `${count(st.n, "Lauf", "Läufe")} der letzten ${s.stats.days} Tage, ${pct(st.wins, st.n)} gewonnen, Ø ${fmtInt(st.fighters)} Teilnehmer.`),
       ...st.scenes.flatMap((sc) => [
         el("h3", {}, `Szene ${sc.i}`),
@@ -1058,53 +1062,55 @@ $("q").addEventListener("keydown", (ev) => {
 document.addEventListener("click", (ev) => { if (!ev.target.closest(".search")) $("suggest").hidden = true; });
 
 // ---- the game itself: silver in circulation, rules and their changes ----
-// [label, unit, what it means]; grouped for the Regeln page. Unknown rules still show, under "Sonstiges".
+// [key, label, unit, what it means]; grouped for the Regeln page. Unknown rules still show, under "Sonstiges".
+// The explanations come from the game's own handbook (/handbuch) and its smithy, market and trader pages (checked
+// 10.10.2026); where the game behaves differently from its rule the text says so.
 const RULE_GROUPS = [
   ["Quests", [
-    ["questCooldownMinutes", "Wartezeit zwischen Quests", "Minuten", "So lange dauert es, bis du wieder questen kannst."],
-    ["questRewardMin", "Belohnung ab", "Silber", "Eine erfolgreiche Quest bringt mindestens so viel."],
+    ["questCooldownMinutes", "Wartezeit zwischen Quests", "Minuten", "Die Wartezeit gilt für dich, nicht für den Kanal: Wer in mehreren Streams zuschaut, questet trotzdem nur einmal je Wartezeit."],
+    ["questRewardMin", "Belohnung ab", "Silber", "Eine gelungene Quest bringt mindestens so viel. Die erste gelungene Quest des Tages zahlt das Doppelte."],
     ["questRewardMax", "Belohnung bis", "Silber", "und höchstens so viel."],
-    ["questFailureCooldownMinutes", "Wartezeit nach Fehlschlag", "Minuten", "Schlägt eine Quest fehl, ist die Pause kürzer."],
-    ["questFailureGraceSilver", "Fehlschlag kostet erst ab", "Silber", "Wer weniger Silber hat, verliert bei einem Fehlschlag nichts."],
-    ["liveOnly", "Nur im Live-Chat", "bool", "Quests gibt es nur, wenn du im Chat eines Streams sitzt, der gerade live ist."],
-    ["silentQuestEvery", "Langsamer Chat: jedes n-te !quest", "", "In Kanälen mit langsamem Chat-Modus wird nur jedes n-te !quest im Chat beantwortet."],
-    ["activityWindowMinutes", "Aktivitätsfenster", "Minuten", "Vermutlich der Zeitraum, in dem du zuletzt etwas getan haben musst, um als aktiv zu gelten."],
+    ["questFailureCooldownMinutes", "Wartezeit nach Fehlschlag", "Minuten", "Nach einem Fehlschlag wartest du nur so lange statt der vollen Zeit."],
+    ["questFailureGraceSilver", "Fehlschlag kostet erst ab", "Silber", "Wer weniger Silber besitzt, verliert bei einem Fehlschlag nichts; wer mehr hat, verliert einen Teil davon."],
+    ["liveOnly", "Nur im Live-Chat", "bool", "Gequestet wird nur im Chat eines Streams, der gerade läuft. Nachts schlafen die Questgeber."],
+    ["silentQuestEvery", "Langsamer Kanal: jedes n-te !quest", "", "Stellt ein Streamer seinen Kanal auf langsam, wird im Chat nur jedes n-te !quest beantwortet."],
+    ["activityWindowMinutes", "Truhen: Chat-Aktivität", "Minuten", "Eine Truhe findet nur, wer in den letzten so vielen Minuten im Chat etwas geschrieben hat; den Rest erledigt der Zufall."],
   ]],
   ["Kämpfe", [
-    ["combatMinQuests", "Quests bis zum ersten Kampf", "", "So viele Quests brauchst du, bevor du an Kämpfen teilnehmen darfst."],
-    ["combatLife", "Basis-Leben im Kampf", "", "Vermutlich das Grundleben eines Kämpfers, bevor Ausrüstung und Talente dazukommen."],
-    ["adventureLootTierOffset", "Abenteuer-Beute: Stufenversatz", "", "Vermutlich: um wie viele Stufen die Beute aus Abenteuern gegenüber der Kampfstufe verschoben ist."],
-    ["adventureLootTierSpread", "Abenteuer-Beute: Streuung", "Stufen", "Vermutlich: um so viele Stufen kann die Beute von der Kampfstufe abweichen."],
+    ["combatMinQuests", "Quests bis zu Beute und Risiko", "", "Wer weniger Quests erledigt hat, zieht als Begleiter mit: schaut zu, teilt nicht aus, wird nicht getroffen und bekommt trotzdem Erfahrung."],
+    ["combatLife", "Leben im Kampf", "", "Jeder geht mit vollem Leben hinein. Treffer kosten Leben, die Verteidigung mindert den Schaden, bei 0 geht man zu Boden."],
+    ["adventureLootTierOffset", "Abenteuer-Beute: Versatz", "", "Nach dem Handbuch des Spiels gibt ein Stern (Schwierigkeit) Beute ab Stufe 1 plus diesem Versatz, jeder weitere Stern eine Stufe mehr."],
+    ["adventureLootTierSpread", "Abenteuer-Beute: Streuung", "Stufen", "So viele Stufen reicht die Beute eines Sterns nach dem Handbuch (bei 2: ein Stern Stufe 1 oder 2, fünf Sterne Stufe 5 oder 6)."],
   ]],
   ["Schmiede", [
-    ["smeltFeePerTier", "Einschmelzen", "Silber je Stufe", "Gebühr fürs Einschmelzen: aus mehreren Teilen wird ein neues."],
-    ["smeltMaxTier", "Höchste Stufe beim Einschmelzen", "", "Darüber geht es nicht weiter."],
-    ["reforgeFeePerTier", "Neu schmieden", "Silber je Stufe", "Gebühr, um die Werte eines Stücks neu zu würfeln."],
-    ["repairFeePerTier", "Reparieren", "Silber je Stufe", "Gebühr fürs Instandsetzen."],
-    ["upgradeScrollsPerThreeTiers", "Schriftrollen je drei Stufen", "", "So viele Schriftrollen kostet eine Aufwertung um drei Stufen."],
-    ["sellValuePerTier", "Verkauf an den Schmied", "Silber je Stufe", "Das zahlt der Schmied für ein Stück, das du nicht auf dem Markt anbieten kannst."],
+    ["smeltFeePerTier", "Einschmelzen", "Silber je Stufe", "Gebühr je Stufe des Ergebnisses: Drei Stücke einer Stufe werden zu einem der nächsten, ein Zweihänder zählt doppelt. Ist eines der Stücke gebunden, ist es auch das Ergebnis."],
+    ["smeltMaxTier", "Höchste Stufe beim Einschmelzen", "", "Der Schmelzofen liefert nichts darüber. Höhere Stufen gibt es von Bossen und aus der Schmiede der Gilde."],
+    ["reforgeFeePerTier", "Neu schmieden", "Silber je Stufe", "Gebühr je Stufe des Stücks: Es bekommt eine andere Form derselben Ausrichtung mit neu verteilten Werten. Stufe, Material und Platz bleiben."],
+    ["repairFeePerTier", "Reparieren", "Silber je Stufe", "Gebühr je Stufe bei völlig abgenutztem Stück, es zählt anteilig der Schaden (abzüglich eines Rabatts). Unter 50 % Haltbarkeit teilt ein Stück weniger aus."],
+    ["upgradeScrollsPerThreeTiers", "Schriftrollen je Versuch", "", "Ein Versuch am Amboss (+1, bis +4) kostet so viele Rollen je angefangene drei Stufen des Stücks, Stufe 8 also das Dreifache. Je höher das Plus, desto seltener gelingt es; misslingt es, sind nur die Rollen weg."],
+    ["sellValuePerTier", "Verkauf an den Schmied", "Silber je Stufe", "Das zahlt der Schmied je Materialstufe für ein Stück: Stufe 8 also das Achtfache."],
   ]],
   ["Markt", [
     ["marketUnlockQuests", "Quests bis zum Markt", "", "So viele Quests brauchst du, bevor du handeln darfst."],
-    ["marketFeePercent", "Marktgebühr", "%", "Anteil des Preises, den der Verkäufer abgibt."],
+    ["marketFeePercent", "Marktgebühr", "%", "Davon behält der Markt vom Preis, der Verkäufer bekommt den Rest."],
     ["marketMaxListings", "Angebote gleichzeitig", "", "So viele Stücke darfst du gleichzeitig anbieten."],
-    ["marketListingDays", "Angebote laufen", "Tage", "Danach verschwindet ein Angebot vom Markt."],
-    ["marketBuyLockMinutes", "Sperre neuer Angebote", "Minuten", "So lange sind neue Angebote gesperrt, dann wird unter allen Interessenten gelost."],
-    ["marketWithdrawSeconds", "Frist zum Zurückziehen", "Sekunden", "Zeit, in der sich ein Kauf oder Interesse zurücknehmen lässt."],
+    ["marketListingDays", "Angebote laufen", "Tage", "Nach so vielen Tagen kommt ein unverkauftes Stück von selbst zurück ins Inventar."],
+    ["marketBuyLockMinutes", "Sperre neuer Angebote", "Minuten", "Ein frisch eingestelltes Stück kann in dieser Zeit niemand kaufen. Wer es will, stellt sich an (der Preis wird abgebucht), am Ende entscheidet das Los. Steht niemand an, ist es danach sofort zu kaufen."],
+    ["marketWithdrawSeconds", "Frist zum Zurückziehen", "Sekunden", "So lange lässt sich ein eigenes Angebot zurückziehen, etwa nach einem Tippfehler im Preis. Danach erst wieder, wenn die Verlosung vorbei ist und niemand ansteht."],
   ]],
   ["Fahrender Händler", [
-    ["traderEnabled", "Händler unterwegs", "bool", "Ob der Händler gerade überhaupt kommt."],
-    ["traderStayMinutes", "Aufenthalt", "Minuten", "So lange steht sein Karren in einem Kanal."],
-    ["traderWareCount", "Waren", "", "So viele Stücke hat er dabei."],
-    ["traderTierMin", "Waren ab Stufe", "", ""],
-    ["traderTierMax", "Waren bis Stufe", "", ""],
-    ["traderPurchasesPerVisit", "Käufe je Besuch", "", "Mehr als so viele Stücke gibt es pro Besuch nicht."],
-    ["traderPricePerTier", "Preis", "Silber je Stufe", "Fester Preis, nicht verhandelbar."],
+    ["traderEnabled", "Händler unterwegs", "bool", "Ob der Händler überhaupt kommt."],
+    ["traderStayMinutes", "Aufenthalt", "Minuten", "So lange steht sein Karren in einem laufenden Stream. Im Chat sagt er vorher, was er dabeihat."],
+    ["traderWareCount", "Waren", "", "So viele Stücke legt er aus. Angreifer, Verteidiger und Unterstützer bekommen alle etwas."],
+    ["traderTierMin", "Waren ab Stufe", "", "Seine Stücke liegen zwischen dieser und der höchsten Stufe."],
+    ["traderTierMax", "Waren bis Stufe", "", "Die höchste Stufe ist selten."],
+    ["traderPurchasesPerVisit", "Käufe je Besuch", "", "So viele Stücke darf jeder pro Besuch kaufen. Der Vorrat ist unbegrenzt, nichts ist weg, weil jemand schneller war."],
+    ["traderPricePerTier", "Preis", "Silber je Stufe", "Richtpreis je Stufe, im Einzelfall ein wenig darüber oder darunter; ein Zweihänder kostet das Doppelte. Gekaufte Stücke sind gebunden und lassen sich nicht auf dem Markt anbieten."],
   ]],
   ["Allgemein", [
-    ["playWindowFrom", "Spielzeit ab", "Uhr", "Außerhalb der Spielzeit (Berliner Zeit) gibt es keine Quests, Kämpfe und neuen Angebote."],
-    ["playWindowTo", "Spielzeit bis", "Uhr", ""],
-    ["silverPerGold", "Silber pro Gold", "", "Das Spiel rechnet in Silber, Gold ist nur die Anzeige."],
+    ["playWindowFrom", "Spielzeit ab", "Uhr", "Außerhalb der Spielzeit (Berliner Zeit) gibt es keine Quests, keine neuen Kämpfe, keine Händlerbesuche und keine neuen Angebote."],
+    ["playWindowTo", "Spielzeit bis", "Uhr", "24 Uhr heißt: bis Mitternacht."],
+    ["silverPerGold", "Silber pro Gold", "", "Das Spiel rechnet in Silber, Gold ist nur die Anzeige. Diese Seite nennt alles in Silber."],
     ["channelApplicationsOpen", "Bewerbung für Kanäle", "bool", "Ob sich neue Streamer als Kanal bewerben können."],
   ]],
 ];
@@ -1152,7 +1158,8 @@ function viewCompendium(s) {
     el("div", { class: "grid two" },
       card("Abenteuer und Überfälle", table([
         { label: "Name", get: (r) => r.name }, { label: "Art", get: (r) => r.kindLabel },
-        { label: "Schwierigkeit", num: true, get: (r) => r.difficulty }], c.fights)),
+        { label: "Schwierigkeit", num: true, get: (r) => r.difficulty }], c.fights),
+        el("p", { class: "note" }, "Das Kompendium führt die Abenteuer von vor dem 04.10.2026. Die Geschichten, die seitdem laufen (unter Kämpfe -> Abenteuer), stehen nicht darin; ihre Schwierigkeit ist immer 3 und sagt nichts.")),
       card("Gildenprojekte", table([
         { label: "Projekt", get: (r) => r.label }, { label: "Wirkung", get: (r) => r.description }], c.projects))),
     ...workshopCards(c),
@@ -1233,13 +1240,20 @@ async function viewGame(s, sub) {
     const groups = RULE_GROUPS.map(([title, rows]) => [title, rows.map((r) => r[0]).filter((k) => k in now)]).filter(([, keys]) => keys.length);
     const other = Object.keys(now).filter((k) => !known.has(k));
     if (other.length) groups.push(["Sonstiges", other]);
+    const last = {};  // rule -> time of its newest measured change (the log is newest first)
+    for (const r of s.rules.log) if (!(r[1] in last)) last[r[1]] = r[0];
+    const changed = s.rules.log.length
+      ? `Zuletzt geändert: ${fmtTime(s.rules.log[0][0])} Uhr (${ruleName(s.rules.log[0][1])}).`
+      : `Seit Beginn der Aufzeichnung (${fmtSince(s.rules.since)}) hat sich keine Regel geändert.`;
     return [card("Die Regeln des Spiels", el("p", { class: "note" },
         "Das sind die Zahlen, mit denen das Spiel gerade rechnet, so wie es sie selbst veröffentlicht. Sie ändern sich ab und zu, oft ohne Ankündigung; ",
-        el("a", { href: "#/spiel/aenderungen" }, "unter Änderungen"), " steht, was sich wann geändert hat.")),
+        el("a", { href: "#/spiel/aenderungen" }, "unter Änderungen"), " steht, was sich wann geändert hat. Die Erklärungen stammen aus dem Handbuch und den Seiten des Spiels."),
+      el("p", {}, el("b", {}, changed), " ", el("span", { class: "muted" }, `Geprüft wird bei jedem Lauf, zuletzt ${fmtTime(s.generated)} Uhr.`))),
       el("div", { class: "grid two" }, groups.map(([title, keys]) => card(title, el("dl", { class: "rules" },
         keys.filter((k) => k in now).flatMap((k) => [
           el("dt", {}, ruleName(k)),
-          el("dd", {}, el("b", {}, ruleText(k, now[k])), (RULE_INFO[k] || {}).help ? el("span", { class: "muted" }, (RULE_INFO[k] || {}).help) : null)])))))];
+          el("dd", {}, el("b", {}, ruleText(k, now[k])), (RULE_INFO[k] || {}).help ? el("span", { class: "muted" }, (RULE_INFO[k] || {}).help) : null,
+            k in last ? el("span", { class: "muted" }, `Zuletzt geändert: ${fmtTime(last[k])} Uhr.`) : null)])))))];
   }
   if (sub === "aenderungen") return viewChanges(s);
   const e = s.economy, now = e.series[e.series.length - 1];

@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.20.2 (09.10.2026)
+
+**Oberfläche**
+- Formen: Beide Spalten enden am Desktop auf gleicher Höhe (die letzte Karte der kürzeren Spalte füllt den Rest), die Hinweise zu den Einhandwaffen stehen jetzt im Textblock unten.
+
 ## 0.20.1 (09.10.2026)
 
 **Oberfläche**

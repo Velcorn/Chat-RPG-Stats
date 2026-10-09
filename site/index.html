@@ -172,6 +172,9 @@
   .bar.atk { --c: var(--atk); } .bar.def { --c: var(--def); } .bar.sup { --c: var(--sup); }
   .bar .name { display: flex; align-items: center; gap: 7px; }
   .bar .name::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex: none; }
+  .forms-col > .card:last-child { display: flex; flex-direction: column; }
+  .forms-col > .card:last-child .wide-table { flex: 1; }
+  .forms-col > .card:last-child table { height: 100%; }
   .forms { table-layout: fixed; width: 100%; }
   .forms td:first-child, .forms td.seen-col { white-space: nowrap; }
   .forms th:nth-child(1) { width: 27%; } .forms th:nth-child(2) { width: 20%; }
@@ -1208,16 +1211,16 @@ function viewForms() {
   return [el("section", { class: "grid" },
     el("div", { class: "head" }, el("h1", {}, "Ausrüstungsformen")),
     el("p", { class: "note" }, "Seit dem 28.09.2026 gibt es jedes Stück je Platz, Stufe und Ausrichtung in fünf Formen. Die Form steht im Namen (\"... des Schlächters\") und legt fest, wie sich die Punkte auf Angriff, Verteidigung und Unterstützung verteilen. Die Summe hängt nur von der Stufe ab: 5 je Stufe plus 3 (Stufe 9: 48), Zweihänder und Stäbe das Doppelte, Ringe 3 je Stufe (Stufe 9: 27)."),
-    el("div", { class: "grid two", style: "align-items: start" },
-      el("div", { class: "grid" },
+    el("div", { class: "grid two" },
+      el("div", { class: "grid forms-col", style: "grid-template-rows: auto 1fr" },
         formsCard("Rüstung", FORMS.armor, "Helm, Brustpanzer, Handschuhe, Beinschutz und Stiefel teilen sich die Formen."),
         formsCard("Ringe", FORMS.ring)),
-      el("div", { class: "grid" },
-        formsCard("Einhandwaffen", FORMS.w1, "Waffen mit Verteidigung als Hauptwert gibt es nicht. \"des Prinzen\" war in den Daten nicht zu finden; seine Anteile stammen aus der Vorlage."),
+      el("div", { class: "grid forms-col", style: "grid-template-rows: auto auto 1fr" },
+        formsCard("Einhandwaffen", FORMS.w1),
         formsCard("Zweihandwaffen und Stäbe", FORMS.w2),
         formsCard("Schilde", FORMS.shield, "Bei Schilden steht der Typ vorne im Namen (\"kobaltener Turmschild\")."))),
     card("So ist die Tabelle entstanden", el("p", { class: "note" },
-      "Nach einer Übersicht von fireworker2000 (Discord). Nachgeprüft am 09.10.2026 an der Ausrüstung der beobachteten Spieler und an rund 840 Angeboten auf dem Markt: gezählt nur Stücke ohne Verbesserung (+) und ohne Stein, deren Summe genau zur Stufe passt. Die Anteile stammen jeweils von der höchsten gesehenen Stufe, meist 9; auf niedrigen Stufen verschiebt die Rundung sie um mehrere Punkte (ein Ring des Zorns hat auf Stufe 2 4/1/1, auf Stufe 9 16/5/6). Bossbeute und Stücke mit eigenem Namen haben eigene Werte und fehlen hier. Alle Angaben ohne Gewähr.")))];
+      "Nach einer Übersicht von fireworker2000 (Discord). Nachgeprüft am 09.10.2026 an der Ausrüstung der beobachteten Spieler und an rund 840 Angeboten auf dem Markt: gezählt nur Stücke ohne Verbesserung (+) und ohne Stein, deren Summe genau zur Stufe passt. Die Anteile stammen jeweils von der höchsten gesehenen Stufe, meist 9; auf niedrigen Stufen verschiebt die Rundung sie um mehrere Punkte (ein Ring des Zorns hat auf Stufe 2 4/1/1, auf Stufe 9 16/5/6). Bossbeute und Stücke mit eigenem Namen haben eigene Werte und fehlen hier. Waffen mit Verteidigung als Hauptwert gibt es nicht. \"des Prinzen\" war in den Daten nicht zu finden, seine Anteile stammen aus der Vorlage. Alle Angaben ohne Gewähr.")))];
 }
 
 async function viewGame(s, sub) {

@@ -589,21 +589,21 @@ async function viewPlayer(s, login) {
 
   if (p.watch) {
     const st = p.watch.stats || {};
-    out.push(el("h2", { class: "divider" }, "Beobachtungsliste"));
+    out.push(el("h2", { class: "divider" }, "Beobachtungsliste und Top 100"));
     out.push(el("div", { class: "grid two" }, fightCard(st),
       card("Statistik", el("dl", { class: "facts" },
         el("dt", {}, "Schadensminderung"), el("dd", {}, `${fmtInt(p.watch.survival)} %, Leben ${fmtInt(p.watch.life)}`),
         STAT_ROWS.flatMap(([name, fn]) => [el("dt", {}, name), el("dd", {}, fn(st))])))));
     if (p.watch.slots && Object.keys(p.watch.slots).length) out.push(gearCard(p.watch.slots, p.power));
   } else {
-    out.push(card("Mehr Statistik", el("p", { class: "note" }, "Ausrüstung je Platz, Kampfquoten, Markt und Verlosungen gibt es für Spieler auf der ",
-      el("a", { href: WATCH_FORM }, "Beobachtungsliste"), ". Eintragen geht über ein kurzes Formular auf GitHub, nur für den eigenen Namen.")));
+    out.push(card("Mehr Statistik", el("p", { class: "note" }, "Ausrüstung je Platz und Kampfquoten gibt es für die Top 100 (einmal am Tag aktualisiert) und für Spieler auf der ",
+      el("a", { href: WATCH_FORM }, "Beobachtungsliste"), " (bei jedem Lauf). Eintragen geht über ein kurzes Formular auf GitHub, nur für den eigenen Namen.")));
   }
   return out;
 }
 
 // ---- guild buildings and bosses ----
-const BUILDING_ORDER = ["WERKSTATT", "LAGER", "KONTOR", "KRIEGSKASSE", "WALL"];
+const BUILDING_ORDER = ["WERKSTATT", "LAGER", "KONTOR", "FELDKASSE", "AKADEMIE", "ARCHIV", "HANDELSPOSTEN", "HOCHOFEN", "WALL"];
 const bossShort = (name) => name.replace(/^(Die|Der|Das|Verteidigung der) /, "").split(" ")[0];
 function bossNames(guilds) {
   const names = [];
@@ -612,21 +612,24 @@ function bossNames(guilds) {
 }
 function buildingsOf(g) {
   const b = g.buildings || {};
-  const row = (k) => ({ key: k, label: b[k][2], level: b[k][0], max: b[k][1], effect: b[k][3], next: b[k][4], nextEffect: b[k][5], blocker: b[k][6] });
+  const row = (k) => ({ key: k, label: b[k][2], level: b[k][0], max: b[k][1], effect: b[k][3], next: b[k][4], nextEffect: b[k][5], blocker: b[k][6], upkeep: b[k][7], until: b[k][8] });
   return BUILDING_ORDER.filter((k) => b[k]).map(row).concat(Object.keys(b).filter((k) => !BUILDING_ORDER.includes(k)).map(row));
 }
 function buildingsCard(g) {
   const rows = buildingsOf(g);
   if (!rows.length) return null;
   const full = (r) => r.level >= r.max;
-  return card("Gebäude", el("div", { class: "scroll" }, table([
+  return card("Gebäude", el("div", { class: "wide-table" }, table([
     { label: "Gebäude", get: (r) => r.label },
     { label: "Stufe", num: true, get: (r) => `${fmtInt(r.level)} / ${fmtInt(r.max)}` },
     { label: "Wirkung", get: (r) => r.effect },
     { label: "Nächste Stufe bringt", get: (r) => full(r) ? "-" : r.nextEffect || "-" },
     { label: "Kosten", num: true, get: (r) => full(r) ? "voll ausgebaut" : fmtSilver(r.next) },
+    ...(rows.some((r) => r.upkeep) ? [{ label: "Unterhalt", num: true, get: (r) => r.upkeep ? fmtSilver(r.upkeep) : "-" }] : []),
+    ...(rows.some((r) => r.until && Date.parse(r.until) > Date.now())
+      ? [{ label: "Bau", get: (r) => r.until && Date.parse(r.until) > Date.now() ? `fertig ${fmtTime(Date.parse(r.until) / 1000)}` : "-" }] : []),
     { label: "Gesperrt", get: (r) => full(r) || !r.blocker ? "-" : r.blocker }], rows)),
-  el("p", { class: "note" }, "Gebaut wird aus der Gildenkasse. Die Preise der nächsten Stufe zeigt das Spiel. Die Schmiede wirkt nur bis zum letzten Boss, den die Gilde der Reihe nach besiegt hat."));
+  el("p", { class: "note" }, "Gebaut wird aus der Gildenkasse; der Unterhalt läuft laufend weiter. Die Preise der nächsten Stufe zeigt das Spiel. Die Schmiede wirkt nur bis zum letzten Boss, den die Gilde der Reihe nach besiegt hat."));
 }
 function bossesCard(g) {
   const rows = Object.entries(g.bosses || {}).map(([name, v]) => ({ name, won: v[0], price: v[1], rec: v[2] }));
@@ -649,7 +652,7 @@ function progressCard(ranked) {
     }))
     .concat(names.map((n) => ({ label: bossShort(n), num: true, title: `${n}: höchste besiegte Stufe`, get: (g) => g.bosses && g.bosses[n] ? fmtInt(g.bosses[n][0]) : "-" })));
   return card("Gebäude und Gildenbosse", table(cols, ranked),
-    el("p", { class: "note" }, "Gebäude: Stufe von höchstens 5. Bosse: höchste besiegte Stufe der Gilde. Einzelheiten stehen auf der Seite jeder Gilde."));
+    el("p", { class: "note" }, "Gebäude: Stufe von höchstens 5 (der Hochofen 1). Bosse: höchste besiegte Stufe der Gilde. Einzelheiten stehen auf der Seite jeder Gilde."));
 }
 
 function viewGuildRace(s) {
@@ -710,7 +713,7 @@ function viewGuild(s, login) {
     el("div", { class: "grid two" },
       chartCard("Kasse", g.series.map((r) => [r[0], r[1]]), { fmt: fmtSilver, until: s.generated }),
       chartCard("Aktive Mitglieder", g.series.map((r) => [r[0], r[3]]), { until: s.generated })),
-    el("div", { class: "grid two" }, buildingsCard(g), bossesCard(g)),
+    buildingsCard(g), bossesCard(g),
     firstKillsCard(s, g.login),
     el("div", { class: "grid two" },
       card("Höchster Ausrüstungswert", table([

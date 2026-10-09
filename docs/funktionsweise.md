@@ -38,6 +38,10 @@ Issue-Text (untrusted: nur ein gültiger Twitch-Name, `^[a-z0-9_]{3,25}$`, und n
 kostet. Für diese Spieler kommen Schadensminderung, Leben, Erfolge, Statistiken und die Ausrüstung je Platz dazu. Einzelne Quests
 und Kämpfe eines Spielers werden nicht gespeichert, nur Werte und ihre Änderungen.
 
+Dieselben Angaben gibt es auch für die Top 100 der Rangliste, ohne Eintrag in die Liste. Ihre Spielerseiten werden in
+60 Scheiben über den Tag gelesen (je etwa 2 pro Lauf), also einmal am Tag; bis dahin gilt der letzte Stand
+(`top_after` im Zustand merkt, wo die Scheibe endete). Wer die Top 100 verlässt, verliert diese Angaben bis zum nächsten Eintrag.
+
 ## Aufbau der Seite
 
 Eine Startseite und vier Bereiche mit einer zweiten Tab-Zeile, damit keine Seite überladen ist (Adresse `#/<Bereich>/<Unterseite>`):

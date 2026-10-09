@@ -3,6 +3,15 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.19.0 (09.10.2026)
+
+**Neu**
+- Für die Top 100 der Rangliste gibt es jetzt auch Ausrüstung je Platz, Kampfquoten und Schadensminderung, einmal am Tag aktualisiert.
+- Gildenseite: die neuen Gebäude (Feldkasse, Akademie, Archiv, Handelsposten, Hochofen) mit Unterhalt und Bauzeit.
+
+**Oberfläche**
+- Die Gebäude- und Bosstabellen der Gildenseite stehen untereinander in voller Breite statt abgeschnitten nebeneinander.
+
 ## 0.18.0 (08.10.2026)
 
 **Oberfläche**

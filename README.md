@@ -40,6 +40,7 @@ zeigt:
 | Erste Siege der Gilden über jeden Boss | Erstkills | 1 pro Tag |
 | Änderungsprotokoll des Spiels | Skript der Changelog-Seite | 3 pro Tag |
 | Spieler auf der Beobachtungsliste | Spielerseite | 1 pro Spieler |
+| Top 100 der Rangliste (ohne Liste) | Spielerseite | etwa 2, jeder Spieler einmal am Tag |
 
 Ein Lauf macht also etwa 70 Anfragen und eine pro neuem Kampf, im Abstand von 2 Sekunden. Bei 4 Läufen pro Stunde und
 17 Stunden Spielzeit sind das rund 4.900 Anfragen am Tag, egal wie viele Leute die Seite ansehen: Besucher lesen nur fertige Dateien. Die Seite nennt diese Zahl
@@ -50,7 +51,7 @@ Wie gerechnet wird (Rang, Tempo, Prognose, Vergleich) und wie die Daten liegen: 
 
 ## Beobachtungsliste
 
-Ausrüstung, Siegquoten, Schadensminderung, Markt und Verlosungen gibt es für Spieler auf der Beobachtungsliste. Die Streamer der Kanäle stehen standardmäßig auf der Liste. Eintragen oder austragen
+Ausrüstung, Siegquoten und Schadensminderung gibt es für die Top 100 (einmal am Tag aktualisiert) und für Spieler auf der Beobachtungsliste (bei jedem Lauf). Die Streamer der Kanäle stehen standardmäßig auf der Liste. Eintragen oder austragen
 geht über das Issue-Formular ["Auf die Beobachtungsliste"](https://github.com/Velcorn/Chat-RPG-Stats/issues/new?template=watchlist.yml);
 eine Action prüft den Namen, trägt ihn ein und schließt das Issue. Bitte nur den eigenen Namen. Die Liste ist auf 150
 Spieler begrenzt, weil jeder Eintrag eine Anfrage pro Lauf kostet.

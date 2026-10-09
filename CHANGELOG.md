@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.20.1 (09.10.2026)
+
+**Oberfläche**
+- Formen: Am Desktop stehen die Karten in zwei gleich hohen Spalten, und alle Tabellen haben dieselben Spaltenbreiten, damit die Balken untereinander ausgerichtet sind und nichts abgeschnitten wird.
+
 ## 0.20.0 (09.10.2026)
 
 **Neu**

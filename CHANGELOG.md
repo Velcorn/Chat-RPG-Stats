@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.20.0 (09.10.2026)
+
+**Neu**
+- Spiel -> Formen: Wie jede Namensendung ("des Schlächters", "des Pilgers", ...) die Punkte eines Stücks auf Angriff, Verteidigung und Unterstützung verteilt, für Rüstung, Waffen, Ringe und Schilde, mit den Werten der höchsten gesehenen Stufe. Nach einer Übersicht von fireworker2000 (Discord), nachgeprüft an beobachteter Ausrüstung und Marktangeboten.
+
 ## 0.19.1 (09.10.2026)
 
 **Verbessert**

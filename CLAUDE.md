@@ -6,6 +6,8 @@ Public, read-only stats dashboard for the Twitch chat RPG at rpg.sola.rip. A Git
 ## Principles
 
 - **Read-only, public data only.** No login, no cookies, never anything but GETs. Nothing automated in the game or chat.
+  One exception, by the user's decision (09.10.2026): the static item form table (`FORMS`, `#/spiel/formen`) was checked once by hand against
+  market listings read with a login. Nothing in the collector uses a login.
 - **Keep requests low.** One collector for everyone; visitors only read the published files. Don't add endpoints or
   per-player requests without need; the watchlist is capped (opt-in for players; the channel owners are on it by default). The board's top 100 also get the watchlist data, but in one pass a day, on the first run of the day (`TOP_WATCH`, about 100 requests at 7 Uhr; the operator's decision, 09.10.2026). The site's operator can ask us to stop at any time.
 - **No activity logs per player.** Store values and their changes (gear, silver, stat totals), never a player's
@@ -51,7 +53,7 @@ Python modules live in `src/` (flat, no package; tests and tools need `PYTHONPAT
 - `src/fightstats.py`: fight statistics for `summary.json` -> `stats` (death share in won fights and per fight (`fallen`), roles, power vs recommendation, hours, channels); only sums per fight, never per player.
 - `src/build.py`: replays the day files (`History`, incl. rules log and live share per channel), computes pace, forecasts, peers, guild standing, fight odds; writes
   `_site/data/summary.json`, `players.json` (search index) and `p/<login>.json`.
-- `site/index.html`: the whole dashboard (no build step; hash routes `#/<section>/<sub>` with sections `start` (default), `rangliste`, `gilden` (subs `vergleich` + one per guild), `spiel` (subs `wirtschaft`, `regeln`, `aenderungen`; `RULE_LABELS` holds the German rule names), `kaempfe` (subs `arten`, `ueberleben`, `kraft`, `zeit`, `letzte`; see `SECTIONS`: each sub
+- `site/index.html`: the whole dashboard (no build step; hash routes `#/<section>/<sub>` with sections `start` (default), `rangliste`, `gilden` (subs `vergleich` + one per guild), `spiel` (subs `wirtschaft`, `regeln`, `aenderungen`, `formen` (static `FORMS` table); `RULE_LABELS` holds the German rule names), `kaempfe` (subs `arten`, `ueberleben`, `kraft`, `zeit`, `letzte`; see `SECTIONS`: each sub
   page is a tab in the second row) and `#/spieler/<login>`).
 - `src/watchlist.py` + `watchlist.txt`: the list (channel owners by default, others opt-in), changed by the issue form via `.github/workflows/watchlist.yml`.
 - Fight stories (adventures since 04.10.2026): `collect.story_digest` parses the fight log (`Szene i/n`, `Der Chat wählt ...`) into name-free scenes, `fightstats.story_stats` aggregates them; `fightstats.UPDATE` splits `eras.after`/`eras.before` for the fight pages.

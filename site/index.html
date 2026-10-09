@@ -172,6 +172,19 @@
   .bar.atk { --c: var(--atk); } .bar.def { --c: var(--def); } .bar.sup { --c: var(--sup); }
   .bar .name { display: flex; align-items: center; gap: 7px; }
   .bar .name::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex: none; }
+  .forms td:first-child, .forms td.seen-col { white-space: nowrap; }
+  .forms td.mix { width: 34%; min-width: 70px; }
+  .mixbar { display: flex; height: 10px; border-radius: 3px; overflow: hidden; background: var(--surface-2); }
+  .mixbar span { display: block; } .mixbar .atk { background: var(--atk); } .mixbar .def { background: var(--def); } .mixbar .sup { background: var(--sup); }
+  .forms td.main { font-weight: 600; color: var(--text-primary); } .forms td.num { color: var(--text-secondary); }
+  .forms tr.group td { padding-top: 10px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; border-bottom: none; }
+  .forms tr.group.atk td { color: var(--atk); } .forms tr.group.def td { color: var(--def); } .forms tr.group.sup td { color: var(--sup); }
+  .forms .unseen { color: var(--text-muted); font-style: italic; }
+  .forms .seen { display: none; font-size: 12px; color: var(--text-muted); }
+  @media (max-width: 600px) {
+    .forms .mix, .forms .seen-col { display: none; }
+    .forms .seen { display: block; }
+  }
   .bar .val { text-align: right; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
   .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
   .legend .you { background: linear-gradient(90deg, var(--atk) 33%, var(--def) 33% 66%, var(--sup) 66%); }
@@ -1163,8 +1176,49 @@ async function viewChanges(s) {
     ...days.get(k).entries.map((e, j) => entry(e, i === 0 && j === 0)), ...days.get(k).rules.map(rule)])))];
 }
 
+// Item forms (the name suffix fixes how a piece splits its points). Observed 09.10.2026: worn gear of the watched
+// players and the market board, only pieces without plus or stone whose total fits the tier; [suffix, tier seen, atk,
+// def, sup]. Tier null: never seen, the share comes from the original sheet (percent).
+const FORMS = {"armor": [["Angriff", [["des Schlächters", 9, 36, 12, 0], ["des Berserkers", 9, 31, 17, 0], ["des Jägers", 9, 29, 12, 7], ["des Duellanten", 8, 24, 15, 4], ["des Kriegspriesters", 8, 22, 9, 12]]], ["Verteidigung", [["der Festung", 9, 7, 41, 0], ["des Bollwerks", 9, 5, 36, 7], ["des Wächters", 9, 12, 36, 0], ["des Tempelritters", 9, 2, 31, 15], ["des Veteranen", 9, 10, 31, 7]]], ["Unterstützung", [["des Pilgers", 8, 0, 15, 28], ["des Erzmagiers", 9, 12, 7, 29], ["des Kreuzritters", 9, 7, 14, 27], ["des Paladins", 9, 0, 22, 26], ["des Hospitaliters", 9, 5, 19, 24]]]], "w1": [["Angriff", [["des Schlächters", 9, 46, 2, 0], ["des Ritters", 8, 37, 6, 0], ["des Prinzen", null, 80.56, 19.44, 0], ["des Kriegspriesters", 9, 38, 5, 5], ["des Schildbrechers", 8, 32, 11, 0], ["des Sonnenordens", 8, 30, 6, 7]]]], "w2": [["Angriff", [["des Zerstörers", 9, 91, 5, 0], ["des Kriegsherrn", 7, 65, 11, 0], ["des Inquisitors", 3, 29, 4, 3], ["des Bergfrieds", 8, 64, 22, 0], ["der Morgenröte", 9, 67, 14, 15]]], ["Unterstützung", [["des Lichts", 9, 14, 14, 68], ["des Sturms", 5, 14, 3, 39], ["der Heilung", 9, 10, 24, 62], ["des Zorns", 3, 7, 7, 22], ["der Wacht", 6, 3, 23, 40]]]], "ring": [["Angriff", [["des Zorns", 9, 16, 5, 6], ["des Sturms", 8, 12, 2, 10]]], ["Verteidigung", [["des Schutzes", 9, 5, 16, 6]]], ["Unterstützung", [["des Segens", 9, 5, 5, 17], ["des Paladins", 8, 2, 10, 12]]]], "shield": [["Verteidigung", [["Turmschild", 7, 2, 36, 0], ["Tempelschild", 9, 0, 41, 7], ["Rundschild", 9, 7, 41, 0], ["Wappenschild", 10, 5, 40, 8], ["Kampfschild", 8, 11, 32, 0]]]]};
+
+const FORM_ORIENT = { Angriff: "atk", Verteidigung: "def", Unterstützung: "sup" };
+function formsCard(title, groups, note) {
+  const shares = (r) => { const t = r[1] ? r[2] + r[3] + r[4] : 100; return [r[2], r[3], r[4]].map((v) => 100 * v / t); };
+  const rows = groups.flatMap(([orient, list]) => [
+    el("tr", { class: `group ${FORM_ORIENT[orient]}` }, el("td", { colspan: "6" }, orient)),
+    ...list.map((r) => {
+      const sh = shares(r), main = ["atk", "def", "sup"].indexOf(FORM_ORIENT[orient]);
+      const seen = r[1] ? `Stufe ${r[1]}: ${r[2]}/${r[3]}/${r[4]}` : "nicht gesehen";
+      return el("tr", {},
+        el("td", {}, `... ${r[0]}`, el("span", { class: r[1] ? "seen" : "seen unseen" }, seen)),
+        el("td", { class: "mix" }, el("div", { class: "mixbar", title: sh.map((v) => `${fmtDec(v, 0)} %`).join(" / ") },
+          ...["atk", "def", "sup"].map((k, i) => el("span", { class: k, style: `width:${sh[i]}%` })))),
+        ...sh.map((v, i) => el("td", { class: i === main ? "num main" : "num" }, `${fmtDec(v, 0)} %`)),
+        el("td", { class: r[1] ? "num seen-col" : "num seen-col unseen" }, seen));
+    })]);
+  return card(title, el("div", { class: "wide-table" }, el("table", { class: "forms" },
+    el("thead", {}, el("tr", {}, el("th", {}, "Form"), el("th", { class: "mix" }, "Verteilung"), el("th", { class: "num" }, "ATK"),
+      el("th", { class: "num" }, "DEF"), el("th", { class: "num" }, "SUP"), el("th", { class: "num seen-col" }, "Gesehen"))),
+    el("tbody", {}, rows))), note ? el("p", { class: "note" }, note) : null);
+}
+function viewForms() {
+  return [el("section", { class: "grid" },
+    el("div", { class: "head" }, el("h1", {}, "Ausrüstungsformen")),
+    el("p", { class: "note" }, "Seit dem 28.09.2026 gibt es jedes Stück je Platz, Stufe und Ausrichtung in fünf Formen. Die Form steht im Namen (\"... des Schlächters\") und legt fest, wie sich die Punkte auf Angriff, Verteidigung und Unterstützung verteilen. Die Summe hängt nur von der Stufe ab: 5 je Stufe plus 3 (Stufe 9: 48), Zweihänder und Stäbe das Doppelte, Ringe 3 je Stufe (Stufe 9: 27)."),
+    el("div", { class: "grid two", style: "align-items: start" },
+      formsCard("Rüstung", FORMS.armor, "Helm, Brustpanzer, Handschuhe, Beinschutz und Stiefel teilen sich die Formen."),
+      el("div", { class: "grid" },
+        formsCard("Einhandwaffen", FORMS.w1, "Waffen mit Verteidigung als Hauptwert gibt es nicht. \"des Prinzen\" war in den Daten nicht zu finden; seine Anteile stammen aus der Vorlage."),
+        formsCard("Zweihandwaffen und Stäbe", FORMS.w2),
+        formsCard("Ringe", FORMS.ring),
+        formsCard("Schilde", FORMS.shield, "Bei Schilden steht der Typ vorne im Namen (\"kobaltener Turmschild\")."))),
+    card("So ist die Tabelle entstanden", el("p", { class: "note" },
+      "Nach einer Übersicht von fireworker2000 (Discord). Nachgeprüft am 09.10.2026 an der Ausrüstung der beobachteten Spieler und an rund 840 Angeboten auf dem Markt: gezählt nur Stücke ohne Verbesserung (+) und ohne Stein, deren Summe genau zur Stufe passt. Die Anteile stammen jeweils von der höchsten gesehenen Stufe, meist 9; auf niedrigen Stufen verschiebt die Rundung sie um mehrere Punkte (ein Ring des Zorns hat auf Stufe 2 4/1/1, auf Stufe 9 16/5/6). Bossbeute und Stücke mit eigenem Namen haben eigene Werte und fehlen hier. Alle Angaben ohne Gewähr.")))];
+}
+
 async function viewGame(s, sub) {
   if (sub === "kompendium") return viewCompendium(s);
+  if (sub === "formen") return viewForms();
   if (sub === "regeln") {
     const now = s.rules.now;
     if (!Object.keys(now).length) return [card("Regeln des Spiels", el("p", { class: "note" }, "Die Regeln werden gerade erst gesammelt."))];
@@ -1204,7 +1258,8 @@ const SECTIONS = {
   rangliste: { subs: () => [["kampfkraft", "Ausrüstungswert"], ["silber", "Silber"], ["errungenschaften", "Errungenschaften"],
                             ["quests", "Quests"], ["aufsteiger", "Aufsteiger"]], render: viewRanks },
   gilden: { subs: (s) => [["vergleich", "Vergleich"], ...s.guilds.map((g) => [g.login, g.login])], render: viewGuild },
-  spiel: { subs: () => [["wirtschaft", "Wirtschaft"], ["regeln", "Regeln"], ["aenderungen", "Änderungen"], ["kompendium", "Kompendium"]],
+  spiel: { subs: () => [["wirtschaft", "Wirtschaft"], ["regeln", "Regeln"], ["aenderungen", "Änderungen"], ["kompendium", "Kompendium"],
+                         ["formen", "Formen"]],
            render: viewGame },
   kaempfe: { subs: () => [["arten", "Kampfarten"], ["abenteuer", "Abenteuer"], ["ueberleben", "Überleben"], ["kraft", "Kampfkraft"],
                           ["zeit", "Wann und wo"], ["gilden", "Gilden"], ["letzte", "Letzte Kämpfe"]],

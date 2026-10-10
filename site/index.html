@@ -627,32 +627,6 @@ async function viewPlayer(s, login) {
   return out;
 }
 
-// ---- guild buildings and bosses ----
-const BUILDING_ORDER = ["WERKSTATT", "LAGER", "KONTOR", "FELDKASSE", "AKADEMIE", "ARCHIV", "HANDELSPOSTEN", "HOCHOFEN", "WALL"];
-const bossShort = (name) => name.replace(/^(Die|Der|Das|Verteidigung der) /, "").split(" ")[0];
-function bossNames(guilds) {
-  const names = [];
-  for (const g of guilds) for (const n of Object.keys(g.bosses || {})) if (!names.includes(n)) names.push(n);
-  return names;
-}
-function buildingsOf(g) {
-  const b = g.buildings || {};
-  const row = (k) => ({ key: k, label: b[k][2], level: b[k][0], max: b[k][1], effect: b[k][3], next: b[k][4], nextEffect: b[k][5], blocker: b[k][6], upkeep: b[k][7], until: b[k][8] });
-  return BUILDING_ORDER.filter((k) => b[k]).map(row).concat(Object.keys(b).filter((k) => !BUILDING_ORDER.includes(k)).map(row));
-}
-function progressCard(ranked) {
-  const names = bossNames(ranked);
-  if (!names.length && !ranked.some((g) => g.buildings)) return null;
-  const cols = [{ label: "Gilde", get: (g) => el("a", { href: `#/gilden/${g.login}` }, g.name) }]
-    .concat(BUILDING_ORDER.map((k) => {
-      const label = (ranked.map(buildingsOf).flat().find((b) => b.key === k) || { label: k }).label;
-      return { label, num: true, title: "Stufe", get: (g) => { const b = buildingsOf(g).find((x) => x.key === k); return b ? `${b.level} / ${b.max}` : "-"; } };
-    }))
-    .concat(names.map((n) => ({ label: bossShort(n), num: true, title: `${n}: höchste besiegte Stufe`, get: (g) => g.bosses && g.bosses[n] ? fmtInt(g.bosses[n][0]) : "-" })));
-  return card("Gebäude und Gildenbosse", table(cols, ranked),
-    el("p", { class: "note" }, "Gebäude: Stufe von höchstens 5 (der Hochofen 1). Bosse: höchste besiegte Stufe der Gilde."));
-}
-
 function viewGuildRace(s) {
   const per = (g, v) => v == null || !g.members ? null : v / g.members;
   const cols = [
@@ -683,7 +657,7 @@ function viewGuildRace(s) {
       tile("Größte Kasse", richest ? richest.login : "-", richest ? fmtSilver(richest.treasury) : "")),
     card("Alle Gilden nach Ø Ausrüstungswert", el("div", { class: "scroll" }, table(cols, ranked)),
       el("p", { class: "note" }, "Der Durchschnitt zählt nur aktive Mitglieder. Gilden mit weniger als 10 aktiven Mitgliedern stehen unten und gewinnen oben keine Kachel.")),
-    progressCard(ranked), firstKillsCard(s))];
+    firstKillsCard(s))];
 }
 
 // The guilds' first kills (the game's list: per boss and level the guild that got there first).

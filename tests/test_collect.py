@@ -202,23 +202,11 @@ class StateTests(unittest.TestCase):
         self.assertEqual(state["players"]["solo"]["gear"], 80)
         self.assertEqual(state["boards"]["gear"], [["solo", 80]])
 
-    def test_guild_buildings_and_bosses(self):
+    def test_guild_boss_totals(self):
         s = snap({"karni": [member("a", 100)]})
-        s["guilds"]["karni"]["boss"] = {"wins": 3, "losses": 1, "averageGear": 248, "bosses": [
-            {"name": "Die Rattenkönigin", "highestWon": 2, "nextPriceSilver": 1500, "nextRecommendedGear": 170}]}
-        s["guilds"]["karni"]["buildings"] = [
-            {"key": "WERKSTATT", "label": "Schmiede", "level": 3, "maxLevel": 5, "effect": "3 Siegel weniger",
-             "nextPrice": "4545 Gold 20 Silber", "nextEffect": "4 Siegel weniger", "blocker": "Erst Boss X besiegen."},
-            {"key": "WALL", "label": "Wall", "level": 5, "maxLevel": 5, "effect": "voll", "nextPrice": None}]
+        s["guilds"]["karni"]["boss"] = {"wins": 3, "losses": 1, "averageGear": 248}
         g = collect.state_from(s, {})["guilds"]["karni"]
-        self.assertEqual(g["buildings"], {"WERKSTATT": [3, 5, "Schmiede", "3 Siegel weniger", 454520,
-                                                        "4 Siegel weniger", "Erst Boss X besiegen.", None, None],
-                                          "WALL": [5, 5, "Wall", "voll", None, None, None, None, None]})
-        self.assertEqual(g["bosses"], {"Die Rattenkönigin": [2, 1500, 170]})
         self.assertEqual(g["boss_gear"], 248)
-        self.assertEqual(collect.price_value("15 Gold"), 1500)
-        self.assertEqual(collect.price_value("80 Silber"), 80)
-        self.assertIsNone(collect.price_value("kostenlos"))
 
     def test_first_kills_keep_what_the_page_says_and_survive_junk(self):
         rows = [{"bossName": "B", "level": 1, "guildLogin": "karni", "guildName": "Karni", "at": "t",

@@ -214,12 +214,6 @@ def silver_value(text: str | None) -> int | None:
     return -value if m[1] != "+" else value
 
 
-def price_value(text: str | None) -> int | None:
-    """"4545 Gold 20 Silber" -> 454520 (silver), None when there is no price."""
-    m = re.fullmatch(r"\s*(?:(\d+) Gold)?\s*(?:(\d+) Silber)?\s*", text or "")
-    return int(m[1] or 0) * 100 + int(m[2] or 0) if m and (m[1] or m[2]) else None
-
-
 SCENE = re.compile(r"^Szene (\d+)/(\d+): (.*)$")
 CHOICE = re.compile(r"^Der Chat wählt \u201e(.+?)\u201c \((\d+) von (\d+)\): (.*)$")
 OUT = re.compile(r" ?Ausgeschieden: ([^.]*)\.")
@@ -304,16 +298,9 @@ def first_kills_state(rows) -> list[list]:
 
 def guild_state(page: dict) -> dict:
     g, boss = page.get("guild") or {}, page.get("boss") or {}
-    buildings = {b["key"]: [b.get("level"), b.get("maxLevel"), b.get("label"), b.get("effect"),
-                            price_value(b.get("nextPrice")), b.get("nextEffect"), b.get("blocker"),
-                            price_value(b.get("upkeep")), b.get("buildingUntil")]
-                 for b in page.get("buildings") or []}
-    bosses = {b["name"]: [b.get("highestWon"), b.get("nextPriceSilver"), b.get("nextRecommendedGear")]
-              for b in boss.get("bosses") or []}
     return {"name": g.get("name"), "treasury": g.get("treasurySilver"), "members": g.get("members"),
             "active": g.get("activeMembers"), "gear": g.get("gearScore"), "raid": g.get("raidLevel"),
-            "boss_wins": boss.get("wins"), "boss_losses": boss.get("losses"), "boss_gear": boss.get("averageGear"),
-            "buildings": buildings, "bosses": bosses}
+            "boss_wins": boss.get("wins"), "boss_losses": boss.get("losses"), "boss_gear": boss.get("averageGear")}
 
 
 def state_from(snap: dict, prev: dict) -> dict:

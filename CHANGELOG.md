@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.23.1 (10.10.2026)
+
+**Entfernt**
+- Die Tabelle "Gebäude und Gildenbosse" im Gildenvergleich ist weg. Sie war fehlerhaft und zeigte nur, was das Spiel auf seiner Gildenseite selbst zeigt.
+
 ## 0.23.0 (10.10.2026)
 
 **Verbessert**

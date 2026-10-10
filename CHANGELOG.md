@@ -7,6 +7,16 @@ Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
 **Entfernt**
 - Die Unterseite "Abenteuer" unter Kämpfe (Wahlen des Chats je Szene) ist weg: zu lang und ohne Nutzen für die Entscheidungen im Spiel.
+- "Wirtschaft" unter Spiel ist weg. Der Verlauf des Silbers in den Gildenkassen steht jetzt im Gildenvergleich; das Silber der Top 100 entfällt.
+- Unter Spiel steht nur noch, wann sich eine Regel geändert hat ("Regeländerungen"). Das Änderungsprotokoll des Spiels gibt die Seite nicht mehr wieder, es steht im Spiel.
+- Die Karte "Aufsteiger" auf der Startseite, die zweite Tabelle "Letzte Kämpfe mit Kampfkraft" unter Kampfkraft und die Spalte "Ø Runden" (Runden gibt es seit dem 04.10. nicht mehr).
+
+**Verbessert**
+- Bei den Kämpfen steht die Auswahl jetzt auf "Seit dem Update (04.10.)"; "Alle" und "Davor" bleiben wählbar. Kampfarten sind nach Zahl der Kämpfe sortiert, Arten mit weniger als 5 Kämpfen stehen nur noch als Zeile darunter.
+- Erste Siege über die Bosse: eine Zeile je Boss ohne Stufe.
+
+**Behoben**
+- Aufsteiger (7 Tage): Die Liste war leer, weil bis zum 04.10. die Rangliste des Spiels die Kampfkraft war und ihre Höchstwerte jeden Anstieg verdeckten. Gezählt werden nur noch Werte ab dem 04.10. (22 Uhr UTC); die 7-Tage-Liste füllt sich ab dem 11.10.
 
 ## 0.23.5 (10.10.2026)
 

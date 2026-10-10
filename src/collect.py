@@ -3,7 +3,7 @@
 Runs every 15 minutes in GitHub Actions during the game's play window. Reads only public endpoints (no login,
 no cookies) and never sends anything but GETs. One run is about fourteen requests plus one per new fight and a
 slice of the active players' profiles (about 55, so every active player is read about once a day), two seconds
-apart; once a day come the first kills (one) and the changelog (three).
+apart; once a day come the first kills (one).
 """
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ BOUND_SOURCES = ("PERSONAL_SHOP", "AUCTION", "TRADER", "SEALED")  # bound to the
 SWEEP_RUNS = 60  # the active players' profiles are read in this many slices, so each one about once a day
 TOP_WATCH = 100  # the board's top players get the watchlist's detailed profile data, all in the day's first run
 # The site's four rankings (`by=` value -> the value they rank by). Others (silver, level) just return the gear board.
-BOARD_FIELDS = {"gear": "gearScore", "gold": "silver"}
+BOARD_FIELDS = {"gear": "gearScore"}
 
 
 def user_agent() -> str:
@@ -63,45 +63,8 @@ def read_watchlist(path: Path) -> list[str]:
     return sorted({n for n in names if n})
 
 
-def parse_changelog(js: str) -> list[dict]:
-    """The changelog page's entries ([{date, title, groups: [{title, items}]}], newest first) from its script
-    chunk, where they sit as a JS literal with backtick strings and bare keys: turned into JSON piece by piece."""
-    start = js.find("[{date:`")
-    if start < 0:
-        raise ValueError("keine Changelog-Einträge im Skript")
-    out, code, depth, i = [], "", 0, start
-    while True:
-        c = js[i]
-        if c == "`":
-            end = i + 1
-            while js[end] != "`":
-                end += 2 if js[end] == "\\" else 1
-            out.append(re.sub(r"([{,])(\w+):", r'\1"\2":', code))  # bare keys, only outside strings
-            out.append(json.dumps(js[i + 1:end].replace("\\`", "`")))
-            code, i = "", end + 1
-            continue
-        code += c
-        depth += (c in "[{") - (c in "]}")
-        i += 1
-        if depth == 0:
-            out.append(re.sub(r"([{,])(\w+):", r'\1"\2":', code))
-            return json.loads("".join(out))
-
-
-def read_changelog(site: Site) -> list[dict]:
-    """The game's changelog. It has no API: it is built into the /changelog page's script, found via the router in
-    the site's entry script (three requests)."""
-    entry = re.search(r'<script[^>]+src="(/_nuxt/[\w.-]+\.js)"', site.text("/"))
-    router = site.text(entry[1]) if entry else ""
-    chunk = re.search(r"path:`/changelog`,component:\(\)=>\w+\(\(\)=>import\(`\./([\w.-]+\.js)`", router)
-    if not chunk:
-        raise ValueError("Changelog-Seite nicht gefunden")
-    return parse_changelog(site.text("/_nuxt/" + chunk[1]))
-
-
 # Reference data read once a day (on the first run of a day that has not got it): name -> how to read it.
-DAILY = {"first_kills": lambda site: site.get("/api/guilds/first-kills"),
-         "changelog": read_changelog}
+DAILY = {"first_kills": lambda site: site.get("/api/guilds/first-kills")}
 
 
 def sweep_batch(logins: list[str], after: str, runs: int = SWEEP_RUNS) -> list[str]:
@@ -116,7 +79,7 @@ def snapshot(site: Site, watchlist: list[str], detail_after: int = 0, daily: dic
              sweep_after: str = "", top_day: str = "", part: str = "all", prev: dict | None = None) -> dict:
     """Everything one run asks the site, in the site's own shapes. Fights newer than `detail_after` also cost one
     request for their detail page (the archive's own numbers: who fell, roles, damage). `daily` maps the reference
-    data that is due (the guilds' first kills, the game's changelog; they hardly ever change) to
+    data that is due (the guilds' first kills; they hardly ever change) to
     today's date; what was read lands in the snapshot with its date in `days`. The board (top 100) and the watchlist
     give the plain gear score anyway; of the other active guild members a slice (after the login `sweep_after`) gets
     its profile read, since only the profile (attack + defense + support) has it. The detail data of the watchlist
@@ -317,7 +280,6 @@ def state_from(snap: dict, prev: dict) -> dict:
             "rules": {k: v for k, v in (snap.get("rules") or {}).items() if k != "playWindowOpenNow"},
             "first_kills": (first_kills_state(snap["first_kills"]) if "first_kills" in snap
                             else prev.get("first_kills", [])),
-            "changelog": snap["changelog"] if snap.get("changelog") else prev.get("changelog", []),
             "days": {**prev.get("days", {}), **snap.get("days", {})},
             "fight_last": max([prev.get("fight_last", 0), *(f.get("id", 0) for f in snap["fights"])]),
             "sweep_after": snap.get("sweep_after", prev.get("sweep_after", "")),

@@ -666,19 +666,23 @@ function viewGuildRace(s) {
       tile("Größte Kasse", richest ? richest.login : "-", richest ? fmtSilver(richest.treasury) : "")),
     card("Alle Gilden nach Ø Ausrüstungswert", el("div", { class: "scroll" }, table(cols, ranked)),
       el("p", { class: "note" }, "Der Durchschnitt zählt nur aktive Mitglieder. Gilden mit weniger als 10 aktiven Mitgliedern stehen unten und gewinnen oben keine Kachel.")),
+    chartCard("Silber in den Gildenkassen", s.economy.series.map((p) => [p.t, p.treasury]), { fmt: fmtSilver, until: s.generated }),
     firstKillsCard(s))];
 }
 
-// The guilds' first kills (the game's list: per boss and level the guild that got there first).
+// The guilds' first kills (the game's list: per boss and level the guild that got there first; shown once per boss).
 function firstKillsCard(s, login) {
   let rows = (s.first_kills || []).filter((r) => r[2] && (!login || r[2] === login));
   if (!rows.length) return null;
-  rows = [...rows].sort((a, b) => (a[5] ?? 99) - (b[5] ?? 99) || (a[1] ?? 0) - (b[1] ?? 0));
-  const cols = [{ label: "Boss", get: (r) => r[0] }, { label: "Stufe", num: true, get: (r) => r[1] ?? "-" }];
+  // One level per boss since 04.10.2026: the first kill of each boss counts (the oldest of its levels).
+  const first = new Map();
+  for (const r of [...rows].sort((a, b) => (a[4] || "").localeCompare(b[4] || ""))) if (!first.has(r[0])) first.set(r[0], r);
+  rows = [...first.values()].sort((a, b) => (a[5] ?? 99) - (b[5] ?? 99));
+  const cols = [{ label: "Boss", get: (r) => r[0] }];
   if (!login) cols.push({ label: "Gilde", get: (r) => el("a", { href: `#/gilden/${r[2]}` }, r[3] || r[2]) });
   cols.push({ label: "Wann", get: (r) => r[4] ? fmtSince(iso(r[4])) : "-" });
   return card("Erste Siege über die Bosse", el("div", { class: "scroll" }, table(cols, rows)),
-    el("p", { class: "note" }, "Welche Gilde einen Boss auf einer Stufe zuerst besiegt hat, so wie das Spiel es führt."));
+    el("p", { class: "note" }, "Welche Gilde einen Boss zuerst besiegt hat, so wie das Spiel es führt."));
 }
 
 function viewGuild(s, login) {
@@ -737,7 +741,7 @@ function viewStart(s) {
     channelLines(s.channel_stats[login]),
     el("div", { class: "head" }, el("a", { href: `#/spieler/${login}` }, "Spielerseite"),
       el("a", { href: `https://www.twitch.tv/${login}`, target: "_blank", rel: "noopener" }, "Zum Stream auf Twitch"))));
-  const top = s.board.slice(0, 5), t = s.stats.total, risers = (s.risers.day || []).slice(0, 5);
+  const top = s.board.slice(0, 5), t = s.stats.total;
   const guilds = [...s.guilds].filter((g) => g.active >= 10).sort((x, y) => (y.avg_gear || 0) - (x.avg_gear || 0)).slice(0, 4);
   const lastRule = s.rules.log[0];
   const more = (href, text) => el("p", { class: "note" }, el("a", { href }, text));
@@ -754,19 +758,13 @@ function viewStart(s) {
         { label: "Spieler", get: playerLink },
         { label: "Ausrüstungswert", num: true, get: (r) => fmtInt(r.gear) },
       ], top), more("#/rangliste/ausruestungswert", "Ganze Bestenliste")] : el("p", { class: "note" }, "Noch keine Daten.")),
-      card("Aufsteiger der letzten 24 Stunden", risers.length ? [table([
-        { label: "Spieler", get: playerLink },
-        { label: "Ausrüstungswert", num: true, get: (r) => fmtInt(r.gear) },
-        { label: "24 h", num: true, title: "Über dem eigenen Höchstwert der Vorwoche", get: (r) => delta(r.gain) },
-      ], risers), more("#/rangliste/aufsteiger", "Alle Aufsteiger")]
-        : el("p", { class: "note" }, "Aufsteiger gibt es nach einem Tag Datensammlung."))),
-    el("div", { class: "grid two" },
       card("Gilden", guilds.length ? [table([
         { label: "Gilde", get: (g) => el("a", { href: `#/gilden/${g.login}` }, g.login) },
         { label: "Aktive", num: true, get: (g) => fmtInt(g.active) },
         { label: "Ø Ausrüstungswert", num: true, get: (g) => fmtDec(g.avg_gear, 1) },
       ], guilds), more("#/gilden/vergleich", "Gilden im Vergleich")] : el("p", { class: "note" }, "Noch keine Gilden mit mindestens 10 aktiven Mitgliedern.")),
-      card("Zuletzt", el("dl", { class: "facts" },
+    ),
+    card("Zuletzt", el("dl", { class: "facts" },
         el("dt", {}, "Regeländerung"), el("dd", {}, lastRule
           ? el("a", { href: "#/spiel/aenderungen" }, `${ruleName(lastRule[1])}: ${ruleText(lastRule[1], lastRule[2])} -> ${ruleText(lastRule[1], lastRule[3])} (${fmtTime(lastRule[0])})`)
           : "keine seit Beginn der Aufzeichnung"),
@@ -774,7 +772,6 @@ function viewStart(s) {
           ? el("a", { href: "#/kaempfe/letzte" }, `${fightLabel(s.fights.recent[0])} in #${s.fights.recent[0].channel}, ${fmtTime(iso(s.fights.recent[0].endedAt))}`)
           : "noch keiner erfasst"),
         el("dt", {}, "Daten vom"), el("dd", {}, fmtTime(s.generated)))),
-    ),
     el("h2", { class: "section" }, "Die Kanäle"),
     el("div", { class: "grid streams" }, streams.map(streamCard))];
 }
@@ -793,14 +790,14 @@ const RECENT_COLS = (s) => [
 // The game version the fight tables show: the whole window, or only the fights since/before the story update
 // (04.10.2026: adventures became chat-voted stories, no more rounds). Offered while both sides have fights.
 const ERAS = [["all", "Alle"], ["after", "Seit dem Update (04.10.)"], ["before", "Davor"]];
-let ERA = "all";
-try { ERA = localStorage.getItem("era") || "all"; } catch { /* a private window: no memory */ }
+let ERA = "after";
+try { ERA = localStorage.getItem("era2") || "after"; } catch { /* a private window: no memory */ }
 const hasEras = (s) => s.eras && s.eras.after.fights && s.eras.before.fights;
 const stFor = (s) => hasEras(s) && s.eras[ERA] ? s.eras[ERA] : s.stats;
 function eraBar(s) {
   if (!hasEras(s)) return null;
   return el("div", { class: "era" },
-    seg(ERAS, s.eras[ERA] ? ERA : "all", (k) => { ERA = k; try { localStorage.setItem("era", k); } catch { /* ignore */ } route(); }),
+    seg(ERAS, s.eras[ERA] ? ERA : "all", (k) => { ERA = k; try { localStorage.setItem("era2", k); } catch { /* ignore */ } route(); }),
     el("p", { class: "note" }, "Am 04.10.2026 hat das Spiel Abenteuer und Kämpfe umgebaut. Zahlen davor und danach lassen sich schlecht vergleichen, hier trennst du sie."));
 }
 
@@ -856,7 +853,6 @@ function viewSurvival(s) {
       { label: "Ø erlitten", num: true, get: (r) => fmtInt(r.taken) },
       { label: "Ø Heilung", num: true, get: (r) => fmtInt(r.heal) },
       { label: "Ø Verstärkung", num: true, title: "Schaden, den Unterstützer anderen durch ihre Verstärkung dazugegeben haben", get: (r) => fmtInt(r.boost) },
-      { label: "Ø Runden", num: true, get: (r) => fmtDec(r.rounds, 1) },
     ], st.kinds.filter((r) => r.detail)))),
     card("Nach Kampf", el("div", { class: "scroll" }, table([
       { label: "Kampf", get: fightLabel },
@@ -873,8 +869,8 @@ function viewPower(s) {
   const powered = st.types.filter((r) => r.power);
   return [
     card("Kampfkraft gegen Empfehlung", p.n ? el("dl", { class: "facts" },
-      el("dt", {}, "Ø Kampfkraft der Teilnehmer"), el("dd", {}, fmtInt(p.avg)),
-      el("dt", {}, "Ø Kampfkraft"), el("dd", {}, fmtInt(p.avg_gear)),
+      el("dt", {}, "Ø Kampfkraft"), el("dd", {}, fmtInt(p.avg)),
+      el("dt", {}, "Ø Ausrüstung"), el("dd", {}, fmtInt(p.avg_gear)),
       el("dt", {}, "Ø empfohlen"), el("dd", {}, p.rec ? fmtInt(p.rec) : "nicht gemessen")) : el("p", { class: "note" }, "Noch keine Kämpfe mit Kampfkraft erfasst."),
       el("p", { class: "note" }, `Die Durchschnitte nennt das Spiel nur, solange es den Kampf noch anzeigt; die Seite sieht sie deshalb nur bei einem Teil der Kämpfe (bisher ${fmtInt(p.n)} von ${fmtInt(st.fights)}). Die Empfehlung gibt es nicht bei jeder Kampfart.`)),
     card("Siegquote nach Abstand zur Empfehlung", p.margins.some((m) => m.n) ? el("div", { class: "scroll" }, table([
@@ -890,16 +886,7 @@ function viewPower(s) {
       { label: "bei Niederlagen", num: true, get: (r) => fmtInt(r.power_loss) },
       { label: "Empfohlen", num: true, get: (r) => r.rec ? fmtInt(r.rec) : "-" },
     ], powered)) : el("p", { class: "note" }, "Noch keine Daten."),
-      el("p", { class: "note" }, "So siehst du, ab welcher Gruppenstärke ein Kampf meist klappt: die Kampfkraft der Siege gegen die der Niederlagen.")),
-    card("Letzte Kämpfe mit Kampfkraft", p.recent.length ? el("div", { class: "scroll" }, table([
-      { label: "Kampf", get: (f) => gameLink(`/kampfbericht/${f.id}`, f.kind === "BOSS" ? `Boss ${f.name}` : `${f.name} (${kindLabel(f.kind)})`) },
-      { label: "Ausgang", get: (f) => f.outcome === "VICTORY" ? el("span", { class: "up" }, "gewonnen") : el("span", { class: "down" }, "verloren") },
-      { label: "Ø Kampfkraft", num: true, get: (f) => fmtInt(f.power) },
-      { label: "Ø Ausrüstung", num: true, get: (f) => fmtInt(f.gear) },
-      { label: "Empfohlen", num: true, get: (f) => f.rec ? fmtInt(f.rec) : "-" },
-      { label: "Gefallen", num: true, get: (f) => pctv(f.death) },
-      { label: "Dauer", num: true, get: (f) => f.secs ? `${fmtInt(f.secs)} s` : "-" },
-    ], p.recent)) : el("p", { class: "note" }, "Noch keine Daten."))];
+      el("p", { class: "note" }, "So siehst du, ab welcher Gruppenstärke ein Kampf meist klappt: die Kampfkraft der Siege gegen die der Niederlagen."))];
 }
 
 function viewWhen(s) {
@@ -949,7 +936,9 @@ function viewFights(s, sub) {
   if (sub === "letzte") return [
     card("Letzte Kämpfe", el("div", { class: "scroll" }, table(RECENT_COLS(s), s.fights.recent)),
       el("p", { class: "note" }, "Der Kampfname führt zum Bericht im Spiel; alle Kämpfe: ", gameLink("/kampf", "Kämpfe im Spiel"), "."), since)];
-  const types = stFor(s).types;
+  // Sorted by the number of fights; kinds with less than FEW fights say little and go into one line below.
+  const FEW = 5, all = [...stFor(s).types].sort((a, b) => b.n - a.n || b.wins / b.n - a.wins / a.n);
+  const types = all.filter((g) => g.n >= FEW), few = all.filter((g) => g.n < FEW);
   return [
     eraBar(s),
     card("Siegquote nach Kampfart (30 Tage)", types.length ? table([
@@ -958,6 +947,7 @@ function viewFights(s, sub) {
       { label: "Siege", num: true, get: (g) => `${fmtInt(g.wins)} (${pct(g.wins, g.n)})` },
       { label: "Ø Teilnehmer", num: true, get: (g) => fmtInt(g.fighters) },
     ], types) : el("p", { class: "note" }, "Noch keine Kämpfe erfasst."),
+    few.length ? el("p", { class: "note" }, `Weniger als ${FEW} Kämpfe: ${few.map((g) => `${fightLabel(g)} (${g.wins} von ${g.n} gewonnen)`).join(", ")}.`) : null,
     el("p", { class: "note" }, "Aus dem Kampfarchiv des Spiels (alle Kanäle). Wenige Kämpfe einer Art sagen noch wenig. ",
       gameLink("/kampf", "Kämpfe im Spiel")), since)];
 }
@@ -1050,25 +1040,18 @@ function ruleText(key, v) {
 }
 const ruleName = (key) => (RULE_INFO[key] || { label: key }).label;
 
-// The game's changelog (read from its page once a day) and the rule changes the collector measured, by day.
+// The rule changes the collector measured, by day.
 const berlinDay = (t) => new Date(t * 1000).toLocaleDateString("sv-SE", { timeZone: TZ });
-async function viewChanges(s) {
-  let changelog = [];
-  try { changelog = await load("changelog.json"); } catch { /* an old build has none */ }
+function viewChanges(s) {
+  const log = s.rules.log;
+  const intro = el("p", { class: "note" }, "Regeln des Spiels, die sich beim Abfragen geändert haben (oft ohne Eintrag im Änderungsprotokoll des Spiels, das du ",
+    gameLink("/changelog", "im Spiel"), " findest). ", s.rules.since ? `Sie werden seit ${fmtSince(s.rules.since)} bei jedem Lauf geprüft.` : "Die Regeln werden gerade erst gesammelt.");
+  if (!log.length) return [card("Regeländerungen", intro, el("p", { class: "note" }, s.rules.since ? "Seit Beginn der Aufzeichnung hat sich keine Regel geändert." : ""))];
   const days = new Map();
-  const day = (k) => days.get(k) || days.set(k, { entries: [], rules: [] }).get(k);
-  for (const e of changelog) { const m = /^(\d+)\.(\d+)\.(\d+)$/.exec(e.date || ""); if (m) day(`${m[3]}-${m[2]}-${m[1]}`).entries.push(e); }
-  for (const r of s.rules.log) day(berlinDay(r[0])).rules.push(r);
-  const keys = [...days.keys()].sort().reverse();
+  for (const r of log) { const k = berlinDay(r[0]); (days.get(k) || days.set(k, []).get(k)).push(r); }
   const heading = (k) => k.split("-").reverse().join(".");
-  const entry = (e, open) => el("details", open ? { open: "" } : {}, el("summary", {}, el("b", {}, e.title || "Änderung")),
-    (e.groups || []).flatMap((g) => [el("h4", {}, g.title), el("ul", {}, (g.items || []).map((i) => el("li", {}, i)))]));
-  const rule = (r) => el("div", { class: "rule" }, `${fmtClock(r[0])} Uhr, Regel gemessen: ${ruleName(r[1])} ${ruleText(r[1], r[2])} -> ${ruleText(r[1], r[3])}`);
-  const intro = el("p", { class: "note" }, "Das Änderungsprotokoll des Spiels, einmal am Tag von seiner Seite gelesen, und dazwischen die Regeln, die sich beim Abfragen geändert haben (oft ohne Eintrag). ",
-    gameLink("/changelog", "Im Spiel"), ". ", s.rules.since ? `Regeln werden seit ${fmtSince(s.rules.since)} bei jedem Lauf geprüft.` : "Die Regeln werden gerade erst gesammelt.");
-  if (!keys.length) return [card("Änderungen", intro, el("p", { class: "note" }, s.rules.since ? "Seit Beginn der Aufzeichnung hat sich keine Regel geändert." : ""))];
-  return [card("Änderungen", intro, el("div", { class: "log" }, keys.flatMap((k, i) => [el("h3", {}, heading(k)),
-    ...days.get(k).entries.map((e, j) => entry(e, i === 0 && j === 0)), ...days.get(k).rules.map(rule)])))];
+  const rule = (r) => el("div", { class: "rule" }, `${fmtClock(r[0])} Uhr: ${ruleName(r[1])} ${ruleText(r[1], r[2])} -> ${ruleText(r[1], r[3])}`);
+  return [card("Regeländerungen", intro, el("div", { class: "log" }, [...days.keys()].sort().reverse().flatMap((k) => [el("h3", {}, heading(k)), ...days.get(k).map(rule)])))];
 }
 
 // Item forms (the name suffix fixes how a piece splits its points). Observed 09.10.2026: worn gear of the watched
@@ -1128,7 +1111,7 @@ async function viewGame(s, sub) {
       : `Seit Beginn der Aufzeichnung (${fmtSince(s.rules.since)}) hat sich keine Regel geändert.`;
     return [card("Die Regeln des Spiels", el("p", { class: "note" },
         "Das sind die Zahlen, mit denen das Spiel gerade rechnet, so wie es sie selbst veröffentlicht. Sie ändern sich ab und zu, oft ohne Ankündigung; ",
-        el("a", { href: "#/spiel/aenderungen" }, "unter Änderungen"), " steht, was sich wann geändert hat. Die Erklärungen stammen aus dem Handbuch und den Seiten des Spiels."),
+        el("a", { href: "#/spiel/aenderungen" }, "unter Regeländerungen"), " steht, was sich wann geändert hat. Die Erklärungen stammen aus dem Handbuch und den Seiten des Spiels."),
       el("p", {}, el("b", {}, changed), " ", el("span", { class: "muted" }, `Geprüft wird bei jedem Lauf, zuletzt ${fmtTime(s.generated)} Uhr.`))),
       el("div", { class: "grid two" }, groups.map(([title, keys]) => card(title, el("dl", { class: "rules" },
         keys.filter((k) => k in now).flatMap((k) => [
@@ -1137,20 +1120,6 @@ async function viewGame(s, sub) {
             k in last ? el("span", { class: "muted" }, `Zuletzt geändert: ${fmtTime(last[k])} Uhr.`) : null)])))))];
   }
   if (sub === "aenderungen") return viewChanges(s);
-  const e = s.economy, now = e.series[e.series.length - 1];
-  const treasury = e.series.map((p) => [p.t, p.treasury]);
-  const top = e.series.filter((p) => p.top100 != null).map((p) => [p.t, p.top100]);
-  return [el("section", { class: "grid" },
-    el("div", { class: "head" }, el("h1", {}, "Wirtschaft")),
-    el("div", { class: "grid tiles" },
-      tile("In den Gildenkassen", now ? fmtSilver(now.treasury) : "-", `${fmtInt(s.guilds.length)} Gilden`),
-      tile("Silber der Top 100", now && now.top100 != null ? fmtSilver(now.top100) : "-", "reichste 100 Spieler"),
-      tile("Mittel der Top 100", e.median_top100 == null ? "-" : fmtSilver(e.median_top100), "Silber je Spieler (Median)"),
-      tile("Gespendet insgesamt", fmtSilver(s.guilds.reduce((n, g) => n + (g.donated || 0), 0)), "in allen Gilden")),
-    el("div", { class: "grid two" },
-      chartCard("Silber in den Gildenkassen", treasury, { fmt: fmtSilver, until: s.generated }),
-      chartCard("Silber der heutigen Top 100", top, { fmt: fmtSilver, until: s.generated })),
-    el("p", { class: "note" }, "Der Markt und seine Preise sind im Spiel nur mit Anmeldung sichtbar und fehlen deshalb hier. Gezählt wird, was Gilden und Bestenliste öffentlich zeigen."))];
 }
 
 // ---- routing ----
@@ -1160,7 +1129,7 @@ const SECTIONS = {
   rangliste: { subs: () => [["ausruestungswert", "Ausrüstungswert"], ["kampfkraft", "Kampfkraft"], ["aufsteiger", "Aufsteiger"]],
                render: viewRanks },
   gilden: { subs: (s) => [["vergleich", "Vergleich"], ...s.guilds.map((g) => [g.login, g.login])], render: viewGuild },
-  spiel: { subs: () => [["wirtschaft", "Wirtschaft"], ["regeln", "Regeln"], ["aenderungen", "Änderungen"], ["formen", "Formen"]],
+  spiel: { subs: () => [["regeln", "Regeln"], ["aenderungen", "Regeländerungen"], ["formen", "Formen"]],
            render: viewGame },
   kaempfe: { subs: () => [["arten", "Kampfarten"], ["ueberleben", "Überleben"], ["kraft", "Kampfkraft"],
                           ["zeit", "Wann und wo"], ["gilden", "Gilden"], ["letzte", "Letzte Kämpfe"]],

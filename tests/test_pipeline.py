@@ -152,6 +152,9 @@ class CommunityTests(unittest.TestCase):
 
 class BuildTests(unittest.TestCase):
     def setUp(self):
+        import build
+        self.addCleanup(setattr, build, "GEAR_SINCE", build.GEAR_SINCE)
+        build.GEAR_SINCE = 0  # the made-up history starts on 30.09.: before the real change of the board's measure
         # A week of history: "fast" gains 10 a day, "slow" 2 a day, "top" sits at the top-100 border.
         self.pipe = Pipeline()
         for d in range(8):
@@ -210,11 +213,16 @@ class BuildTests(unittest.TestCase):
         from build import gain
         now = 10 * DAY
         dip = [[0, 270], [6 * DAY, 0], [9.5 * DAY, 300]]  # a profile read 0 for a while, then 300
-        self.assertEqual(gain(dip, now, DAY), 30)       # above the old peak of 270, not +300
+        self.assertEqual(gain(dip, now, DAY, since=0), 30)       # above the old peak of 270, not +300
         back = [[0, 270], [6 * DAY, 0], [9 * DAY, 270]]
-        self.assertEqual(gain(back, now, DAY), 0)       # just back where it was
-        self.assertEqual(gain([[9 * DAY + 100, 50]], now, DAY), None)  # no value that old
-        self.assertEqual(gain([[0, 100], [9.5 * DAY, 160]], now, DAY), 60)
+        self.assertEqual(gain(back, now, DAY, since=0), 0)       # just back where it was
+        self.assertEqual(gain([[9 * DAY + 100, 50]], now, DAY, since=0), None)  # no value that old
+        self.assertEqual(gain([[0, 100], [9.5 * DAY, 160]], now, DAY, since=0), 60)
+        # a measure that changed at DAY * 4 (Kampfkraft before, plain gear after): its peaks don't count
+        series = [[DAY, 500], [5 * DAY, 300], [9.5 * DAY, 340]]
+        self.assertEqual(gain(series, now, DAY, since=4 * DAY), 40)
+        self.assertEqual(gain(series, now, DAY, since=0), 0)
+        self.assertIsNone(gain(series, now, 7 * DAY, since=4 * DAY))  # the week reaches back before the change
 
     def test_the_second_half_of_a_run_is_not_another_run(self):
         from build import History

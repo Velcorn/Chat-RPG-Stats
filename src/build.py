@@ -105,16 +105,22 @@ def change(series: list, now: float, span: float):
     return None if then is None or cur is None else cur - then
 
 
-def gain(series: list, now: float, span: float, lookback: float = 7 * DAY):
+GEAR_SINCE = 1791151200  # 2026-10-04 22:00 UTC: from here the board shows the plain gear score (before: Kampfkraft)
+
+
+def gain(series: list, now: float, span: float, lookback: float = 7 * DAY, since: float | None = None):
     """How far the value is above its own peak before the last `span` seconds (looking back `lookback` more), 0 if it
     isn't. A value that dips and returns (08./09.10.2026: some profiles read 0 to 60 % of their gear for a while)
-    isn't a rise: the change from the dip would be the day's biggest. None without data that old."""
+    isn't a rise: the change from the dip would be the day's biggest. Values before `since` are another measure
+    (their peaks would hide every rise). None without data that old."""
+    since = GEAR_SINCE if since is None else since
     cur = series[-1][1] if series else None
-    start = value_at(series, now - span)
+    start = value_at(series, now - span) if now - span >= since else None
     if start is None or cur is None:
         return None
-    carried = value_at(series, now - span - lookback)  # what the value was when the look-back began
-    before = [v for t, v in series if now - span - lookback < t <= now - span and v is not None]
+    from_ = max(now - span - lookback, since)
+    carried = value_at(series, from_) if from_ == now - span - lookback else None  # the value when the look-back began
+    before = [v for t, v in series if from_ < t <= now - span and v is not None]
     return max(0, cur - max([start, carried or 0, *before]))
 
 
@@ -218,14 +224,13 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
                "channel_stats": channel_stats(h, state, summary_stats["channels"]),
                "rules": {"now": state.get("rules", {}), "log": h.rules_log[::-1][:60],
                          "since": h.first if state.get("rules") else None},
-               "economy": economy(h, state, now)}
+               "economy": economy(h, now)}
 
     target = out / "data"
     if target.exists():
         shutil.rmtree(target)
     (target / "p").mkdir(parents=True)
     write(target / "summary.json", summary)
-    write(target / "changelog.json", state.get("changelog", []))
     write(target / "players.json", sorted(([login, p.get("name") or login, p["gs"], p.get("guild")]
                                            for login, p in players.items() if p.get("gs") is not None),
                                           key=lambda r: -r[2]))
@@ -258,23 +263,16 @@ def channel_stats(h: History, state: dict, fights_by_channel: list[dict]) -> dic
     return out
 
 
-def economy(h: History, state: dict, now: float, days: int = 30) -> dict:
-    """Silver in the guild treasuries and held by today's silver top 100, one point per day."""
-    board = [login for login, _ in state["boards"].get("gold", [])]
-    held = {login: [[t, d["silver"]] for t, d in h.details.get(login, []) if d.get("silver")] for login in board}
-    held = {login: series for login, series in held.items() if series}
+def economy(h: History, now: float, days: int = 30) -> dict:
+    """Silver in the guild treasuries, one point per day."""
     treasuries = [[[r[0], r[1]] for r in rows if r[1] is not None] for rows in h.guilds.values()]
     points = []
     for k in range(days, -1, -1):
         t = now - k * DAY
         if h.first is None or t < h.first:
             continue
-        top = [v for v in (value_at(series, t) for series in held.values()) if v is not None]
-        points.append({"t": int(t), "treasury": sum(value_at(series, t) or 0 for series in treasuries),
-                       "top100": sum(top) if len(top) >= 0.9 * len(held) else None})
-    latest = [series[-1][1] for series in held.values()]
-    return {"series": points, "players": len(held),
-            "median_top100": rounded(statistics.median(latest), 0) if latest else None}
+        points.append({"t": int(t), "treasury": sum(value_at(series, t) or 0 for series in treasuries)})
+    return {"series": points}
 
 
 def player_page(login, h, state, now, rank, paces, with_split, top100_gear, top100_pace, guild_members,

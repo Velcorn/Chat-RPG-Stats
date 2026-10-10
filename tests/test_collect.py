@@ -32,17 +32,6 @@ class FakeSite:
     text = get
 
 
-CHANGELOG_JS = ("const x=[{date:`06.10.2026`,title:`Der Ofen`,"
-                "groups:[{title:`Schmiede`,items:[`Ein \\`Zug\\` mehr.`,`Zwei.`]}]},"
-                "{date:`05.10.2026`,title:`Davor`,groups:[]}];export{x}")
-CHANGELOG = [{"date": "06.10.2026", "title": "Der Ofen",
-              "groups": [{"title": "Schmiede", "items": ["Ein `Zug` mehr.", "Zwei."]}]},
-             {"date": "05.10.2026", "title": "Davor", "groups": []}]
-CHANGELOG_PAGES = {"/": '<html><script type="module" src="/_nuxt/entry.js"></script>',
-                   "/_nuxt/entry.js": "x{path:`/changelog`,component:()=>a(()=>import(`./log.js`),[])}",
-                   "/_nuxt/log.js": CHANGELOG_JS}
-
-
 def answers(**extra):
     board = [{"login": "a", "gearScore": 100, "quests": 3, "silver": 500, "achievements": 7}]
     return {"/api/guilds": [{"login": "karni", "members": 2}, {"login": "leer", "members": 0}],
@@ -57,45 +46,35 @@ class SnapshotTests(unittest.TestCase):
         site = FakeSite(answers())
         s = collect.snapshot(site, [])
         self.assertEqual(list(s["guilds"]), ["karni"])  # a guild without members costs no request
-        self.assertEqual((site.requests, s["watch"], "days" in s), (8, {}, False))  # the top is not due
+        self.assertEqual((site.requests, s["watch"], "days" in s), (7, {}, False))  # the top is not due
 
     def test_the_top_100_is_read_in_full_on_the_day_s_first_run(self):
         site = FakeSite(answers())
         s = collect.snapshot(site, [], top_day="2026-10-09")
-        self.assertEqual(site.requests, 9)  # the board's one player included
+        self.assertEqual(site.requests, 8)  # the board's one player included
         self.assertEqual((list(s["watch"]), s["days"]), (["a"], {"top": "2026-10-09"}))  # read like the watchlist
 
     def test_the_daily_reference_data_is_read_on_request_and_a_failing_page_costs_nothing(self):
-        site = FakeSite(answers(**{"/api/guilds/first-kills": [{"level": 1}], **CHANGELOG_PAGES}))
-        day = {"first_kills": "2026-10-04", "changelog": "2026-10-04"}
+        site = FakeSite(answers(**{"/api/guilds/first-kills": [{"level": 1}]}))
+        day = {"first_kills": "2026-10-04"}
         s = collect.snapshot(site, [], daily=day)
-        self.assertEqual((s["first_kills"], s["changelog"], s["days"]), ([{"level": 1}], CHANGELOG, day))
-        self.assertEqual(site.requests, 8 + 1 + 3)
+        self.assertEqual((s["first_kills"], s["days"]), ([{"level": 1}], day))
+        self.assertEqual(site.requests, 7 + 1)
         for name in day:
             self.assertNotIn(name, collect.snapshot(FakeSite(answers()), []))
-        broken = collect.snapshot(FakeSite(answers(**{"/api/guilds/first-kills": 503, "/": 503})), [], daily=day)
-        self.assertFalse({"first_kills", "changelog", "days"} & set(broken))
-
-    def test_one_failing_reference_page_does_not_hide_the_others(self):
-        site = FakeSite(answers(**{"/api/guilds/first-kills": 503, **CHANGELOG_PAGES}))
-        s = collect.snapshot(site, [], daily={"first_kills": "d", "changelog": "d"})
-        self.assertEqual(("first_kills" in s, s["changelog"], s["days"]), (False, CHANGELOG, {"changelog": "d"}))
-
-    def test_a_changelog_page_without_entries_or_route_is_skipped(self):
-        for pages in ({**CHANGELOG_PAGES, "/_nuxt/log.js": "nothing"}, {**CHANGELOG_PAGES, "/_nuxt/entry.js": "x"}):
-            s = collect.snapshot(FakeSite(answers(**pages)), [], daily={"changelog": "d"})
-            self.assertNotIn("changelog", s)
+        broken = collect.snapshot(FakeSite(answers(**{"/api/guilds/first-kills": 503})), [], daily=day)
+        self.assertFalse({"first_kills", "days"} & set(broken))
 
     def test_watchlist_costs_one_request_each_and_skips_unknown_players(self):
         site = FakeSite(answers(**{"/api/players/sola": {"displayName": "Sola"}, "/api/players/weg": 404}))
         s = collect.snapshot(site, ["sola", "weg"])
         self.assertEqual(list(s["watch"]), ["sola"])
-        self.assertEqual(site.requests, 10)
+        self.assertEqual(site.requests, 9)
 
     def test_a_core_part_asks_no_profile_and_a_profiles_part_only_those(self):
         core = FakeSite(answers(**{"/api/players/sola": {"displayName": "Sola"}}))
         s = collect.snapshot(core, ["sola"], part="core", top_day="2026-10-09")
-        self.assertEqual((core.requests, s["watch"], s["sweep"], s["top"]), (8, {}, {}, ["a"]))
+        self.assertEqual((core.requests, s["watch"], s["sweep"], s["top"]), (7, {}, {}, ["a"]))
         prev = collect.state_from(s, {})
         later = FakeSite(answers(**{"/api/players/sola": {"displayName": "Sola"}}))
         p = collect.snapshot(later, ["sola"], part="profiles", prev=prev, top_day="2026-10-09")
@@ -175,7 +154,7 @@ class StateTests(unittest.TestCase):
     def test_every_ranking_keeps_the_value_it_ranks_by(self):
         s = snap({"karni": [member("a", 100)]}, board=[("a", 100, 1, 2, 3)])
         state = collect.state_from(s, {})
-        self.assertEqual(state["boards"], {"gear": [["a", 100]], "gold": [["a", 100]]})
+        self.assertEqual(state["boards"], {"gear": [["a", 100]]})
 
     def test_a_core_and_a_profiles_part_make_the_state_of_a_full_run(self):
         watch = {"a": {"displayName": "A", "attack": 5, "defense": 6, "support": 7, "silver": 42,
@@ -259,13 +238,13 @@ class MainTests(unittest.TestCase):
 
         def fake(site, wl, after=0, daily=None, sweep_after="", top_day="", part="all", prev=None):
             asked.append(daily)
-            got = {n: [] for n in daily if n != "changelog"}  # the changelog page is down
-            return {**snap({"karni": [member("a", 100)]}), **got, "days": {n: d for n, d in daily.items() if n in got}}
+            got = {n: [] for n in daily}
+            return {**snap({"karni": [member("a", 100)]}), **got, "days": dict(daily)}
 
         _, data, _, _ = self.run_main(now=self.NOON, snapshot=fake)
         self.run_main(now=self.NOON, snapshot=fake, data=data)
         day = "2026-09-30"
-        self.assertEqual(asked, [{"first_kills": day, "changelog": day}, {"changelog": day}])
+        self.assertEqual(asked, [{"first_kills": day}, {}])
 
     def test_a_profiles_part_without_a_state_does_nothing(self):
         code, data, _, printed = self.run_main(now=self.NOON, args=("--part", "profiles"))

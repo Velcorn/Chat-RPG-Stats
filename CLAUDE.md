@@ -53,7 +53,7 @@ Python modules live in `src/` (flat, no package; tests and tools need `PYTHONPAT
 - `src/fightstats.py`: fight statistics for `summary.json` -> `stats` (death share in won fights and per fight (`fallen`), roles, power vs recommendation, hours, channels); only sums per fight, never per player.
 - `src/build.py`: replays the day files (`History`, incl. rules log and live share per channel), computes pace, forecasts, peers, guild standing, fight odds; writes
   `_site/data/summary.json`, `players.json` (search index) and `p/<login>.json`.
-- `site/index.html`: the whole dashboard (no build step; hash routes `#/<section>/<sub>` with sections `start` (default), `rangliste`, `gilden` (subs `vergleich` + one per guild), `spiel` (subs `wirtschaft`, `regeln`, `aenderungen`, `formen` (static `FORMS` table); `RULE_LABELS` holds the German rule names), `kaempfe` (subs `arten`, `ueberleben`, `kraft`, `zeit`, `letzte`; see `SECTIONS`: each sub
+- `site/index.html`: the whole dashboard (no build step; hash routes `#/<section>/<sub>` with sections `start` (default), `rangliste`, `gilden` (subs `vergleich` + one per guild), `spiel` (subs `regeln`, `aenderungen` (measured rule changes only), `formen` (static `FORMS` table); `RULE_LABELS` holds the German rule names), `kaempfe` (subs `arten`, `ueberleben`, `kraft`, `zeit`, `letzte`; see `SECTIONS`: each sub
   page is a tab in the second row) and `#/spieler/<login>`).
 - `src/watchlist.py` + `watchlist.txt`: the list (channel owners by default, others opt-in), changed by the issue form via `.github/workflows/watchlist.yml`.
 - `fightstats.UPDATE` (04.10.2026, the story update) splits `eras.after`/`eras.before` for the fight pages.

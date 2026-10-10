@@ -10,7 +10,14 @@ Zeitplan (alle 15 Min., 7-24 Uhr) -> src/collect.py -> Zweig "data" -> src/build
 ```
 
 1. **Sammeln** (`src/collect.py`): fragt die öffentlichen Schnittstellen ab (Tabelle in der README), bildet daraus den
-   aktuellen Stand und schreibt nur die Änderungen zum letzten Lauf.
+   aktuellen Stand und schreibt nur die Änderungen zum letzten Lauf. Seit 0.23.0 hat ein Lauf zwei Teile (zwei Jobs der
+   Action, `--part core` und `--part profiles`): Zuerst der Kern (Gildenliste, Ranglisten, Kämpfe, Kanäle, Regeln, die
+   Tagesdaten; etwa 15 Anfragen, rund 40 Sekunden), danach Speichern, Bauen und Veröffentlichen. Dann die Profile
+   (Beobachtungsliste, einmal am Tag die Top 100, eine Scheibe der übrigen aktiven Spieler; etwa 55 bis 70 Anfragen, zwei
+   Minuten bei 2 Sekunden Abstand), die der Teil danach nur speichert: Sie stehen auf der Seite des nächsten Laufs. So ist
+   die Rangliste der Seite nicht mehr die gut drei Minuten alt, die ein ganzer Lauf dauert, wenn sie erscheint (vorher 5 bis
+   19 Minuten Alter, jetzt etwa 2 bis 17). Der Profile-Teil liest aus dem letzten Stand, wer dran ist (`profiles_state`), und
+   schreibt seine Zeile mit `part: "profiles"`; der Verlauf zählt sie nicht als Lauf und addiert ihre Anfragen zu denen des Laufs.
 2. **Speichern:** im Zweig `data`, eine Datei `days/JJJJ-MM-TT.jsonl` pro Tag (eine Zeile pro Lauf) und `state.json`
    mit dem letzten Stand. Von einem bekannten Spieler oder einer Gilde werden nur die geänderten Werte gespeichert.
    Ein Lauf ist dadurch rund 25 KB groß, ein Tag etwa 1,6 MB (die Summen je Kampf kommen dazu).

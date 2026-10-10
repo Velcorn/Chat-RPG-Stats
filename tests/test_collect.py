@@ -92,6 +92,17 @@ class SnapshotTests(unittest.TestCase):
         self.assertEqual(list(s["watch"]), ["sola"])
         self.assertEqual(site.requests, 10)
 
+    def test_a_core_part_asks_no_profile_and_a_profiles_part_only_those(self):
+        core = FakeSite(answers(**{"/api/players/sola": {"displayName": "Sola"}}))
+        s = collect.snapshot(core, ["sola"], part="core", top_day="2026-10-09")
+        self.assertEqual((core.requests, s["watch"], s["sweep"], s["top"]), (8, {}, {}, ["a"]))
+        prev = collect.state_from(s, {})
+        later = FakeSite(answers(**{"/api/players/sola": {"displayName": "Sola"}}))
+        p = collect.snapshot(later, ["sola"], part="profiles", prev=prev, top_day="2026-10-09")
+        # the watchlist, the board's top 100 ("a") and nobody else: the guild's only member is on the board
+        self.assertEqual((later.requests, sorted(p["watch"]), p["days"]), (2, ["a", "sola"], {"top": "2026-10-09"}))
+        self.assertEqual((p["fights"], p["boards"]), ([], {}))
+
     def test_the_active_players_off_the_board_are_read_in_slices(self):
         names = [f"p{i:02d}" for i in range(7)]
         page = {"guild": {"name": "Karni"},
@@ -166,6 +177,24 @@ class StateTests(unittest.TestCase):
         state = collect.state_from(s, {})
         self.assertEqual(state["boards"], {"gear": [["a", 100]], "gold": [["a", 100]]})
 
+    def test_a_core_and_a_profiles_part_make_the_state_of_a_full_run(self):
+        watch = {"a": {"displayName": "A", "attack": 5, "defense": 6, "support": 7, "silver": 42,
+                       "survivalPercent": 80, "life": 3, "achievementsUnlocked": 2, "stats": {"fights": 4}}}
+        s = snap({"karni": [member("a", 100), member("b", 50), member("c", 40)]}, board=[("a", 100, 1, 2, 3)],
+                 watch=watch)
+        s["top"], s["sweep_after"] = ["a"], "c"
+        full = collect.state_from(s, {})
+        core = collect.state_from({**s, "watch": {}, "sweep": {}, "top": ["a"]}, {})
+        self.assertEqual((core["players"]["b"].get("gs"), core["watch"]), (None, {}))
+        merged = collect.profiles_state({"watch": s["watch"], "sweep": s["sweep"], "fights": [], "boards": {},
+                                         "sweep_after": "c"}, core)
+        for key in ("players", "details", "watch", "sweep_after", "boards", "guilds"):
+            self.assertEqual(merged[key], full[key], key)
+        self.assertEqual(merged["players"]["a"]["gs"], 100)  # on the board: the board's own score, not 5 + 6 + 7
+        self.assertEqual(merged["players"]["b"]["gs"], 50)
+        rec = collect.record({"fights": [], "details": {}}, core, merged, 5)
+        self.assertEqual(sorted(rec), ["details", "players", "t", "watch"])  # only profile data changed
+
     def test_board_player_without_a_guild(self):
         s = snap({"karni": [member("a", 100)]}, board=[("solo", 80, 1, 2, 3)])
         state = collect.state_from(s, {})
@@ -210,7 +239,7 @@ class MainTests(unittest.TestCase):
         patches = [mock.patch.object(collect, "datetime", mock.Mock(now=lambda tz: now)),
                    mock.patch.object(collect, "Site", lambda: mock.Mock(requests=7)),
                    mock.patch.object(collect, "snapshot", snapshot or (
-                       lambda site, wl, after=0, daily=None, sweep_after="", top_day="":
+                       lambda site, wl, after=0, daily=None, sweep_after="", top_day="", part="all", prev=None:
                        snap({"karni": [member("a", 100)]}))),
                    mock.patch("sys.argv", ["collect.py", "--data", str(data), "--watchlist", str(data / "none.txt"),
                                            *args]),
@@ -240,7 +269,7 @@ class MainTests(unittest.TestCase):
     def test_the_reference_data_is_asked_for_once_a_day_each(self):
         asked = []
 
-        def fake(site, wl, after=0, daily=None, sweep_after="", top_day=""):
+        def fake(site, wl, after=0, daily=None, sweep_after="", top_day="", part="all", prev=None):
             asked.append(daily)
             got = {n: [] for n in daily if n != "changelog"}  # the changelog page is down
             return {**snap({"karni": [member("a", 100)]}), **got, "days": {n: d for n, d in daily.items() if n in got}}
@@ -250,14 +279,20 @@ class MainTests(unittest.TestCase):
         day = "2026-09-30"
         self.assertEqual(asked, [{"first_kills": day, "changelog": day}, {"changelog": day}])
 
+    def test_a_profiles_part_without_a_state_does_nothing(self):
+        code, data, _, printed = self.run_main(now=self.NOON, args=("--part", "profiles"))
+        self.assertEqual(code, 0)
+        self.assertIn("Noch kein Stand", printed)
+        self.assertFalse((data / "state.json").exists() or (data / "days").exists())
+
     def test_second_run_appends_and_reads_the_state(self):
         _, data, _, _ = self.run_main(now=self.NOON)
         with mock.patch("sys.argv", ["collect.py", "--data", str(data), "--watchlist", str(data / "none.txt")]), \
                 mock.patch.object(collect, "datetime", mock.Mock(now=lambda tz: self.NOON)), \
                 mock.patch.object(collect, "Site", lambda: mock.Mock(requests=7)), \
                 mock.patch.object(collect, "snapshot",
-                                  lambda site, wl, after=0, daily=None, sweep_after="", top_day="":
-                                  snap({"karni": [member("a", 105)]})), \
+                                  lambda site, wl, after=0, daily=None, sweep_after="", top_day="", part="all",
+                                  prev=None: snap({"karni": [member("a", 105)]})), \
                 redirect_stdout(io.StringIO()):
             collect.main()
         lines = (data / "days" / "2026-09-30.jsonl").read_text().splitlines()
@@ -276,7 +311,7 @@ class MainTests(unittest.TestCase):
         self.assertTrue(out.exists())
 
     def test_site_down_skips_the_run_without_failing(self):
-        def down(site, wl, after=0, daily=None, sweep_after="", top_day=""):
+        def down(site, wl, after=0, daily=None, sweep_after="", top_day="", part="all", prev=None):
             raise TimeoutError("timed out")
 
         code, data, out, printed = self.run_main(now=self.NOON, snapshot=down)

@@ -46,7 +46,7 @@ jobs:
       - name: Sammeln
         id: collect
         if: github.event_name != 'push'
-        run: uv run --no-dev python src/collect.py --data data ${{ github.event_name == 'workflow_dispatch' && '--force' || '' }} ${{ inputs.full_top && '--full-top' || '' }}
+        run: uv run --no-dev python src/collect.py --data data --part core ${{ github.event_name == 'workflow_dispatch' && '--force' || '' }}
       - name: Daten sichern
         if: steps.collect.outputs.collected == 'true'
         working-directory: data
@@ -67,3 +67,30 @@ jobs:
       - id: deploy
         if: steps.build.outcome == 'success'
         uses: actions/deploy-pages@v5
+
+  # The second half of a run: the profiles (watchlist, the board's top 100 once a day, a slice of the other active
+  # players) take about two minutes of the run, so the page is published without them first; the next run's page has them.
+  profiles:
+    needs: collect
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+      - name: Datenzweig holen
+        env:
+          REMOTE: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}
+        run: git clone --quiet --branch data --single-branch --depth 1 "$REMOTE" data
+      - name: Profile lesen
+        id: collect
+        run: uv run --no-dev python src/collect.py --data data --part profiles ${{ github.event_name == 'workflow_dispatch' && '--force' || '' }} ${{ inputs.full_top && '--full-top' || '' }}
+      - name: Daten sichern
+        if: steps.collect.outputs.collected == 'true'
+        working-directory: data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit --quiet -m "Profile $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push --quiet origin data

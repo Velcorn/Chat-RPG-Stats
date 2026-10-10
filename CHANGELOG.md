@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.23.0 (10.10.2026)
+
+**Verbessert**
+- Die Seite erscheint früher mit den Ranglisten, Gilden, Kämpfen und Kanälen: Der Sammler veröffentlicht sie jetzt nach etwa 40 Sekunden und liest erst danach die Profile (Beobachtungsliste, Top 100, Scheibe der übrigen Spieler), die dann beim nächsten Lauf auf der Seite stehen. Die Rangliste ist damit um gut zwei Minuten aktueller, die Zahl der Anfragen bleibt gleich.
+
 ## 0.22.1 (10.10.2026)
 
 **Behoben**

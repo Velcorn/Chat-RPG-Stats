@@ -216,6 +216,14 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(gain([[9 * DAY + 100, 50]], now, DAY), None)  # no value that old
         self.assertEqual(gain([[0, 100], [9.5 * DAY, 160]], now, DAY), 60)
 
+    def test_the_second_half_of_a_run_is_not_another_run(self):
+        from build import History
+        h = History([{"t": 1, "req": 10, "channels": {"sola": True}}, {"t": 2, "req": 50, "part": "profiles"},
+                     {"t": 3, "req": 12, "channels": {"sola": False}}])
+        self.assertEqual((h.runs, h.requests, dict(h.live_runs)), (2, 12, {"sola": [1, 2]}))
+        h = History([{"t": 1, "req": 10, "channels": {"sola": True}}, {"t": 2, "req": 50, "part": "profiles"}])
+        self.assertEqual((h.runs, h.requests, h.last), (1, 60, 2))  # the run's requests: both halves
+
     def test_players_index_is_sorted_by_gear(self):
         index = json.loads((self.out / "players.json").read_text())
         self.assertEqual([r[0] for r in index], ["top", "fast", "slow"])

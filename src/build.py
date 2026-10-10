@@ -52,8 +52,12 @@ class History:
         for rec in records:
             t = rec["t"]
             self.first = self.first or t
-            self.last, self.runs = t, self.runs + 1
-            self.requests = rec.get("req", self.requests)
+            self.last = t
+            if rec.get("part") == "profiles":  # the second half of a run: its requests add to the run's
+                self.requests = (self.requests or 0) + rec.get("req", 0)
+            else:
+                self.runs += 1
+                self.requests = rec.get("req", self.requests)
             for login, p in rec.get("players", {}).items():
                 for series, key in ((self.gs, "gs"), (self.power, "gear"), (self.guild, "guild")):
                     if key in p and (p[key] is not None or key == "guild"):  # a record only has changed fields
@@ -75,7 +79,7 @@ class History:
                     self.rules_log.append([t, rule, rules_now[rule], v])
                 rules_now[rule] = v
             live_now.update(rec.get("channels", {}))
-            for channel, live in live_now.items():
+            for channel, live in ({} if rec.get("part") == "profiles" else live_now).items():
                 self.live_runs[channel][0] += bool(live)
                 self.live_runs[channel][1] += 1
             self.fights += rec.get("fights", [])

@@ -48,7 +48,7 @@ keep it.
 
 Python modules live in `src/` (flat, no package; tests and tools need `PYTHONPATH=src`); `site/`, `tests/`, `docs/` stay at the top.
 
-- `src/collect.py`: one run (about 15 requests plus one per new fight plus the profile sweep, ~55): `snapshot` (the requests), `state_from` (flat current state, incl. the watchlist's gear per slot), `record` (only the changes).
+- `src/collect.py`: one run (about 15 requests plus one per new fight plus the profile sweep, ~55; two parts since 0.23.0: `--part core` is published first, `--part profiles` (`read_profiles`, `profiles_state`, record line `part: "profiles"`) runs in the workflow's second job and shows on the next run's page): `snapshot` (the requests), `state_from` (flat current state, incl. the watchlist's gear per slot), `record` (only the changes).
   Writes `data/days/YYYY-MM-DD.jsonl` (one line per run) and `data/state.json` on the `data` branch.
 - `src/fightstats.py`: fight statistics for `summary.json` -> `stats` (death share in won fights and per fight (`fallen`), roles, power vs recommendation, hours, channels); only sums per fight, never per player.
 - `src/build.py`: replays the day files (`History`, incl. rules log and live share per channel), computes pace, forecasts, peers, guild standing, fight odds; writes

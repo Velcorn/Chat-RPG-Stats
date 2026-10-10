@@ -41,7 +41,7 @@ zeigt:
 | Spieler auf der Beobachtungsliste | Spielerseite | 1 pro Spieler |
 | Top 100 der Rangliste (ohne Liste) | Spielerseite | 100, alle einmal am Tag um 7 Uhr |
 
-Ein Lauf macht also etwa 68 Anfragen und eine pro neuem Kampf, im Abstand von 2 Sekunden. Bei 4 Läufen pro Stunde und
+Ein Lauf macht also etwa 68 Anfragen (rund 15 für Ranglisten, Gilden, Kämpfe und Kanäle, die zuerst auf die Seite kommen, den Rest für Profile danach) und eine pro neuem Kampf, im Abstand von 2 Sekunden. Bei 4 Läufen pro Stunde und
 17 Stunden Spielzeit sind das rund 4.600 Anfragen am Tag, egal wie viele Leute die Seite ansehen: Besucher lesen nur fertige Dateien. Die Seite nennt diese Zahl
 im Fuß (gemessen am letzten Lauf, mal 68 Läufe am Tag). Jede Anfrage nennt
 das Projekt im User-Agent. Ist die Seite nicht erreichbar, fällt der Lauf aus. Gespeichert wird nur, was sich geändert hat.

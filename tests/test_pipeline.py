@@ -136,6 +136,11 @@ class CommunityTests(unittest.TestCase):
         g = self.summary["guilds"][0]
         self.assertEqual((g["week"], g["treasury_week"]), (70, 700))
 
+    def test_the_kampfkraft_board_ranks_everyone_known_by_the_guild_pages_value_and_its_change(self):
+        board = self.summary["power_board"]
+        self.assertEqual([(r["login"], r["rank"], r["power"], r["power_day"]) for r in board],
+                         [("a", 1, 170, 10), ("b", 2, 50, 0)])
+
     def test_economy_series_sums_the_treasuries(self):
         self.assertEqual(self.summary["economy"]["series"][-1]["treasury"], 1700)
 
@@ -197,11 +202,9 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(len(series), 8)
         self.assertEqual(self.summary["guilds"][0]["avg_gear"], 180.3)  # fast 170, slow 164, top 207
 
-    def test_value_boards_rank_by_their_own_value(self):
-        self.assertEqual([(r["login"], r["rank"], r["value"]) for r in self.summary["quests"]],
-                         [("top", 1, 10), ("slow", 2, 10)])
-        self.assertEqual([r["value"] for r in self.summary["silver"]], [100, 100])
-        self.assertEqual([r["value"] for r in self.summary["achievements"]], [5, 5])
+    def test_the_pages_the_game_shows_itself_are_not_built(self):
+        for gone in ("quests", "silver", "achievements", "compendium"):
+            self.assertNotIn(gone, self.summary)
 
     def test_players_index_is_sorted_by_gear(self):
         index = json.loads((self.out / "players.json").read_text())

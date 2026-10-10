@@ -1,9 +1,9 @@
 """Collector: one snapshot of the game's public data, stored as the changes since the last one.
 
 Runs every 15 minutes in GitHub Actions during the game's play window. Reads only public endpoints (no login,
-no cookies) and never sends anything but GETs. One run is about sixteen requests plus one per new fight and a
+no cookies) and never sends anything but GETs. One run is about fourteen requests plus one per new fight and a
 slice of the active players' profiles (about 55, so every active player is read about once a day), two seconds
-apart; once a day come the compendium and the first kills (one each) and the changelog (three).
+apart; once a day come the first kills (one) and the changelog (three).
 """
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ BOUND_SOURCES = ("PERSONAL_SHOP", "AUCTION", "TRADER", "SEALED")  # bound to the
 SWEEP_RUNS = 60  # the active players' profiles are read in this many slices, so each one about once a day
 TOP_WATCH = 100  # the board's top players get the watchlist's detailed profile data, all in the day's first run
 # The site's four rankings (`by=` value -> the value they rank by). Others (silver, level) just return the gear board.
-BOARD_FIELDS = {"gear": "gearScore", "gold": "silver", "errungenschaften": "achievements", "quests": "quests"}
+BOARD_FIELDS = {"gear": "gearScore", "gold": "silver"}
 
 
 def user_agent() -> str:
@@ -100,8 +100,7 @@ def read_changelog(site: Site) -> list[dict]:
 
 
 # Reference data read once a day (on the first run of a day that has not got it): name -> how to read it.
-DAILY = {"compendium": lambda site: site.get("/api/compendium"),
-         "first_kills": lambda site: site.get("/api/guilds/first-kills"),
+DAILY = {"first_kills": lambda site: site.get("/api/guilds/first-kills"),
          "changelog": read_changelog}
 
 
@@ -117,7 +116,7 @@ def snapshot(site: Site, watchlist: list[str], detail_after: int = 0, daily: dic
              sweep_after: str = "", top_day: str = "") -> dict:
     """Everything one run asks the site, in the site's own shapes. Fights newer than `detail_after` also cost one
     request for their detail page (the archive's own numbers: who fell, roles, damage). `daily` maps the reference
-    data that is due (the game's compendium, the guilds' first kills, its changelog; they hardly ever change) to
+    data that is due (the guilds' first kills, the game's changelog; they hardly ever change) to
     today's date; what was read lands in the snapshot with its date in `days`. The board (top 100) and the watchlist
     give the plain gear score anyway; of the other active guild members a slice (after the login `sweep_after`) gets
     its profile read, since only the profile (attack + defense + support) has it. The detail data of the watchlist
@@ -279,28 +278,6 @@ def live_digest(e: dict) -> dict:
             "tanks": [b.get("tanksStanding"), b.get("tanksTotal")]}
 
 
-def compendium_state(c: dict) -> dict:
-    """The reference data worth showing: no icons, examples, intro texts or the stale Mythic fields."""
-    pick = lambda rows, *keys: [{k: r.get(k) for k in keys} for r in rows or []]  # noqa: E731
-    return {"potions": pick(c.get("potions"), "kind", "label", "description", "use"),
-            "tiers": pick(c.get("tiers"), "tier", "material", "templates", "sources"),
-            "bosses": [{**{k: b.get(k) for k in ("name", "lootTierMin", "lootTierMax", "gearTier", "recommendedGear",
-                                                 "hidden", "unlockedBy")},
-                        "hoard": pick(b.get("hoard"), "name", "slot")} for b in c.get("bosses") or []],
-            "fights": pick(c.get("fights"), "name", "kind", "kindLabel", "difficulty"),
-            "projects": pick(c.get("projects"), "project", "label", "description", "nextBattle"),
-            "workshop": workshop_state(c.get("workshop") or {})}
-
-
-def workshop_state(w: dict) -> dict:
-    """The Schmiede's levels (highest seal tier, the boss the guild must have beaten, seals per piece) and the
-    Lager's wares with the Lager level that unlocks them."""
-    pick = lambda rows, *keys: [{k: r.get(k) for k in keys} for r in rows or [] if isinstance(r, dict)]  # noqa: E731
-    return {"forge": pick(w.get("forge"), "level", "upTo", "upToTier", "requires", "sealsPerItem"),
-            "wares": pick(w.get("wares"), "kind", "label", "description", "level", "price"),
-            "sealSalePerTier": w.get("sealSalePerTier")}
-
-
 def first_kills_state(rows) -> list[list]:
     """The guilds' first kills as [boss, level, guild login, guild name, time, boss order], in the game's order."""
     return [[r.get("bossName"), r.get("level"), r.get("guildLogin"), r.get("guildName"), r.get("at"),
@@ -381,8 +358,6 @@ def state_from(snap: dict, prev: dict) -> dict:
             "channels": {c["login"]: bool(c.get("live")) for c in snap["channels"] if c.get("enabled")},
             "chat": {c["login"]: c.get("chatMode") for c in snap["channels"] if c.get("enabled")},
             "rules": {k: v for k, v in (snap.get("rules") or {}).items() if k != "playWindowOpenNow"},
-            "compendium": (compendium_state(snap["compendium"]) if snap.get("compendium")
-                           else prev.get("compendium", {})),
             "first_kills": (first_kills_state(snap["first_kills"]) if "first_kills" in snap
                             else prev.get("first_kills", [])),
             "changelog": snap["changelog"] if snap.get("changelog") else prev.get("changelog", []),

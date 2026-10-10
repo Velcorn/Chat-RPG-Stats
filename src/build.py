@@ -33,6 +33,7 @@ class History:
 
     def __init__(self, records):
         self.gs: dict[str, list] = defaultdict(list)         # login -> [[t, gear score], ...] (only changes)
+        self.power: dict[str, list] = defaultdict(list)      # login -> [[t, Kampfkraft], ...] (only changes)
         self.guild: dict[str, list] = defaultdict(list)      # login -> [[t, guild login or None], ...]
         self.details: dict[str, list] = defaultdict(list)    # login -> [[t, {atk, def, sup, silver, quests}], ...]
         self.rank: dict[str, list] = defaultdict(list)       # login -> [[t, rank on the gear board or None], ...]
@@ -54,7 +55,7 @@ class History:
             self.last, self.runs = t, self.runs + 1
             self.requests = rec.get("req", self.requests)
             for login, p in rec.get("players", {}).items():
-                for series, key in ((self.gs, "gs"), (self.guild, "guild")):
+                for series, key in ((self.gs, "gs"), (self.power, "gear"), (self.guild, "guild")):
                     if key in p and (p[key] is not None or key == "guild"):  # a record only has changed fields
                         put(series[login], t, p[key])
             for login, d in rec.get("details", {}).items():
@@ -150,15 +151,12 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
         board_rows.append({**row(login), "rank": i + 1, "rank_change": None if prev is None else prev - (i + 1),
                            **{k: details.get(login, {}).get(k) for k in ("atk", "def", "sup")}})
 
-    def value_board(name: str, key: str):
-        """A ranking by one value: rank, the board's own value and its change in 24 hours."""
-        return [{**row(login), "rank": i + 1, "value": v,
-                 "value_day": change([[t, d[key]] for t, d in h.details[login] if d.get(key)], now, DAY)}
-                for i, (login, v) in enumerate(state["boards"].get(name, []))]
-
-    quest_rows = value_board("quests", "quests")
-    silver_rows = value_board("gold", "silver")
-    achievement_rows = value_board("errungenschaften", "ach")
+    # The Kampfkraft ranking (gear plus talents): the game ranks by the gear score, but its guild pages give the
+    # Kampfkraft of every member, so this is the top 100 of everyone known, not only of the game's board.
+    power = {login: p["gear"] for login, p in players.items() if p.get("gear") is not None}
+    power_rows = [{**row(login), "rank": i + 1, "power": power[login],
+                   "power_day": change(h.power[login], now, DAY)}
+                  for i, login in enumerate(sorted(power, key=lambda x: -power[x])[:100])]
 
     guild_members: dict[str, list[str]] = defaultdict(list)
     for login, p in players.items():
@@ -187,8 +185,7 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
                "players": len(players),
                "ranked": len(gear),
                "active": sum(1 for p in players.values() if p.get("active")),
-               "board": board_rows, "quests": quest_rows, "silver": silver_rows,
-               "achievements": achievement_rows,
+               "board": board_rows, "power_board": power_rows,
                "risers": {"day": risers(day), "week": risers(week)},
                "top100": {"gear": top100_gear, "pace": rounded(top100_pace)},
                "guilds": sorted(guild_rows, key=lambda g: -(g.get("gear") or 0)),
@@ -204,7 +201,6 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
                "channel_stats": channel_stats(h, state, summary_stats["channels"]),
                "rules": {"now": state.get("rules", {}), "log": h.rules_log[::-1][:60],
                          "since": h.first if state.get("rules") else None},
-               "compendium": state.get("compendium", {}),
                "economy": economy(h, state, now)}
 
     target = out / "data"

@@ -3,6 +3,19 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.22.0 (10.10.2026)
+
+**Neu**
+- Ranglisten -> Kampfkraft: die Top 100 aller erfassten Spieler nach der Kampfkraft (Ausrüstung plus Talente) mit der Veränderung in 24 Stunden, daneben der Ausrüstungswert. Die Reihenfolge weicht von der des Spiels deutlich ab.
+- Startseite: Der Spieler mit dem höchsten Ausrüstungswert ist anklickbar.
+
+**Entfernt**
+- Was das Spiel selbst genauso zeigt: das Kompendium, die Ranglisten Silber, Errungenschaften und Quests sowie die Tabellen Gebäude und Gildenbosse auf den Gildenseiten. Der Gildenvergleich zeigt die Stufen weiter.
+- Die Rangliste "Ausrüstungswert" liegt jetzt unter `#/rangliste/ausruestungswert`; unter `#/rangliste/kampfkraft` steht die neue Rangliste.
+
+**Verbessert**
+- Der Sammler fragt zwei Ranglisten und das Kompendium nicht mehr ab: etwa 3 Anfragen weniger je Lauf.
+
 ## 0.21.1 (10.10.2026)
 
 **Verbessert**

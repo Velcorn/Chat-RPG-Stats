@@ -57,33 +57,29 @@ class SnapshotTests(unittest.TestCase):
         site = FakeSite(answers())
         s = collect.snapshot(site, [])
         self.assertEqual(list(s["guilds"]), ["karni"])  # a guild without members costs no request
-        self.assertEqual((site.requests, s["watch"], "days" in s), (10, {}, False))  # the top is not due
+        self.assertEqual((site.requests, s["watch"], "days" in s), (8, {}, False))  # the top is not due
 
     def test_the_top_100_is_read_in_full_on_the_day_s_first_run(self):
         site = FakeSite(answers())
         s = collect.snapshot(site, [], top_day="2026-10-09")
-        self.assertEqual(site.requests, 11)  # the board's one player included
+        self.assertEqual(site.requests, 9)  # the board's one player included
         self.assertEqual((list(s["watch"]), s["days"]), (["a"], {"top": "2026-10-09"}))  # read like the watchlist
 
     def test_the_daily_reference_data_is_read_on_request_and_a_failing_page_costs_nothing(self):
-        site = FakeSite(answers(**{"/api/compendium": {"potions": []}, "/api/guilds/first-kills": [{"level": 1}],
-                                   **CHANGELOG_PAGES}))
-        day = {"compendium": "2026-10-04", "first_kills": "2026-10-04", "changelog": "2026-10-04"}
+        site = FakeSite(answers(**{"/api/guilds/first-kills": [{"level": 1}], **CHANGELOG_PAGES}))
+        day = {"first_kills": "2026-10-04", "changelog": "2026-10-04"}
         s = collect.snapshot(site, [], daily=day)
-        self.assertEqual((s["compendium"], s["first_kills"], s["changelog"], s["days"]),
-                         ({"potions": []}, [{"level": 1}], CHANGELOG, day))
-        self.assertEqual(site.requests, 10 + 1 + 1 + 3)
+        self.assertEqual((s["first_kills"], s["changelog"], s["days"]), ([{"level": 1}], CHANGELOG, day))
+        self.assertEqual(site.requests, 8 + 1 + 3)
         for name in day:
             self.assertNotIn(name, collect.snapshot(FakeSite(answers()), []))
-        broken = collect.snapshot(FakeSite(answers(**{"/api/compendium": 503, "/api/guilds/first-kills": 503,
-                                                      "/": 503})), [], daily=day)
-        self.assertFalse({"compendium", "first_kills", "changelog", "days"} & set(broken))
+        broken = collect.snapshot(FakeSite(answers(**{"/api/guilds/first-kills": 503, "/": 503})), [], daily=day)
+        self.assertFalse({"first_kills", "changelog", "days"} & set(broken))
 
     def test_one_failing_reference_page_does_not_hide_the_others(self):
-        site = FakeSite(answers(**{"/api/compendium": 503, "/api/guilds/first-kills": [], **CHANGELOG_PAGES}))
-        s = collect.snapshot(site, [], daily={"compendium": "d", "first_kills": "d", "changelog": "d"})
-        self.assertEqual((s["first_kills"], s["changelog"], s["days"]),
-                         ([], CHANGELOG, {"first_kills": "d", "changelog": "d"}))
+        site = FakeSite(answers(**{"/api/guilds/first-kills": 503, **CHANGELOG_PAGES}))
+        s = collect.snapshot(site, [], daily={"first_kills": "d", "changelog": "d"})
+        self.assertEqual(("first_kills" in s, s["changelog"], s["days"]), (False, CHANGELOG, {"changelog": "d"}))
 
     def test_a_changelog_page_without_entries_or_route_is_skipped(self):
         for pages in ({**CHANGELOG_PAGES, "/_nuxt/log.js": "nothing"}, {**CHANGELOG_PAGES, "/_nuxt/entry.js": "x"}):
@@ -94,7 +90,7 @@ class SnapshotTests(unittest.TestCase):
         site = FakeSite(answers(**{"/api/players/sola": {"displayName": "Sola"}, "/api/players/weg": 404}))
         s = collect.snapshot(site, ["sola", "weg"])
         self.assertEqual(list(s["watch"]), ["sola"])
-        self.assertEqual(site.requests, 12)
+        self.assertEqual(site.requests, 10)
 
     def test_the_active_players_off_the_board_are_read_in_slices(self):
         names = [f"p{i:02d}" for i in range(7)]
@@ -168,9 +164,7 @@ class StateTests(unittest.TestCase):
     def test_every_ranking_keeps_the_value_it_ranks_by(self):
         s = snap({"karni": [member("a", 100)]}, board=[("a", 100, 1, 2, 3)])
         state = collect.state_from(s, {})
-        self.assertEqual({b: state["boards"][b] for b in ("gear", "gold", "errungenschaften", "quests")},
-                         {"gear": [["a", 100]], "gold": [["a", 100]], "errungenschaften": [["a", 5]],
-                          "quests": [["a", 10]]})
+        self.assertEqual(state["boards"], {"gear": [["a", 100]], "gold": [["a", 100]]})
 
     def test_board_player_without_a_guild(self):
         s = snap({"karni": [member("a", 100)]}, board=[("solo", 80, 1, 2, 3)])
@@ -197,34 +191,7 @@ class StateTests(unittest.TestCase):
         self.assertEqual(collect.price_value("80 Silber"), 80)
         self.assertIsNone(collect.price_value("kostenlos"))
 
-    def test_compendium_keeps_the_reference_data_and_carries_over_until_the_next_read(self):
-        raw = {"potions": [{"kind": "HEAL", "label": "Heiltrank", "description": "d", "icon": "x.png", "use": "FIGHT"}],
-               "tiers": [{"tier": 1, "material": "Holz", "templates": 90, "examples": [{}], "sources": ["Quests"]}],
-               "bosses": [{"name": "Boss", "intro": "...", "lootTierMin": 4, "lootTierMax": 5, "gearTier": 3,
-                           "recommendedGear": 170, "mythicGearTier": 3, "hidden": False, "unlockedBy": None,
-                           "hoard": [{"name": "Helm", "slot": "Helm", "icon": "i.png"}]}],
-               "fights": [{"name": "Höhle", "kind": "ADVENTURE", "kindLabel": "Abenteuer", "difficulty": 1}],
-               "projects": [{"project": "WARD", "label": "Schutzzeichen", "description": "d", "nextBattle": True}]}
-        s = snap({"karni": [member("a", 100)]})
-        first = collect.state_from({**s, "compendium": raw, "days": {"compendium": "2026-10-04"}}, {})
-        self.assertEqual(first["compendium"]["potions"], [{"kind": "HEAL", "label": "Heiltrank", "description": "d",
-                                                          "use": "FIGHT"}])
-        self.assertEqual(first["compendium"]["tiers"][0], {"tier": 1, "material": "Holz", "templates": 90,
-                                                          "sources": ["Quests"]})
-        self.assertEqual(first["compendium"]["bosses"][0]["hoard"], [{"name": "Helm", "slot": "Helm"}])
-        self.assertNotIn("mythicGearTier", first["compendium"]["bosses"][0])
-        later = collect.state_from(s, first)
-        self.assertEqual(later["compendium"], first["compendium"])
-
-    def test_workshop_and_first_kills_keep_what_the_pages_say_and_survive_junk(self):
-        w = collect.workshop_state({"forge": [{"level": 1, "upTo": "Boss", "upToTier": 4, "requires": None,
-                                               "sealsPerItem": 21, "x": 1}, "junk"],
-                                    "wares": [{"kind": "GEM_RARE", "label": "Stein", "description": "d", "level": 2,
-                                               "price": 500, "icon": "x"}], "sealSalePerTier": 10})
-        self.assertEqual(w["forge"], [{"level": 1, "upTo": "Boss", "upToTier": 4, "requires": None,
-                                       "sealsPerItem": 21}])
-        self.assertEqual(w["wares"][0]["price"], 500)
-        self.assertEqual(collect.workshop_state({}), {"forge": [], "wares": [], "sealSalePerTier": None})
+    def test_first_kills_keep_what_the_page_says_and_survive_junk(self):
         rows = [{"bossName": "B", "level": 1, "guildLogin": "karni", "guildName": "Karni", "at": "t",
                  "bossOrder": 2}, 5]
         self.assertEqual(collect.first_kills_state(rows), [["B", 1, "karni", "Karni", "t", 2]])
@@ -281,7 +248,7 @@ class MainTests(unittest.TestCase):
         _, data, _, _ = self.run_main(now=self.NOON, snapshot=fake)
         self.run_main(now=self.NOON, snapshot=fake, data=data)
         day = "2026-09-30"
-        self.assertEqual(asked, [{"compendium": day, "first_kills": day, "changelog": day}, {"changelog": day}])
+        self.assertEqual(asked, [{"first_kills": day, "changelog": day}, {"changelog": day}])
 
     def test_second_run_appends_and_reads_the_state(self):
         _, data, _, _ = self.run_main(now=self.NOON)

@@ -57,6 +57,7 @@
   .tile.kk { display: grid; grid-template-columns: auto 1fr; column-gap: 12px; align-content: start; }
   .tile.kk .sub { grid-column: 1 / -1; }
   .tile .pwl { text-transform: none; letter-spacing: 0; }
+  .tile .sub a { padding: 0; font-size: inherit; }
   .tile .pwv { align-self: start; margin-top: 8px; font-size: 13px; font-weight: 650; line-height: 1.2; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
   .tile .value { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; margin: 2px 0; white-space: nowrap;
                  overflow: hidden; text-overflow: ellipsis; }
@@ -429,16 +430,16 @@ function chartCard(title, series, opts) {
 // ---- views ----
 function viewRanks(s, sub) {
   const scroll = (title, cols, rows) => [card(title, el("div", { class: "scroll" }, table(cols, rows)))];
-  const valueBoard = (title, label, rows, fmt = fmtInt) => scroll(title, [
-    { label: "#", num: true, get: (r) => r.rank },
-    { label: "Spieler", get: playerLink },
-    { label: "Gilde", get: (r) => r.guild || "-" },
-    { label: label, num: true, get: (r) => fmt(r.value) },
-    { label: "24 h", num: true, get: (r) => delta(r.value_day) },
-  ], rows);
-  if (sub === "silber") return valueBoard("Rangliste Silber (Top 100)", "Silber", s.silver);
-  if (sub === "errungenschaften") return valueBoard("Rangliste Errungenschaften (Top 100)", "Errungenschaften", s.achievements);
-  if (sub === "quests") return valueBoard("Rangliste Quests (Top 100)", "Quests", s.quests);
+  if (sub === "kampfkraft") return [
+    ...scroll("Rangliste Kampfkraft (Top 100)", [
+      { label: "#", num: true, get: (r) => r.rank },
+      { label: "Spieler", get: playerLink },
+      { label: "Gilde", get: (r) => r.guild || "-" },
+      { label: "Kampfkraft", num: true, get: (r) => fmtInt(r.power) },
+      { label: "24 h", num: true, title: "Änderung der Kampfkraft", get: (r) => delta(r.power_day) },
+      { label: "Ausrüstungswert", num: true, title: "Ohne Talente; danach ordnet das Spiel", get: (r) => fmtInt(r.gear) },
+    ], s.power_board),
+    el("p", { class: "note" }, "Kampfkraft ist die Ausrüstung plus der Bonus aus den Talenten. Das Spiel ordnet seine Rangliste nach dem Ausrüstungswert; hier stehen alle erfassten Spieler (Gildenmitglieder und die Top 100) nach der Kampfkraft, die ihre Gildenseiten nennen.")];
   if (sub === "aufsteiger") {
     let span = "day";
     const riserBox = el("div");
@@ -638,33 +639,6 @@ function buildingsOf(g) {
   const row = (k) => ({ key: k, label: b[k][2], level: b[k][0], max: b[k][1], effect: b[k][3], next: b[k][4], nextEffect: b[k][5], blocker: b[k][6], upkeep: b[k][7], until: b[k][8] });
   return BUILDING_ORDER.filter((k) => b[k]).map(row).concat(Object.keys(b).filter((k) => !BUILDING_ORDER.includes(k)).map(row));
 }
-function buildingsCard(g) {
-  const rows = buildingsOf(g);
-  if (!rows.length) return null;
-  const full = (r) => r.level >= r.max;
-  return card("Gebäude", el("div", { class: "wide-table" }, table([
-    { label: "Gebäude", get: (r) => r.label },
-    { label: "Stufe", num: true, get: (r) => `${fmtInt(r.level)} / ${fmtInt(r.max)}` },
-    { label: "Wirkung", get: (r) => r.effect },
-    { label: "Nächste Stufe bringt", get: (r) => full(r) ? "-" : r.nextEffect || "-" },
-    { label: "Kosten", num: true, get: (r) => full(r) ? "voll ausgebaut" : fmtSilver(r.next) },
-    ...(rows.some((r) => r.upkeep) ? [{ label: "Unterhalt", num: true, get: (r) => r.upkeep ? fmtSilver(r.upkeep) : "-" }] : []),
-    ...(rows.some((r) => r.until && Date.parse(r.until) > Date.now())
-      ? [{ label: "Bau", get: (r) => r.until && Date.parse(r.until) > Date.now() ? `fertig ${fmtTime(Date.parse(r.until) / 1000)}` : "-" }] : []),
-    { label: "Gesperrt", get: (r) => full(r) || !r.blocker ? "-" : r.blocker }], rows)),
-  el("p", { class: "note" }, "Gebaut wird aus der Gildenkasse; der Unterhalt läuft laufend weiter. Die Preise der nächsten Stufe zeigt das Spiel. Die Schmiede wirkt nur bis zum letzten Boss, den die Gilde der Reihe nach besiegt hat."));
-}
-function bossesCard(g) {
-  const rows = Object.entries(g.bosses || {}).map(([name, v]) => ({ name, won: v[0], price: v[1], rec: v[2] }));
-  if (!rows.length) return null;
-  return card("Gildenbosse", table([
-    { label: "Boss", get: (r) => r.name },
-    { label: "Höchste Stufe besiegt", num: true, get: (r) => fmtInt(r.won) },
-    { label: "Beschwören", num: true, get: (r) => fmtSilver(r.price) },
-    { label: "Empfohlene Ausrüstung", num: true, get: (r) => fmtInt(r.rec) }], rows),
-  el("p", { class: "note" }, `Ø Ausrüstung der Gilde: ${fmtInt(g.boss_gear)}. Preis und Empfehlung gelten für die nächste Stufe.`));
-}
-
 function progressCard(ranked) {
   const names = bossNames(ranked);
   if (!names.length && !ranked.some((g) => g.buildings)) return null;
@@ -675,7 +649,7 @@ function progressCard(ranked) {
     }))
     .concat(names.map((n) => ({ label: bossShort(n), num: true, title: `${n}: höchste besiegte Stufe`, get: (g) => g.bosses && g.bosses[n] ? fmtInt(g.bosses[n][0]) : "-" })));
   return card("Gebäude und Gildenbosse", table(cols, ranked),
-    el("p", { class: "note" }, "Gebäude: Stufe von höchstens 5 (der Hochofen 1). Bosse: höchste besiegte Stufe der Gilde. Einzelheiten stehen auf der Seite jeder Gilde."));
+    el("p", { class: "note" }, "Gebäude: Stufe von höchstens 5 (der Hochofen 1). Bosse: höchste besiegte Stufe der Gilde."));
 }
 
 function viewGuildRace(s) {
@@ -736,7 +710,6 @@ function viewGuild(s, login) {
     el("div", { class: "grid two" },
       chartCard("Kasse", g.series.map((r) => [r[0], r[1]]), { fmt: fmtSilver, until: s.generated }),
       chartCard("Aktive Mitglieder", g.series.map((r) => [r[0], r[3]]), { until: s.generated })),
-    buildingsCard(g), bossesCard(g),
     firstKillsCard(s, g.login),
     el("div", { class: "grid two" },
       card("Höchster Ausrüstungswert", table([
@@ -787,7 +760,7 @@ function viewStart(s) {
   return [
     el("div", { class: "grid tiles" },
       tile("Spieler erfasst", fmtInt(s.players), `${fmtInt(s.active)} davon aktiv`),
-      tile("Höchster Ausrüstungswert", top[0] ? fmtInt(top[0].gear) : "-", top[0] ? top[0].name || top[0].login : ""),
+      tile("Höchster Ausrüstungswert", top[0] ? fmtInt(top[0].gear) : "-", top[0] ? playerLink(top[0]) : ""),
       tile("Kämpfe", fmtInt(t.n), t.n ? `${fmtInt(t.wins)} gewonnen, letzte ${fmtInt(s.stats.days)} Tage` : ""),
       tile("Gilden", fmtInt(s.guilds.length), `${fmtInt(s.guilds.reduce((n, g) => n + g.members, 0))} Mitglieder`)),
     card("Spieler suchen", el("div", { id: "hero-search" }), el("p", { class: "note" }, "Erfasst sind alle aktiven Gildenmitglieder und die Top 100.")),
@@ -796,7 +769,7 @@ function viewStart(s) {
         { label: "#", num: true, get: (r) => fmtInt(r.rank) },
         { label: "Spieler", get: playerLink },
         { label: "Ausrüstungswert", num: true, get: (r) => fmtInt(r.gear) },
-      ], top), more("#/rangliste/kampfkraft", "Ganze Bestenliste")] : el("p", { class: "note" }, "Noch keine Daten.")),
+      ], top), more("#/rangliste/ausruestungswert", "Ganze Bestenliste")] : el("p", { class: "note" }, "Noch keine Daten.")),
       card("Aufsteiger der letzten 24 Stunden", risers.length ? [table([
         { label: "Spieler", get: playerLink },
         { label: "Ausrüstungswert", num: true, get: (r) => fmtInt(r.gear) },
@@ -1123,51 +1096,6 @@ function ruleText(key, v) {
 }
 const ruleName = (key) => (RULE_INFO[key] || { label: key }).label;
 
-const POTION_USE = { FIGHT: "nächster Kampf", GROUP: "ganze Gruppe", BOSS: "nächster Bosskampf", FORGE: "Schmieden", UPGRADE: "Verbessern",
-                     SOCKET: "Sockeln", MEAL: "Mahlzeit", QUEST: "nächste Quest" };
-function workshopCards(c) {
-  const w = c.workshop || {};
-  if (!(w.forge || []).length && !(w.wares || []).length) return [];
-  return [
-    (w.forge || []).length ? card("Schmiede der Gilde", table([
-      { label: "Stufe", num: true, get: (r) => r.level }, { label: "Siegel bis", get: (r) => `${r.upTo} (Stufe ${r.upToTier})` },
-      { label: "Dafür besiegt", get: (r) => r.requires || "-" },
-      { label: "Siegel je Stück", num: true, get: (r) => fmtInt(r.sealsPerItem) }], w.forge),
-      el("p", { class: "note" }, "Die Schmiede wirkt nur bis zum letzten Boss, den die Gilde der Reihe nach besiegt hat; geschmiedete Stücke sind gebunden.")) : null,
-    (w.wares || []).length ? card("Lager der Gilde", el("div", { class: "scroll" }, table([
-      { label: "Ware", get: (r) => r.label }, { label: "Ab Lagerstufe", num: true, get: (r) => r.level },
-      { label: "Preis", num: true, get: (r) => fmtSilver(r.price) }, { label: "Wirkung", get: (r) => r.description }], w.wares)),
-      el("p", { class: "note" }, "Das Lager ersetzt den Alchemisten: Tränke gibt es nur hier, und der eine Kampftrank wirkt je nach Rolle.")) : null];
-}
-
-function viewCompendium(s) {
-  const c = s.compendium || {};
-  if (!c.tiers || !c.tiers.length) return [card("Kompendium", el("p", { class: "note" }, "Das Kompendium wird gerade erst gesammelt."))];
-  const range = (b) => b.lootTierMin === b.lootTierMax ? `Stufe ${b.lootTierMin}` : `Stufe ${b.lootTierMin} bis ${b.lootTierMax}`;
-  return [el("section", { class: "grid" },
-    el("div", { class: "head" }, el("h1", {}, "Kompendium"), gameLink("/kompendium", "Im Spiel")),
-    el("p", { class: "note" }, "Das Nachschlagewerk des Spiels, einmal am Tag abgefragt. Es zeigt, was das Spiel selbst veröffentlicht; die Zahlen dazu stehen unter Regeln."),
-    card("Ausrüstungsstufen", table([
-      { label: "Stufe", num: true, get: (r) => r.tier }, { label: "Material", get: (r) => r.material },
-      { label: "Vorlagen", num: true, get: (r) => fmtInt(r.templates) }, { label: "Zu finden bei", get: (r) => r.sources.join(", ") }], c.tiers)),
-    card("Bosse", table([
-      { label: "Boss", get: (r) => r.name }, { label: "Beute", get: range },
-      { label: "Empfohlene Ausrüstung", num: true, get: (r) => fmtInt(r.recommendedGear) },
-      { label: "Besonderes Beutestück", get: (r) => r.hoard.length ? r.hoard.map((h) => `${h.name} (${h.slot})`).join(", ") : "-" }], c.bosses),
-      el("p", { class: "note" }, "Beute ist die Ausrüstungsstufe der Stücke, die ein Boss fallen lässt. Seit dem Update vom 04.10.2026 gibt es keinen Mythic-Modus mehr, jeder Boss hat eine Stufe nach der anderen.")),
-    el("div", { class: "grid two" },
-      card("Abenteuer und Überfälle", table([
-        { label: "Name", get: (r) => r.name }, { label: "Art", get: (r) => r.kindLabel },
-        { label: "Schwierigkeit", num: true, get: (r) => r.difficulty }], c.fights),
-        el("p", { class: "note" }, "Das Kompendium führt die Abenteuer von vor dem 04.10.2026. Die Geschichten, die seitdem laufen (unter Kämpfe -> Abenteuer), stehen nicht darin; ihre Schwierigkeit ist immer 3 und sagt nichts.")),
-      card("Gildenprojekte", table([
-        { label: "Projekt", get: (r) => r.label }, { label: "Wirkung", get: (r) => r.description }], c.projects))),
-    ...workshopCards(c),
-    ((c.workshop || {}).wares || []).length ? null : card("Tränke und Verpflegung", el("div", { class: "scroll" }, table([
-      { label: "Name", get: (r) => r.label }, { label: "Wirkung", get: (r) => r.description },
-      { label: "Wirkt auf", get: (r) => POTION_USE[r.use] || r.use }], c.potions))))];
-}
-
 // The game's changelog (read from its page once a day) and the rule changes the collector measured, by day.
 const berlinDay = (t) => new Date(t * 1000).toLocaleDateString("sv-SE", { timeZone: TZ });
 async function viewChanges(s) {
@@ -1231,7 +1159,6 @@ function viewForms() {
 }
 
 async function viewGame(s, sub) {
-  if (sub === "kompendium") return viewCompendium(s);
   if (sub === "formen") return viewForms();
   if (sub === "regeln") {
     const now = s.rules.now;
@@ -1276,11 +1203,10 @@ async function viewGame(s, sub) {
 // Each section has sub pages (one per ranking, guild or fight table), shown as a second tab row.
 const SECTIONS = {
   start: { subs: () => [], render: viewStart },
-  rangliste: { subs: () => [["kampfkraft", "Ausrüstungswert"], ["silber", "Silber"], ["errungenschaften", "Errungenschaften"],
-                            ["quests", "Quests"], ["aufsteiger", "Aufsteiger"]], render: viewRanks },
+  rangliste: { subs: () => [["ausruestungswert", "Ausrüstungswert"], ["kampfkraft", "Kampfkraft"], ["aufsteiger", "Aufsteiger"]],
+               render: viewRanks },
   gilden: { subs: (s) => [["vergleich", "Vergleich"], ...s.guilds.map((g) => [g.login, g.login])], render: viewGuild },
-  spiel: { subs: () => [["wirtschaft", "Wirtschaft"], ["regeln", "Regeln"], ["aenderungen", "Änderungen"], ["kompendium", "Kompendium"],
-                         ["formen", "Formen"]],
+  spiel: { subs: () => [["wirtschaft", "Wirtschaft"], ["regeln", "Regeln"], ["aenderungen", "Änderungen"], ["formen", "Formen"]],
            render: viewGame },
   kaempfe: { subs: () => [["arten", "Kampfarten"], ["abenteuer", "Abenteuer"], ["ueberleben", "Überleben"], ["kraft", "Kampfkraft"],
                           ["zeit", "Wann und wo"], ["gilden", "Gilden"], ["letzte", "Letzte Kämpfe"]],

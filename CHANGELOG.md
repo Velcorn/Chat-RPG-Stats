@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.23.5 (10.10.2026)
+
+**Verbessert**
+- Abenteuer nennen hinter dem Namen die Stufen, die dort bisher als Beute fielen ("Der Gipfel der Stürme 6-10"). Die Spannen sind von Hand beobachtet (Stand 10.10.2026, je Abenteuer nur wenige Läufe) und können noch wachsen.
+
 ## 0.23.4 (10.10.2026)
 
 **Behoben**

@@ -268,11 +268,17 @@ const inDays = (d) => d < 1 ? "in weniger als einem Tag" : `in etwa ${count(Math
 const KINDS = { BOSS: "Boss", ADVENTURE: "Abenteuer", RAID: "Überfall" };
 // Every story adventure since 04.10.2026 arrives with difficulty 3 (a placeholder, not a measure): not shown. An
 // Überfall shows its difficulty after the name ("Harpyienschwarm 5").
+// Item tiers the adventures dropped, [lowest, highest], observed up to 10.10.2026 (a handful of runs each, so the
+// range may grow); the game's public data doesn't list loot.
+const ADVENTURE_LOOT = { "Das Licht von Möwenfels": [6, 9], "Der Gipfel der Stürme": [6, 10], "Der Jahrmarkt der Schatten": [6, 9],
+  "Der Nebelwald": [5, 9], "Die stille Mine": [7, 9], "Die versunkene Krypta": [6, 9], "Nachts in Grauhafen": [4, 8] };
 const fightLabel = (f) => {
   // One level per boss since 04.10.2026 (always 1): only older fights with a higher level show it.
   if (f.kind === "BOSS") { const l = f.level ?? f.bossLevel; return `Boss ${f.name || ""}${l > 1 ? `, Stufe ${l}` : ""}`; }
   const d = f.level ?? f.difficulty;
   const name = f.name || KINDS[f.kind] || f.kind;
+  const loot = f.kind === "ADVENTURE" && ADVENTURE_LOOT[f.name];
+  if (loot) return `${name} ${loot[0]}-${loot[1]}`;
   return f.kind === "ADVENTURE" || d == null ? name : `${name} ${d}`;
 };
 // The repo behind the page (user.github.io/repo), for the watchlist form and the footer.

@@ -266,11 +266,13 @@ const pct = (a, b) => b ? `${fmtDec(100 * a / b, 0)} %` : "-";
 // "in weniger als einem Tag" / "in etwa 3 Tagen"
 const inDays = (d) => d < 1 ? "in weniger als einem Tag" : `in etwa ${count(Math.ceil(d), "Tag", "Tagen")}`;
 const KINDS = { BOSS: "Boss", ADVENTURE: "Abenteuer", RAID: "Überfall" };
-// Every story adventure since 04.10.2026 arrives with difficulty 3 (a placeholder, not a measure): not shown.
+// Every story adventure since 04.10.2026 arrives with difficulty 3 (a placeholder, not a measure): not shown. An
+// Überfall shows its difficulty after the name ("Harpyienschwarm 5").
 const fightLabel = (f) => {
   if (f.kind === "BOSS") return `Boss ${f.name || ""}, Stufe ${f.level ?? f.bossLevel ?? "?"}`;
-  const d = f.level ?? f.difficulty ?? "?";
-  return f.kind === "ADVENTURE" && d === 3 ? "Abenteuer" : `${KINDS[f.kind] || f.kind} Schwierigkeit ${d}`;
+  const d = f.level ?? f.difficulty;
+  const name = f.name || KINDS[f.kind] || f.kind;
+  return f.kind === "ADVENTURE" || d == null ? name : `${name} ${d}`;
 };
 // The repo behind the page (user.github.io/repo), for the watchlist form and the footer.
 const REPO = location.hostname.endsWith(".github.io")
@@ -773,7 +775,7 @@ function viewStart(s) {
 const RECENT_COLS = (s) => [
   { label: "Ende", get: (f) => fmtTime(iso(f.endedAt)) },
   { label: "Kanal", get: (f) => "#" + f.channel },
-  { label: "Kampf", get: (f) => gameLink(`/kampfbericht/${f.id}`, f.kind === "BOSS" ? fightLabel(f) : `${f.name} (${fightLabel(f)})`) },
+  { label: "Kampf", get: (f) => gameLink(`/kampfbericht/${f.id}`, fightLabel(f)) },
   { label: "Gilde", title: "Die Gilde, um die es im Kampf ging (Überfall auf ihre Kasse, beschworener Boss)", get: (f) => f.gn || "-" },
   { label: "Teilnehmer", num: true, get: (f) => fmtInt(f.fighters) },
   { label: "Kasse", num: true, title: "Was die Gildenkasse im Kampf verloren (-) oder gewonnen (+) hat", get: (f) => f.gc == null ? "-" : el("span", { class: f.gc < 0 ? "down" : "up" }, signed(f.gc)) },

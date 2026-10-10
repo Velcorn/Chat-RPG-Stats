@@ -162,41 +162,6 @@ def fight_stats(fights: list[dict], extra: dict[int, dict], now: float, days: in
     }
 
 
-def story_stats(fights: list[dict], extra: dict[int, dict], now: float, days: int = 30) -> list[dict]:
-    """The chat-voted adventures: per story and scene what the chat picked and how those runs ended.
-    A scene's text can differ between runs, so a scene is told apart by its number and text."""
-    runs: dict[tuple, list] = defaultdict(list)
-    for f in fights:
-        story = extra.get(f["id"], {}).get("story")
-        if story and (t := iso_ts(f.get("endedAt"))) and t >= now - days * DAY:
-            runs[(f.get("name"), f.get("difficulty"))].append((f, story))
-    rows = []
-    for (name, difficulty), rs in runs.items():
-        scenes: dict[tuple, dict[str, list]] = defaultdict(lambda: defaultdict(list))
-        for f, story in rs:
-            for i, (text, choice, votes, total, result, out, danger, life, silver, fight) in enumerate(story):
-                scenes[(i, text)][choice].append((f, votes / total if total else None, result, out, danger, life,
-                                                  silver, fight))
-        scene_rows = []
-        size = lambda choices: sum(len(v) for v in choices.values())  # noqa: E731
-        for (i, text), choices in sorted(scenes.items(), key=lambda kv: (kv[0][0], -size(kv[1]))):
-            picks = []
-            for choice, ps in choices.items():
-                won = sum(f.get("outcome") == "VICTORY" for f, *_ in ps)
-                picks.append({"choice": choice, "n": len(ps), "wins": won, "share": mean([p[1] for p in ps], 2),
-                              "result": ps[-1][2], "out": mean([100 * p[3] / p[0]["fighters"] for p in ps
-                                                                if p[0].get("fighters")], 1),
-                              "danger": max((p[4] or 0 for p in ps), default=0) or None,
-                              "life": max(p[5] for p in ps) or None, "silver": mean([p[6] for p in ps]) or None,
-                              "fight": any(p[7] for p in ps)})
-            picks.sort(key=lambda p: -p["n"])
-            scene_rows.append({"i": i + 1, "text": text, "n": sum(p["n"] for p in picks), "picks": picks})
-        wins = sum(f.get("outcome") == "VICTORY" for f, _ in rs)
-        rows.append({"name": name, "difficulty": difficulty, "n": len(rs), "wins": wins,
-                     "fighters": mean([f.get("fighters") for f, _ in rs]), "scenes": scene_rows,
-                     "last": max(f["id"] for f, _ in rs)})
-    return sorted(rows, key=lambda r: (-r["n"], r["name"] or ""))
-
 
 def guild_fights(fights: list[dict], extra: dict[int, dict], now: float, days: int = 30) -> list[dict]:
     """Per guild, from the fights whose detail page names it: the raids on its treasury (how many it fended off and

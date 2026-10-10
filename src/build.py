@@ -212,7 +212,6 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
                "stats": summary_stats,
                "eras": {"after": fightstats.fight_stats(h.fights, h.fightx, now, lo=fightstats.UPDATE),
                         "before": fightstats.fight_stats(h.fights, h.fightx, now, hi=fightstats.UPDATE)},
-               "stories": fightstats.story_stats(h.fights, h.fightx, now),
                "guild_fights": fightstats.guild_fights(h.fights, h.fightx, now),
                "first_kills": state.get("first_kills", []),
                "channels": state.get("channels", {}),

@@ -925,35 +925,6 @@ function viewWhen(s) {
     ], st.daily.slice(-14).reverse())), detailNote(st))];
 }
 
-function effectText(p) {
-  const bits = [];
-  if (p.fight) bits.push("Kampf");
-  if (p.out) bits.push(`${fmtDec(p.out, 0)} % scheiden aus`);
-  if (p.life) bits.push(`alle verlieren ${p.life} % Leben`);
-  if (p.silver) bits.push(`je Kopf ${signed(p.silver)} Silber`);
-  if (p.danger) bits.push(`Gefahr steigt auf ${p.danger}`);
-  return bits.join(", ");
-}
-
-function viewStories(s) {
-  if (!s.stories.length) return [card("Abenteuer", el("p", { class: "note" }, "Noch keine Abenteuer seit dem Update gesammelt."))];
-  return [
-    el("p", { class: "note" }, "Seit dem Update 04.10.2026 sind Abenteuer Geschichten, bei denen der Chat jede Szene abstimmt. Hier siehst du, was gewählt wurde und wie die Läufe ausgingen. Wenige Läufe sagen noch wenig."),
-    ...s.stories.map((st) => card(st.difficulty && st.difficulty !== 3 ? `${st.name} (Schwierigkeit ${st.difficulty})` : st.name,
-      el("p", { class: "note" }, `${count(st.n, "Lauf", "Läufe")} der letzten ${s.stats.days} Tage, ${pct(st.wins, st.n)} gewonnen, Ø ${fmtInt(st.fighters)} Teilnehmer.`),
-      ...st.scenes.flatMap((sc) => [
-        el("h3", {}, `Szene ${sc.i}`),
-        el("p", { class: "note" }, sc.text),
-        el("div", { class: "scroll" }, table([
-          { label: "Wahl des Chats", get: (p) => el("div", {}, p.choice,
-            el("div", { class: "note" }, [p.result, effectText(p) ? `(${effectText(p)})` : ""].filter(Boolean).join(" "))) },
-          { label: "Gewählt", num: true, get: (p) => `${fmtInt(p.n)} von ${fmtInt(sc.n)}` },
-          { label: "Siege", num: true, title: "Läufe, in denen diese Wahl getroffen wurde und das Abenteuer gewonnen wurde", get: (p) => pct(p.wins, p.n) },
-          { label: "Stimmen", num: true, title: "Ø Anteil der Stimmen der Szene für diese Wahl", get: (p) => p.share == null ? "-" : pct(p.share, 1) },
-        ], sc.picks))]))
-    )];
-}
-
 function viewGuildFights(s) {
   const rows = s.guild_fights || [];
   const known = rows.reduce((n, r) => n + r.raid_known, 0), raids = rows.reduce((n, r) => n + r.raids, 0);
@@ -971,7 +942,6 @@ function viewGuildFights(s) {
 
 function viewFights(s, sub) {
   const since = s.since ? el("p", { class: "note" }, `Erfasst wird seit ${fmtSince(s.since)}, frühere Kämpfe fehlen.`) : null;
-  if (sub === "abenteuer") return viewStories(s);
   if (sub === "ueberleben") return [eraBar(s), ...viewSurvival(s)];
   if (sub === "kraft") return [eraBar(s), ...viewPower(s)];
   if (sub === "zeit") return [eraBar(s), ...viewWhen(s)];
@@ -1192,7 +1162,7 @@ const SECTIONS = {
   gilden: { subs: (s) => [["vergleich", "Vergleich"], ...s.guilds.map((g) => [g.login, g.login])], render: viewGuild },
   spiel: { subs: () => [["wirtschaft", "Wirtschaft"], ["regeln", "Regeln"], ["aenderungen", "Änderungen"], ["formen", "Formen"]],
            render: viewGame },
-  kaempfe: { subs: () => [["arten", "Kampfarten"], ["abenteuer", "Abenteuer"], ["ueberleben", "Überleben"], ["kraft", "Kampfkraft"],
+  kaempfe: { subs: () => [["arten", "Kampfarten"], ["ueberleben", "Überleben"], ["kraft", "Kampfkraft"],
                           ["zeit", "Wann und wo"], ["gilden", "Gilden"], ["letzte", "Letzte Kämpfe"]],
              render: viewFights },
 };

@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.24.0 (10.10.2026)
+
+**Entfernt**
+- Die Unterseite "Abenteuer" unter Kämpfe (Wahlen des Chats je Szene) ist weg: zu lang und ohne Nutzen für die Entscheidungen im Spiel.
+
 ## 0.23.5 (10.10.2026)
 
 **Verbessert**

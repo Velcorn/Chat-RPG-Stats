@@ -214,44 +214,6 @@ def silver_value(text: str | None) -> int | None:
     return -value if m[1] != "+" else value
 
 
-SCENE = re.compile(r"^Szene (\d+)/(\d+): (.*)$")
-CHOICE = re.compile(r"^Der Chat wählt \u201e(.+?)\u201c \((\d+) von (\d+)\): (.*)$")
-OUT = re.compile(r" ?Ausgeschieden: ([^.]*)\.")
-MORE = re.compile(r" und (\d+) weitere$")
-DANGER = re.compile(r" ?Die Gefahr steigt auf (\d+)\.")
-LIFE = re.compile(r" ?Alle verlieren (\d+) % Leben\.")
-PAY = re.compile(r" ?Je Kopf (\d+) Silber (weniger|mehr)(?: am Ende)?\.")
-
-
-def story_digest(log: list[str]) -> list[list] | None:
-    """The scenes of a story adventure from its log: [text, choice, votes, total, result, out, danger, life,
-    silver, fight] per scene. The names of those who dropped out are counted, never kept."""
-    scenes: list[list] = []
-    for line in log:
-        if m := SCENE.match(line):
-            scenes.append([m[3], None, 0, 0, "", 0, None, 0, 0, False])
-        elif (m := CHOICE.match(line)) and scenes:
-            text, row = m[4], scenes[-1]
-            if o := OUT.search(text):
-                names = o[1]
-                row[5] = (int(more[1]) if (more := MORE.search(names)) else 0) + \
-                    len(re.split(r", | und ", MORE.sub("", names)))
-                text = OUT.sub("", text)
-            if d := DANGER.search(text):
-                row[6] = int(d[1])
-                text = DANGER.sub("", text)
-            if lf := LIFE.search(text):
-                row[7] = int(lf[1])
-                text = LIFE.sub("", text)
-            if pay := PAY.search(text):
-                row[8] = int(pay[1]) * (1 if pay[2] == "mehr" else -1)
-                text = PAY.sub("", text)
-            if text.endswith("Kampf!"):
-                row[9], text = True, text[:-len("Kampf!")]
-            row[1:5] = [m[1], int(m[2]), int(m[3]), text.strip()]
-    return [r for r in scenes if r[1]] or None
-
-
 def detail_digest(d: dict) -> dict:
     """What one finished fight's detail page adds up to: sums and counts only, nothing per player."""
     n, dead, pay = [0, 0, 0], [0, 0, 0], {True: [], False: []}
@@ -267,13 +229,12 @@ def detail_digest(d: dict) -> dict:
             pay[bool(f.get("alive"))].append(v)
     tally = (d.get("crowd") or {}).get("tally") or {}
     mean = lambda xs: round(sum(xs) / len(xs)) if xs else None  # noqa: E731
-    story = story_digest(d.get("log") or []) if d.get("kind") == "ADVENTURE" else None
     # Whose fight it was: the guild it is about (a raid on its treasury, a boss it summoned), the summoner's channel
     # and what the treasury lost or won (the game's text, parsed). Only what the page has.
     guild = {k: v for k, v in (("gn", d.get("guildName")), ("by", d.get("summonedBy")),
                                ("gc", silver_value(d.get("treasuryChange"))),
                                ("go", True if d.get("guildOnly") else None)) if v is not None}
-    return {**({"story": story} if story else {}), **guild, "roles": n, "dead": dead, "rsum": by_role,
+    return {**guild, "roles": n, "dead": dead, "rsum": by_role,
             "dmg": tally.get("damage"), "taken": tally.get("taken"), "heal": tally.get("healing"),
             "boost": tally.get("boosted"),
             "round": d.get("round"), "rounds": d.get("maxRounds"), "hp": d.get("hp"), "maxhp": d.get("maxHp"),

@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.21.1 (10.10.2026)
+
+**Verbessert**
+- Regeln: Die Hinweise zur Abenteuer-Beute und zur Spielzeit geben nur noch wieder, was das Spiel selbst dazu schreibt.
+
 ## 0.21.0 (10.10.2026)
 
 **Neu**

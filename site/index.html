@@ -449,12 +449,13 @@ function viewRanks(s, sub) {
         { label: "Spieler", get: playerLink },
         { label: "Gilde", get: (r) => r.guild || "-" },
         { label: "Ausrüstungswert", num: true, get: (r) => fmtInt(r.gear) },
-        { label: span === "day" ? "24 Stunden" : "7 Tage", num: true, get: (r) => delta(r[span]) },
+        { label: span === "day" ? "24 Stunden" : "7 Tage", num: true, title: "Über dem eigenen Höchstwert der Vorwoche", get: (r) => delta(r.gain) },
       ], rows) : el("p", { class: "note" }, span === "day" ? "Aufsteiger gibt es nach einem Tag Datensammlung." : "Aufsteiger der Woche gibt es nach sieben Tagen Datensammlung."));
     };
     renderRisers();
     return [el("section", { class: "card" }, el("div", { class: "head" }, el("h2", {}, "Aufsteiger (Ausrüstungswert)"),
-      seg([["day", "24 Stunden"], ["week", "7 Tage"]], span, (k) => { span = k; renderRisers(); })), riserBox)];
+      seg([["day", "24 Stunden"], ["week", "7 Tage"]], span, (k) => { span = k; renderRisers(); })), riserBox,
+      el("p", { class: "note" }, "Gezählt wird nur, was über dem eigenen Höchstwert der Vorwoche liegt. Bei manchen Spielern bricht der gemessene Wert zwischendurch ein (am 08. und 09.10.2026 bei etwa zwei Dutzend auf 0 bis 60 % ihrer Ausrüstung) und kehrt zurück; der Wiederanstieg zählt nicht als Aufstieg."))];
   }
   return [
     ...scroll("Rangliste Ausrüstungswert (Top 100)", [
@@ -773,7 +774,7 @@ function viewStart(s) {
       card("Aufsteiger der letzten 24 Stunden", risers.length ? [table([
         { label: "Spieler", get: playerLink },
         { label: "Ausrüstungswert", num: true, get: (r) => fmtInt(r.gear) },
-        { label: "24 h", num: true, get: (r) => delta(r.day) },
+        { label: "24 h", num: true, title: "Über dem eigenen Höchstwert der Vorwoche", get: (r) => delta(r.gain) },
       ], risers), more("#/rangliste/aufsteiger", "Alle Aufsteiger")]
         : el("p", { class: "note" }, "Aufsteiger gibt es nach einem Tag Datensammlung."))),
     el("div", { class: "grid two" },

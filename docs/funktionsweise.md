@@ -83,7 +83,7 @@ Eine Startseite und vier Bereiche mit einer zweiten Tab-Zeile, damit keine Seite
 - **Siegquote** (nur Beobachtungsliste): gewonnene von den Kämpfen, an denen der Spieler teilgenommen hat, je Art
   (Abenteuer, Überfälle, Bosse), aus den Gesamtwerten seit Spielbeginn. Dazu Fallquote und Schaden pro Kampf.
 - **Silber:** Silber über die Zeit (Top 100 und Beobachtungsliste).
-- **Aufsteiger:** größter Zuwachs in 24 Stunden bzw. 7 Tagen.
+- **Aufsteiger:** größter Zuwachs in 24 Stunden bzw. 7 Tagen, gezählt über dem eigenen Höchstwert der sieben Tage davor (`build.gain`), nicht über dem Wert am Anfang des Zeitraums. Grund: Bei manchen Spielern bricht der gemessene Ausrüstungswert zwischendurch ein und kehrt zurück (am 08. und 09.10.2026 bei etwa zwei Dutzend auf 0 bis 60 %, die Ursache ist unbekannt); ein Wiederanstieg auf das alte Niveau zählt nicht, sonst führten diese Spieler die Liste mit +300 an. Die Verläufe selbst bleiben unverändert.
 - **Kämpfe:** Siegquote pro Kampfart der letzten 30 Tage, Bosse nach Name und Stufe, sonst nach Art und Schwierigkeit. Sortiert nach Siegquote, bei gleicher Quote nach Zahl der Kämpfe (mehr zuerst).
   Das Kampfarchiv des Spiels hält nur die letzten 20 Kämpfe, deshalb sammelt der Sammler sie fortlaufend. Die Kampfseiten nennen dazu den Beginn der Erfassung (`since` in `summary.json`, der erste Lauf); frühere Kämpfe fehlen, die Quoten gelten also nur für die Zeit danach. Derselbe Zeitpunkt steht im Seitenfuß.
   Kampfstatistik (`src/fightstats.py`, `summary.json` -> `stats`, letzte 30 Tage), ab 0.9.0:

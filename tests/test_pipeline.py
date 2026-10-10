@@ -206,6 +206,16 @@ class BuildTests(unittest.TestCase):
         for gone in ("quests", "silver", "achievements", "compendium"):
             self.assertNotIn(gone, self.summary)
 
+    def test_a_value_that_dips_and_returns_is_no_rise(self):
+        from build import gain
+        now = 10 * DAY
+        dip = [[0, 270], [6 * DAY, 0], [9.5 * DAY, 300]]  # a profile read 0 for a while, then 300
+        self.assertEqual(gain(dip, now, DAY), 30)       # above the old peak of 270, not +300
+        back = [[0, 270], [6 * DAY, 0], [9 * DAY, 270]]
+        self.assertEqual(gain(back, now, DAY), 0)       # just back where it was
+        self.assertEqual(gain([[9 * DAY + 100, 50]], now, DAY), None)  # no value that old
+        self.assertEqual(gain([[0, 100], [9.5 * DAY, 160]], now, DAY), 60)
+
     def test_players_index_is_sorted_by_gear(self):
         index = json.loads((self.out / "players.json").read_text())
         self.assertEqual([r[0] for r in index], ["top", "fast", "slow"])

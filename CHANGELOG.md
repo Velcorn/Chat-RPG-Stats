@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.22.1 (10.10.2026)
+
+**Behoben**
+- Aufsteiger: Spieler, deren gemessener Wert kurz eingebrochen war (am 08. und 09.10. bei etwa zwei Dutzend auf 0 bis 60 % ihrer Ausrüstung) und dann zurückkehrte, führten die Liste mit Zuwächsen um +300 an. Gezählt wird jetzt nur noch, was über dem eigenen Höchstwert der Vorwoche liegt; ein Wiederanstieg nach einem Einbruch ist kein Aufstieg.
+
 ## 0.22.0 (10.10.2026)
 
 **Neu**

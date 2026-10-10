@@ -101,6 +101,19 @@ def change(series: list, now: float, span: float):
     return None if then is None or cur is None else cur - then
 
 
+def gain(series: list, now: float, span: float, lookback: float = 7 * DAY):
+    """How far the value is above its own peak before the last `span` seconds (looking back `lookback` more), 0 if it
+    isn't. A value that dips and returns (08./09.10.2026: some profiles read 0 to 60 % of their gear for a while)
+    isn't a rise: the change from the dip would be the day's biggest. None without data that old."""
+    cur = series[-1][1] if series else None
+    start = value_at(series, now - span)
+    if start is None or cur is None:
+        return None
+    carried = value_at(series, now - span - lookback)  # what the value was when the look-back began
+    before = [v for t, v in series if now - span - lookback < t <= now - span and v is not None]
+    return max(0, cur - max([start, carried or 0, *before]))
+
+
 def pace(series: list, now: float, span: float = 7 * DAY) -> float | None:
     """Gear points per day over the last `span` (or since the first data point, if at least 12 h ago)."""
     if not series:
@@ -141,9 +154,10 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
         return {"login": login, "name": p.get("name") or login, "gear": p.get("gs"), "guild": p.get("guild"),
                 "day": day.get(login), "week": week.get(login), "pace": rounded(paces.get(login))}
 
-    def risers(changes):
-        best = sorted((login for login in changes if changes[login]), key=lambda x: -changes[x])[:25]
-        return [row(login) for login in best]
+    def risers(span):
+        gains = {login: gain(h.gs[login], now, span) for login in gear}
+        best = sorted((login for login in gains if gains[login]), key=lambda x: -gains[x])[:25]
+        return [{**row(login), "gain": gains[login]} for login in best]
 
     board_rows = []
     for i, login in enumerate(board):
@@ -186,7 +200,7 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
                "ranked": len(gear),
                "active": sum(1 for p in players.values() if p.get("active")),
                "board": board_rows, "power_board": power_rows,
-               "risers": {"day": risers(day), "week": risers(week)},
+               "risers": {"day": risers(DAY), "week": risers(7 * DAY)},
                "top100": {"gear": top100_gear, "pace": rounded(top100_pace)},
                "guilds": sorted(guild_rows, key=lambda g: -(g.get("gear") or 0)),
                "fights": {"recent": recent_fights(h),

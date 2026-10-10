@@ -269,7 +269,8 @@ const KINDS = { BOSS: "Boss", ADVENTURE: "Abenteuer", RAID: "Überfall" };
 // Every story adventure since 04.10.2026 arrives with difficulty 3 (a placeholder, not a measure): not shown. An
 // Überfall shows its difficulty after the name ("Harpyienschwarm 5").
 const fightLabel = (f) => {
-  if (f.kind === "BOSS") return `Boss ${f.name || ""}, Stufe ${f.level ?? f.bossLevel ?? "?"}`;
+  // One level per boss since 04.10.2026 (always 1): only older fights with a higher level show it.
+  if (f.kind === "BOSS") { const l = f.level ?? f.bossLevel; return `Boss ${f.name || ""}${l > 1 ? `, Stufe ${l}` : ""}`; }
   const d = f.level ?? f.difficulty;
   const name = f.name || KINDS[f.kind] || f.kind;
   return f.kind === "ADVENTURE" || d == null ? name : `${name} ${d}`;

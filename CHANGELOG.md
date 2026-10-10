@@ -3,10 +3,10 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
-## 0.23.2 (10.10.2026)
+## 0.23.3 (10.10.2026)
 
 **Verbessert**
-- Kämpfe heißen in den Listen jetzt wie im Spiel: Abenteuer nur mit Namen ("Der Gipfel der Stürme"), Überfälle mit Namen und Schwierigkeit ("Harpyienschwarm 5"), statt "Name (Überfall Schwierigkeit 5)".
+- Kämpfe heißen in den Listen jetzt wie im Spiel: Abenteuer nur mit Namen ("Der Gipfel der Stürme"), Überfälle mit Namen und Schwierigkeit ("Harpyienschwarm 5"), statt "Name (Überfall Schwierigkeit 5)". Bosse stehen ohne Stufe da, denn es gibt nur noch eine je Boss.
 
 ## 0.23.1 (10.10.2026)
 

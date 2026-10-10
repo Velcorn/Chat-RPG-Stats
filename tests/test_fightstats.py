@@ -181,7 +181,7 @@ class WindowAndOrderTests(unittest.TestCase):
         win, lose = "VICTORY", "DEFEAT"
 
         def f(i, kind, difficulty, outcome):
-            return {**fight(i, outcome, kind), "difficulty": difficulty}
+            return {**fight(i, outcome, kind), "difficulty": difficulty, "name": f"Abenteuer {difficulty}"}
         fights = [f(1, "ADVENTURE", 1, win), f(2, "ADVENTURE", 1, lose),
                   f(3, "RAID", 1, win), f(4, "RAID", 1, win), f(5, "RAID", 1, lose), f(6, "RAID", 1, lose),
                   f(7, "ADVENTURE", 2, win), f(8, "RAID", 2, win),

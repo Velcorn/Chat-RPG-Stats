@@ -24,10 +24,10 @@ def iso_ts(s: str | None) -> float | None:
 
 
 def fight_key(f: dict) -> tuple:
-    """Bosses by name and level, the rest by kind and difficulty."""
+    """Bosses by name and level, raids by name and difficulty, adventures by name (their difficulty is always 3)."""
     if f.get("kind") == "BOSS":
         return ("BOSS", f.get("name"), f.get("bossLevel"))
-    return (f.get("kind"), None, f.get("difficulty"))
+    return (f.get("kind"), f.get("name"), f.get("difficulty") if f.get("kind") == "RAID" else None)
 
 
 def pct(part, whole, digits=1):

@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.23.4 (10.10.2026)
+
+**Behoben**
+- In den Tabellen nach Kampf und Kampfart stehen Abenteuer und Überfälle jetzt mit ihrem Namen ("Der Gipfel der Stürme", "Harpyienschwarm 5") und werden je Name ausgewertet. Vorher standen dort nur "Abenteuer" und "Überfall 5", weil die Tabellen nach Art und Schwierigkeit zusammenfassten.
+
 ## 0.23.3 (10.10.2026)
 
 **Verbessert**

@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.27.1 (11.10.2026)
+
+**Oberfläche**
+- "Werte und Überleben in Bosssiegen" in drei Rollenkarten nebeneinander (auf dem Handy untereinander): Stufen von 20, je Zeile ein Balken für den Anteil Gefallener und einer für Einstecken, Schaden oder Verstärkung. Die Tabellen "nach Verteidigung" für Kämpfer und Unterstützer entfallen, sie zeigten keinen Unterschied.
+
 ## 0.27.0 (11.10.2026)
 
 **Neu**

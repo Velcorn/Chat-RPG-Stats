@@ -142,6 +142,17 @@
   .sr .bar .peer { position: absolute; top: -3px; width: 2px; height: 12px; margin-left: -1px; background: var(--text-secondary); }
   .sr b { color: var(--text-primary); text-align: right; font-size: 14px; font-variant-numeric: tabular-nums; }
   .sr.atk .bar > div { background: var(--atk); } .sr.def .bar > div { background: var(--def); } .sr.sup .bar > div { background: var(--sup); }
+  .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  @media (max-width: 900px) { .grid.three { grid-template-columns: minmax(0, 1fr); } }
+  .statrole h2 { margin-bottom: 2px; }
+  .statgrid { display: grid; grid-template-columns: 44px minmax(0, 1fr) minmax(0, 1fr); gap: 6px 12px; align-items: center; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .statgrid .h { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-secondary); }
+  .statgrid .k { color: var(--text-secondary); }
+  .statgrid .v { display: grid; grid-template-columns: minmax(0, 1fr) 46px; align-items: center; gap: 8px; text-align: right; }
+  .minibar { display: block; height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+  .minibar i { display: block; height: 100%; border-radius: 3px; }
+  .minibar.fell i { background: var(--text-muted); } .minibar.atk i { background: var(--atk); }
+  .minibar.def i { background: var(--def); } .minibar.sup i { background: var(--sup); }
   .gear { display: grid; }
   .grow { display: grid; grid-template-columns: 44px 34px minmax(0, 1fr) repeat(3, 62px); gap: 0 12px; align-items: center;
           padding: 8px 0; border-top: 1px solid var(--grid); }
@@ -855,38 +866,55 @@ function survivalCards(st) {
   return [el("div", { class: "grid two" }, roles, facts)];
 }
 
-// Won boss fights by role and stat (since 0.27.0): who fell, and what they did, per 10 points of the stat. Steps with
-// few fighters say little and stay out.
-const STAT_MIN = 10;
-const STAT_VIEWS = [
-  ["TANK", "def", "Schildträger nach Verteidigung", "Ø eingesteckt"],
-  ["FIGHTER", "atk", "Kämpfer nach Angriff", "Ø Schaden"],
-  ["SUPPORT", "sup", "Unterstützer nach Unterstützung", "Ø Verstärkung"],
-  ["FIGHTER", "def", "Kämpfer nach Verteidigung", null],
-  ["SUPPORT", "def", "Unterstützer nach Verteidigung", null],
+// Won boss fights by role and stat (since 0.27.0): per role a card with the role's own stat in steps of 20, the share
+// that fell and what they did, each with a small bar. Steps with few fighters say little and stay out.
+const STAT_MIN = 15, STAT_STEP = 20;
+const STAT_ROLES = [
+  ["TANK", "def", "Schildträger", "Verteidigung", "eingesteckt", "def"],
+  ["FIGHTER", "atk", "Kämpfer", "Angriff", "Schaden", "atk"],
+  ["SUPPORT", "sup", "Unterstützer", "Unterstützung", "Verstärkung", "sup"],
 ];
 let statBoss = null;
+function statRows(rows) {
+  const out = new Map();  // the collector counts in steps of 10: two of them make one step here
+  for (const [lo, n, fell, done] of rows) {
+    const k = Math.floor(lo / STAT_STEP) * STAT_STEP, acc = out.get(k) || [0, 0, 0];
+    acc[0] += n; acc[1] += n * (fell || 0) / 100; acc[2] += n * (done || 0);
+    out.set(k, acc);
+  }
+  return [...out].sort((a, b) => a[0] - b[0]).filter(([, a]) => a[0] >= STAT_MIN)
+    .map(([k, [n, fell, done]]) => ({ k, n, fell: 100 * fell / n, done: done / n }));
+}
+function roleCard(c, [role, stat, title, statName, doneName, color]) {
+  const rows = statRows(((c.roles[role] || {})[stat]) || []);
+  const maxDone = Math.max(1, ...rows.map((r) => r.done));
+  const bar = (w, cls) => el("span", { class: `minibar ${cls}` }, el("i", { style: `width:${Math.max(2, w)}%` }));
+  return el("section", { class: "card statrole" }, el("h2", {}, title),
+    el("p", { class: "note" }, `nach ${statName}, ${fmtInt(rows.reduce((a, r) => a + r.n, 0))} Teilnahmen`),
+    rows.length ? el("div", { class: "statgrid" },
+      el("span", { class: "h" }, stat.toUpperCase()), el("span", { class: "h" }, "Gefallen"), el("span", { class: "h" }, `Ø ${doneName}`),
+      ...rows.flatMap((r) => [
+        el("span", { class: "k", title: `${r.k} bis ${r.k + STAT_STEP - 1}, ${fmtInt(r.n)} Teilnahmen` }, `${r.k}+`),
+        el("span", { class: "v" }, bar(r.fell, "fell"), `${fmtDec(r.fell, 0)} %`),
+        el("span", { class: "v" }, bar(100 * r.done / maxDone, color), fmtInt(r.done))]))
+      : el("p", { class: "note" }, "Noch zu wenige Teilnahmen."));
+}
 function statCurvesCard(s) {
   const curves = s.stat_curves || [];
-  if (!curves.length) return card("Werte und Überleben in Bosssiegen", el("p", { class: "note" },
-    "Wird seit dem 11.10.2026 gesammelt: je Bosssieg die Teilnehmer nach Rolle und ihren Werten, ohne Namen. Die ersten Zahlen erscheinen nach den nächsten Bosskämpfen."));
+  const intro = "Je Bosssieg die Teilnehmer nach Rolle und ihrem Hauptwert, ohne Namen, gesammelt seit dem 11.10.2026.";
+  if (!curves.length) return card("Werte und Überleben in Bosssiegen", el("p", { class: "note" }, intro + " Die ersten Zahlen erscheinen nach den nächsten Bosskämpfen."));
   if (!curves.some((c) => c.boss === statBoss)) statBoss = curves[0].boss;
   const box = el("div");
   const render = () => {
     const c = curves.find((x) => x.boss === statBoss);
-    box.replaceChildren(el("div", { class: "grid two" }, ...STAT_VIEWS.map(([role, stat, title, done]) => {
-      const rows = ((c.roles[role] || {})[stat] || []).filter((r) => r[1] >= STAT_MIN);
-      return el("div", {}, el("h3", {}, title), rows.length ? table([
-        { label: stat.toUpperCase(), get: (r) => `${r[0]} bis ${r[0] + 9}` },
-        { label: "Spieler", num: true, get: (r) => fmtInt(r[1]) },
-        { label: "Gefallen", num: true, get: (r) => pctv(r[2]) },
-        ...(done ? [{ label: done, num: true, get: (r) => r[3] == null ? "-" : fmtInt(r[3]) }] : []),
-      ], rows) : el("p", { class: "note" }, "Noch zu wenige."));
-    })), el("p", { class: "note" }, `${count(c.fights, "Sieg", "Siege")} gegen ${c.boss} in den letzten 30 Tagen. Gefallen ist der Anteil, der am Ende nicht mehr stand; die Wutrunde am Schluss trifft fast alle, Werte helfen vor allem davor. Werte aus den Profilen (Top 100 und Beobachtungsliste mit allen Verbesserungen, sonst die letzte Lesung); Stufen mit weniger als ${STAT_MIN} Spielern fehlen.`));
+    box.replaceChildren(el("div", { class: "grid three" }, ...STAT_ROLES.map((r) => roleCard(c, r))),
+      el("p", { class: "note" }, `${count(c.fights, "Sieg", "Siege")} gegen ${c.boss} in den letzten 30 Tagen. "Gefallen": wer am Ende nicht mehr stand; die Wutrunde am Schluss trifft fast alle, die Werte helfen vor allem davor. Die Werte stammen aus den Profilen (Top 100 und Beobachtungsliste mit allen Verbesserungen, sonst die letzte Lesung). Stufen mit weniger als ${STAT_MIN} Teilnahmen fehlen.`));
   };
   render();
-  return el("section", { class: "card" }, el("div", { class: "head" }, el("h2", {}, "Werte und Überleben in Bosssiegen"),
-    curves.length > 1 ? seg(curves.map((c) => [c.boss, c.boss]), statBoss, (k) => { statBoss = k; render(); }) : null), box);
+  return el("section", { class: "grid" },
+    el("div", { class: "head" }, el("h1", {}, "Werte und Überleben in Bosssiegen"),
+      curves.length > 1 ? seg(curves.map((c) => [c.boss, c.boss.replace(/ der .*$/, "").replace(/^(Die|Das|Der) /, "")]), statBoss, (k) => { statBoss = k; render(); }) : null),
+    el("p", { class: "note" }, intro), box);
 }
 
 function viewPower(s) {

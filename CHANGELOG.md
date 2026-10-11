@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.27.2 (11.10.2026)
+
+**Oberfläche**
+- Abenteuer stehen nur mit ihrem Namen da, ohne Beutespanne: Seit dem Spiel-Update vom 11.10.2026 gibt ein Abenteuer jedem höchstens die eigene Stufe.
+
 ## 0.27.1 (11.10.2026)
 
 **Oberfläche**

@@ -265,8 +265,8 @@ def state_from(snap: dict, prev: dict) -> dict:
     for login, p in snap.get("sweep", {}).items():
         details[login] = {**prev.get("details", {}).get(login, {}), "atk": p.get("attack"), "def": p.get("defense"),
                           "sup": p.get("support"), "silver": p.get("silver")}
-    # Watchlist and top 100: what was read this run, else what was kept from the last state: the top 100's (read once a day) and the watchlist's (a core part reads no profile; the
-    # profiles part after it reads them again).
+    # Watchlist and top 100: what was read this run, else what was kept from the last state: the top 100's and the
+    # watchlist's (a core part reads no profile; the profiles part after it reads them again).
     keep = {*snap.get("top", ()), *snap.get("listed", ())}
     watch: dict[str, dict] = {login: w for login, w in prev.get("watch", {}).items() if login in keep}
     for login, p in snap["watch"].items():

@@ -398,7 +398,19 @@ function lineChart(box, points, { label, fmt = fmtInt, invert = false, until, em
       const ya = y(Math.max(lo, from)), yb = y(Math.min(hi, to));
       if (to < lo || from > hi || yb <= ya) return;
       svg.insertBefore(sv("rect", { x: m.l, y: ya, width: W - m.l - m.r, height: yb - ya, class: "band", opacity }), axis);
-      svg.append(sv("text", { x: m.l + 8, y: ya + 14, class: "bandlabel" }, name));
+      // The name goes in the middle of its band, at the left or the right end, wherever the line leaves room (the
+      // line is a step: a point holds its value until the next). No room on either side, or a thin band: no label.
+      if (yb - ya < 16) return;
+      const mid = (ya + yb) / 2, wide = 74;
+      const hits = (x0, x1) => pts.some((p, i) => {
+        const a = x(p.t), next = pts[i + 1], b = next ? x(next.t) : W - m.r;
+        const flat = b >= x0 && a <= x1 && Math.abs(y(p.v) - mid) < 10;  // the level of this point
+        const step = next && b >= x0 && b <= x1 && Math.min(y(p.v), y(next.v)) < mid + 10 && Math.max(y(p.v), y(next.v)) > mid - 10;
+        return flat || step;  // or the step up or down to the next one
+      });
+      const left = !hits(m.l, m.l + wide), right = !hits(W - m.r - wide, W - m.r);
+      if (left || right) svg.insertBefore(sv("text", { x: left ? m.l + 8 : W - m.r - 8, y: mid + 4, class: "bandlabel",
+        "text-anchor": left ? "start" : "end" }, name), axis);
     });
   }
   let d = "", area = "";

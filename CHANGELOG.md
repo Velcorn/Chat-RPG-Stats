@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.25.1 (11.10.2026)
+
+**Verbessert**
+- Rangverlauf: Die Beschriftungen "Top 10/25/50" stehen links oder rechts in ihrem Band, wo die Linie Platz lässt, und fehlen, wenn das Band zu schmal ist oder die Linie beide Enden kreuzt.
+
 ## 0.25.0 (11.10.2026)
 
 **Neu**

@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.26.0 (11.10.2026)
+
+**Verbessert**
+- Ausrüstung und Statistik der Top 100 sind jetzt aktuell: Ändert sich der Ausrüstungswert eines Spielers in der Rangliste, liest der nächste Lauf sein Profil neu, nicht erst am nächsten Morgen. Das kostet im Mittel etwa 6 Anfragen je Lauf mehr (statt 100, wenn alle jedes Mal gelesen würden).
+
 ## 0.25.2 (11.10.2026)
 
 **Verbessert**

@@ -9,7 +9,7 @@ Public, read-only stats dashboard for the Twitch chat RPG at rpg.sola.rip. A Git
   One exception, by the user's decision (09.10.2026): the static item form table (`FORMS`, `#/spiel/formen`) was checked once by hand against
   market listings read with a login. Nothing in the collector uses a login.
 - **Keep requests low.** One collector for everyone; visitors only read the published files. Don't add endpoints or
-  per-player requests without need; the watchlist is capped (opt-in for players; the channel owners are on it by default). The board's top 100 also get the watchlist data, but in one pass a day, on the first run of the day (`TOP_WATCH`, about 100 requests at 7 Uhr; the operator's decision, 09.10.2026). The site's operator can ask us to stop at any time.
+  per-player requests without need; the watchlist is capped (opt-in for players; the channel owners are on it by default). The board's top 100 also get the watchlist data, but in one pass a day, on the first run of the day (`TOP_WATCH`, about 100 requests at 7 Uhr; the operator's decision, 09.10.2026); since 0.26.0 also in every run those whose board score no longer matches the gear sum of their last profile (`collect.slot_sum`, about 6 a run; the operator's decision, 11.10.2026). The site's operator can ask us to stop at any time.
 - **No activity logs per player.** Store values and their changes (gear, silver, stat totals), never a player's
   individual quests or fights with times and channels: that would show when and where someone plays.
 - The README's request table must match what `collect.snapshot` actually does.

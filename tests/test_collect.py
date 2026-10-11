@@ -41,10 +41,14 @@ def answers(**extra):
             "/api/rules": {"questCooldownMinutes": 45}, "/api/players/a": {"displayName": "A"}, **extra}
 
 
+# A last state whose profile of "a" still adds up to the board's 100: "a" is not due between the morning reads.
+KEPT = {"watch": {"a": {"slots": {"HELMET": ["Helm", "h", 9, 50, 30, 20]}}}}
+
+
 class SnapshotTests(unittest.TestCase):
     def test_requests_and_empty_guilds(self):
         site = FakeSite(answers())
-        s = collect.snapshot(site, [])
+        s = collect.snapshot(site, [], prev=KEPT)
         self.assertEqual(list(s["guilds"]), ["karni"])  # a guild without members costs no request
         self.assertEqual((site.requests, s["watch"], "days" in s), (7, {}, False))  # the top is not due
 
@@ -54,20 +58,26 @@ class SnapshotTests(unittest.TestCase):
         self.assertEqual(site.requests, 8)  # the board's one player included
         self.assertEqual((list(s["watch"]), s["days"]), (["a"], {"top": "2026-10-09"}))  # read like the watchlist
 
+    def test_between_the_morning_reads_a_top_profile_is_read_when_its_gear_moved(self):
+        moved = {"watch": {"a": {"slots": {"HELMET": ["Helm", "h", 9, 50, 30, 16]}}}}  # 96, the board says 100
+        for prev, read in ((KEPT, []), (moved, ["a"]), ({}, ["a"])):  # no profile yet: read too
+            site = FakeSite(answers())
+            self.assertEqual(list(collect.snapshot(site, [], prev=prev)["watch"]), read, prev)
+
     def test_the_daily_reference_data_is_read_on_request_and_a_failing_page_costs_nothing(self):
         site = FakeSite(answers(**{"/api/guilds/first-kills": [{"level": 1}]}))
         day = {"first_kills": "2026-10-04"}
-        s = collect.snapshot(site, [], daily=day)
+        s = collect.snapshot(site, [], daily=day, prev=KEPT)
         self.assertEqual((s["first_kills"], s["days"]), ([{"level": 1}], day))
         self.assertEqual(site.requests, 7 + 1)
         for name in day:
-            self.assertNotIn(name, collect.snapshot(FakeSite(answers()), []))
-        broken = collect.snapshot(FakeSite(answers(**{"/api/guilds/first-kills": 503})), [], daily=day)
+            self.assertNotIn(name, collect.snapshot(FakeSite(answers()), [], prev=KEPT))
+        broken = collect.snapshot(FakeSite(answers(**{"/api/guilds/first-kills": 503})), [], daily=day, prev=KEPT)
         self.assertFalse({"first_kills", "days"} & set(broken))
 
     def test_watchlist_costs_one_request_each_and_skips_unknown_players(self):
         site = FakeSite(answers(**{"/api/players/sola": {"displayName": "Sola"}, "/api/players/weg": 404}))
-        s = collect.snapshot(site, ["sola", "weg"])
+        s = collect.snapshot(site, ["sola", "weg"], prev=KEPT)
         self.assertEqual(list(s["watch"]), ["sola"])
         self.assertEqual(site.requests, 9)
 

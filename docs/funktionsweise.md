@@ -13,7 +13,7 @@ Zeitplan (alle 15 Min., 7-24 Uhr) -> src/collect.py -> Zweig "data" -> src/build
    aktuellen Stand und schreibt nur die Änderungen zum letzten Lauf. Seit 0.23.0 hat ein Lauf zwei Teile (zwei Jobs der
    Action, `--part core` und `--part profiles`): Zuerst der Kern (Gildenliste, Ranglisten, Kämpfe, Kanäle, Regeln, die
    Tagesdaten; etwa 15 Anfragen, rund 40 Sekunden), danach Speichern, Bauen und Veröffentlichen. Dann die Profile
-   (Beobachtungsliste, einmal am Tag die Top 100, eine Scheibe der übrigen aktiven Spieler; etwa 55 bis 70 Anfragen, zwei
+   (Beobachtungsliste, einmal am Tag die Top 100 und seit 0.26.0 bei jedem Lauf die der Top 100, deren Ausrüstungswert in der Rangliste nicht mehr zur Summe ihrer Ausrüstung im letzten Profil passt, im Mittel etwa 6 (gemessen an 158 Läufen vom 09. bis 11.10.2026: Median 3, Mittel 5,6), eine Scheibe der übrigen aktiven Spieler; etwa 55 bis 70 Anfragen, zwei
    Minuten bei 2 Sekunden Abstand), die der Teil danach nur speichert: Sie stehen auf der Seite des nächsten Laufs. So ist
    die Rangliste der Seite nicht mehr die gut drei Minuten alt, die ein ganzer Lauf dauert, wenn sie erscheint (vorher 5 bis
    19 Minuten Alter, jetzt etwa 2 bis 17). Der Profile-Teil liest aus dem letzten Stand, wer dran ist (`profiles_state`), und

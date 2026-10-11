@@ -116,13 +116,20 @@ def snapshot(site: Site, watchlist: list[str], detail_after: int = 0, daily: dic
         except (urllib.error.URLError, TimeoutError, ValueError, IndexError):
             pass
     snap["top"] = [r["login"].lower() for r in snap["boards"]["gear"][:TOP_WATCH]]
-    return snap if part == "core" else read_profiles(site, snap, watchlist, sweep_after, top_day, {})
+    return snap if part == "core" else read_profiles(site, snap, watchlist, sweep_after, top_day, prev or {})
+
+
+def slot_sum(entry: dict | None) -> int | None:
+    """The gear score a kept profile had: attack + defense + support of its worn pieces (None without one)."""
+    if not entry or not entry.get("slots"):
+        return None
+    return sum(sum(v[i] or 0 for i in (3, 4, 5)) for v in entry["slots"].values() if len(v) > 5)
 
 
 def read_profiles(site: Site, snap: dict, watchlist: list[str], sweep_after: str, top_day: str, prev: dict) -> dict:
-    """The profile reads of a run: the watchlist, the board's top 100 (once a day) and a slice of the other active
-    guild members. In a full run the board and the guilds are in `snap`; in a profiles-only part they come from the
-    last state `prev`."""
+    """The profile reads of a run: the watchlist, the board's top 100 (all once a day, and in every run those whose
+    gear score on the board moved away from their last profile) and a slice of the other active guild members. In a
+    full run the board and the guilds are in `snap`; in a profiles-only part they come from the last state `prev`."""
     for login in watchlist:
         try:
             snap["watch"][login] = site.get(f"/api/players/{quote(login)}")
@@ -132,13 +139,19 @@ def read_profiles(site: Site, snap: dict, watchlist: list[str], sweep_after: str
                 raise
     if snap["boards"]:
         board = [r["login"].lower() for r in snap["boards"]["gear"]]
+        scores = {r["login"].lower(): r.get("gearScore") for r in snap["boards"]["gear"]}
         members = [m["login"].lower() for page in snap["guilds"].values() for m in page.get("members") or []
                    if m.get("active")]
     else:
         board = [login for login, _ in prev.get("boards", {}).get("gear", [])]
+        scores = dict(prev.get("boards", {}).get("gear", []))
         members = [login for login, p in prev.get("players", {}).items() if p.get("active")]
     top = snap["top"] = board[:TOP_WATCH]
-    for login in ([x for x in top if x not in watchlist] if top_day else []):
+    # Between the morning reads only those whose gear changed: the board's score against the sum of the gear of the
+    # last profile (about 6 of 100 a run, measured 09.-11.10.2026).
+    kept = prev.get("watch", {})
+    due_top = [x for x in top if x not in watchlist and (top_day or slot_sum(kept.get(x)) != scores.get(x))]
+    for login in due_top:
         try:  # an extra: a failing page must not cost the rest of the run
             snap["watch"][login] = site.get(f"/api/players/{quote(login)}")
         except urllib.error.HTTPError as exc:

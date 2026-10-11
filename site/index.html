@@ -668,7 +668,7 @@ async function viewPlayer(s, login) {
         STAT_ROWS.flatMap(([name, fn]) => [el("dt", {}, name), el("dd", {}, fn(st))])))));
     if (p.watch.slots && Object.keys(p.watch.slots).length) out.push(gearCard(p.watch.slots, p.power));
   } else {
-    out.push(card("Mehr Statistik", el("p", { class: "note" }, "Ausrüstung je Platz und Kampfquoten gibt es für die Top 100 (einmal am Tag aktualisiert) und für Spieler auf der ",
+    out.push(card("Mehr Statistik", el("p", { class: "note" }, "Ausrüstung je Platz und Kampfquoten gibt es für die Top 100 (am Morgen und nach jeder Änderung der Ausrüstung aktualisiert) und für Spieler auf der ",
       el("a", { href: WATCH_FORM }, "Beobachtungsliste"), " (bei jedem Lauf). Eintragen geht über ein kurzes Formular auf GitHub, nur für den eigenen Namen.")));
   }
   return out;

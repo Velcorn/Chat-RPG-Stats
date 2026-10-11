@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.25.2 (11.10.2026)
+
+**Verbessert**
+- Ausrüstung auf dem Handy: Die Haltbarkeit steht klein unter der Stufe, ATK, DEF und SUP stehen in drei schmalen Spalten rechts neben dem Namen wie auf dem großen Bildschirm.
+
 ## 0.25.1 (11.10.2026)
 
 **Verbessert**

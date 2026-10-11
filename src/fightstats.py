@@ -185,3 +185,32 @@ def guild_fights(fights: list[dict], extra: dict[int, dict], now: float, days: i
             row["bosses"] += 1
             row["boss_wins"] += win
     return sorted(rows.values(), key=lambda r: (-(r["raids"] + r["bosses"]), r["guild"]))
+
+
+def stat_curves(fights: list[dict], extra: dict[int, dict], now: float, days: int = 30, step: int = 10) -> list[dict]:
+    """Per boss (won fights of the last `days`, since 0.27.0 counted by the collector): for each role and stat the
+    fighters per `step` of the stat, with the share that fell and the mean of what they did (`sx` of the digests).
+    [{boss, fights, roles: {role: {stat: [[from, n, fallen %, mean done], ...]}}}], most fights first."""
+    bosses: dict[str, dict] = {}
+    for f in fights:
+        sx = extra.get(f["id"], {}).get("sx")
+        t = iso_ts(f.get("endedAt"))
+        if not sx or f.get("kind") != "BOSS" or f.get("outcome") != "VICTORY" or not t or t < now - days * DAY:
+            continue
+        b = bosses.setdefault(f.get("name"), {"boss": f.get("name"), "fights": 0, "sums": {}})
+        b["fights"] += 1
+        for role, stats in sx.items():
+            for stat, rows in stats.items():
+                for lo, (n, fell, done) in rows.items():
+                    k = int(lo) // step * step
+                    acc = b["sums"].setdefault(role, {}).setdefault(stat, {}).setdefault(k, [0, 0, 0])
+                    acc[0] += n
+                    acc[1] += fell
+                    acc[2] += done
+    out = []
+    for b in bosses.values():
+        roles = {role: {stat: [[k, n, pct(fell, n), round(done / n) if n else None]
+                               for k, (n, fell, done) in sorted(rows.items())]
+                        for stat, rows in stats.items()} for role, stats in b["sums"].items()}
+        out.append({"boss": b["boss"], "fights": b["fights"], "roles": roles})
+    return sorted(out, key=lambda r: -r["fights"])

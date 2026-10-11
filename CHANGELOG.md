@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.27.0 (11.10.2026)
+
+**Neu**
+- Kämpfe > Kampfkraft: "Werte und Überleben in Bosssiegen" zeigt je Boss, wie viele Schildträger nach Verteidigung fallen und wie viel sie einstecken, wie viel Schaden Kämpfer nach Angriff machen und wie viel Verstärkung Unterstützer nach Unterstützung bringen, dazu das Fallen nach Verteidigung, in Stufen von 10. Gezählt wird ab heute bei jedem neuen Bosskampf, ohne Namen und ohne zusätzliche Anfrage.
+
 ## 0.26.2 (11.10.2026)
 
 **Verbessert**

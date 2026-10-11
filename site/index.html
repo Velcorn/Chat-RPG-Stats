@@ -855,6 +855,40 @@ function survivalCards(st) {
   return [el("div", { class: "grid two" }, roles, facts)];
 }
 
+// Won boss fights by role and stat (since 0.27.0): who fell, and what they did, per 10 points of the stat. Steps with
+// few fighters say little and stay out.
+const STAT_MIN = 10;
+const STAT_VIEWS = [
+  ["TANK", "def", "Schildträger nach Verteidigung", "Ø eingesteckt"],
+  ["FIGHTER", "atk", "Kämpfer nach Angriff", "Ø Schaden"],
+  ["SUPPORT", "sup", "Unterstützer nach Unterstützung", "Ø Verstärkung"],
+  ["FIGHTER", "def", "Kämpfer nach Verteidigung", null],
+  ["SUPPORT", "def", "Unterstützer nach Verteidigung", null],
+];
+let statBoss = null;
+function statCurvesCard(s) {
+  const curves = s.stat_curves || [];
+  if (!curves.length) return card("Werte und Überleben in Bosssiegen", el("p", { class: "note" },
+    "Wird seit dem 11.10.2026 gesammelt: je Bosssieg die Teilnehmer nach Rolle und ihren Werten, ohne Namen. Die ersten Zahlen erscheinen nach den nächsten Bosskämpfen."));
+  if (!curves.some((c) => c.boss === statBoss)) statBoss = curves[0].boss;
+  const box = el("div");
+  const render = () => {
+    const c = curves.find((x) => x.boss === statBoss);
+    box.replaceChildren(el("div", { class: "grid two" }, ...STAT_VIEWS.map(([role, stat, title, done]) => {
+      const rows = ((c.roles[role] || {})[stat] || []).filter((r) => r[1] >= STAT_MIN);
+      return el("div", {}, el("h3", {}, title), rows.length ? table([
+        { label: stat.toUpperCase(), get: (r) => `${r[0]} bis ${r[0] + 9}` },
+        { label: "Spieler", num: true, get: (r) => fmtInt(r[1]) },
+        { label: "Gefallen", num: true, get: (r) => pctv(r[2]) },
+        ...(done ? [{ label: done, num: true, get: (r) => r[3] == null ? "-" : fmtInt(r[3]) }] : []),
+      ], rows) : el("p", { class: "note" }, "Noch zu wenige."));
+    })), el("p", { class: "note" }, `${count(c.fights, "Sieg", "Siege")} gegen ${c.boss} in den letzten 30 Tagen. Gefallen ist der Anteil, der am Ende nicht mehr stand; die Wutrunde am Schluss trifft fast alle, Werte helfen vor allem davor. Werte aus den Profilen (Top 100 und Beobachtungsliste mit allen Verbesserungen, sonst die letzte Lesung); Stufen mit weniger als ${STAT_MIN} Spielern fehlen.`));
+  };
+  render();
+  return el("section", { class: "card" }, el("div", { class: "head" }, el("h2", {}, "Werte und Überleben in Bosssiegen"),
+    curves.length > 1 ? seg(curves.map((c) => [c.boss, c.boss]), statBoss, (k) => { statBoss = k; render(); }) : null), box);
+}
+
 function viewPower(s) {
   const st = stFor(s), p = st.power;
   const bucket = (m) => m.to == null ? `über ${fmtDec(100 * m.from, 0)} %` : m.from === 0 ? `unter ${fmtDec(100 * m.to, 0)} %` : `${fmtDec(100 * m.from, 0)} bis ${fmtDec(100 * m.to, 0)} %`;
@@ -878,7 +912,8 @@ function viewPower(s) {
       { label: "bei Niederlagen", num: true, get: (r) => fmtInt(r.power_loss) },
       { label: "Empfohlen", num: true, get: (r) => r.rec ? fmtInt(r.rec) : "-" },
     ], powered)) : el("p", { class: "note" }, "Noch keine Daten."),
-      el("p", { class: "note" }, "So siehst du, ab welcher Gruppenstärke ein Kampf meist klappt: die Kampfkraft der Siege gegen die der Niederlagen."))];
+      el("p", { class: "note" }, "So siehst du, ab welcher Gruppenstärke ein Kampf meist klappt: die Kampfkraft der Siege gegen die der Niederlagen.")),
+    statCurvesCard(s)];
 }
 
 function guildFightsCard(s) {

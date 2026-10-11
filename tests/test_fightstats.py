@@ -199,3 +199,38 @@ class WindowAndOrderTests(unittest.TestCase):
         self.assertEqual(fightstats.fight_stats(*args)["fights"], 3)
         self.assertEqual(fightstats.fight_stats(*args, lo=fightstats.UPDATE)["fights"], 1)
         self.assertEqual(fightstats.fight_stats(*args, hi=fightstats.UPDATE)["fights"], 1)
+
+
+class StatCurveTests(unittest.TestCase):
+    """Fighters counted by role and stat, without names (0.27.0)."""
+
+    def test_the_digest_counts_by_role_and_stat_and_keeps_no_name(self):
+        d = {"fighters": [{"login": "Anna1", "role": "TANK", "alive": True, "damageTaken": 100},
+                          {"login": "berta", "role": "TANK", "alive": False, "damageTaken": 140},
+                          {"login": "hau", "role": "FIGHTER", "alive": True, "damage": 900},
+                          {"login": "fremd", "role": "SUPPORT", "alive": True, "boosted": 50}]}
+        stats = {"anna1": {"atk": 10, "def": 204, "sup": 5}, "berta": {"atk": 10, "def": 209, "sup": 5},
+                 "hau": {"atk": 151, "def": 80, "sup": 0}}
+        sx = collect.stat_digest(d, stats)
+        self.assertEqual(sx["TANK"], {"def": {"200": [2, 1, 240]}})
+        self.assertEqual(sx["FIGHTER"], {"atk": {"150": [1, 0, 900]}, "def": {"80": [1, 0, 0]}})
+        self.assertNotIn("SUPPORT", sx)  # unknown stats: left out
+        self.assertFalse({"anna1", "berta", "hau"} & set(str(sx).lower().replace("'", " ").split()))
+        self.assertIsNone(collect.stat_digest({"fighters": []}, stats))
+
+    def test_player_stats_prefer_the_gear_of_a_kept_profile(self):
+        state = {"details": {"a": {"atk": 1, "def": 2, "sup": 3}, "b": {"atk": 4, "def": 5, "sup": 6}},
+                 "watch": {"a": {"slots": {"HELMET": ["Helm", "h", 9, 10, 20, 30], "BOOTS": ["Stiefel"]}}}}
+        self.assertEqual(collect.player_stats(state), {"a": {"atk": 10, "def": 20, "sup": 30},
+                                                       "b": {"atk": 4, "def": 5, "sup": 6}})
+
+    def test_curves_add_up_won_boss_fights_per_boss(self):
+        sx = {"TANK": {"def": {"200": [3, 1, 300], "210": [1, 1, 150]}}}
+        fights = [{**fight(1, kind="BOSS", name="Loserqueue"), "endedAt": "2026-10-05T10:00:00Z"},
+                  {**fight(2, "DEFEAT", kind="BOSS", name="Loserqueue"), "endedAt": "2026-10-05T11:00:00Z"},
+                  {**fight(3, kind="BOSS", name="Loserqueue"), "endedAt": "2026-10-05T12:00:00Z"}]
+        extra = {1: {"sx": sx}, 2: {"sx": sx}, 3: {"sx": sx}}
+        curves = fightstats.stat_curves(fights, extra, NOW, step=20)
+        self.assertEqual(len(curves), 1)
+        self.assertEqual(curves[0]["fights"], 2)  # the lost one doesn't count
+        self.assertEqual(curves[0]["roles"]["TANK"]["def"], [[200, 8, 50.0, 112]])

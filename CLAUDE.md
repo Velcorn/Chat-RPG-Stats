@@ -56,6 +56,7 @@ Python modules live in `src/` (flat, no package; tests and tools need `PYTHONPAT
 - `site/index.html`: the whole dashboard (no build step; hash routes `#/<section>/<sub>` with sections `start` (default), `rangliste`, `gilden` (subs `vergleich` + one per guild), `spiel` (subs `regeln`, `aenderungen` (measured rule changes only), `formen` (static `FORMS` table); `RULE_LABELS` holds the German rule names), `kaempfe` (subs `uebersicht`, `kraft`, `letzte`; see `SECTIONS`: each sub
   page is a tab in the second row) and `#/spieler/<login>`).
 - `src/watchlist.py` + `watchlist.txt`: the list (channel owners by default, others opt-in), changed by the issue form via `.github/workflows/watchlist.yml`.
+- `collect.stat_digest`/`player_stats` (0.27.0): per fight the fighters counted by role and stat in steps of 10 (`sx`, no names), `fightstats.stat_curves` sums the won boss fights per boss for the Kampfkraft page.
 - `fightstats.UPDATE` (04.10.2026, the story update) splits `eras.after`/`eras.before` for the fight pages.
 - `tests/`: `test_collect.py`, `test_pipeline.py` (build), `test_fightstats.py`, `test_watchlist.py`, `test_site.py` (the page script parses with `node --check`).
 - `docs/funktionsweise.md`: German detail: data flow, storage, watchlist, every calculation. README stays short.

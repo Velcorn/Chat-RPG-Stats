@@ -365,6 +365,42 @@ def changed(old: dict, new: dict) -> dict:
     return out
 
 
+# Which stats a role's fighters are counted by, and what they did with them (0.27.0): the tank by defense (and the
+# damage taken), the fighter by attack (damage) and defense, the supporter by support (boost) and defense.
+STAT_PAIRS = {"TANK": (("def", "damageTaken"),), "FIGHTER": (("atk", "damage"), ("def", None)),
+              "SUPPORT": (("sup", "boosted"), ("def", None))}
+STAT_STEP = 10
+
+
+def player_stats(state: dict) -> dict[str, dict]:
+    """Attack, defense and support of every player the state knows: from the gear of a kept profile (it has upgrades
+    and stones), else what the last reading gave (a profile, or the board without upgrades)."""
+    out = {login: {k: d.get(k) for k in ("atk", "def", "sup")} for login, d in state.get("details", {}).items()}
+    for login, w in state.get("watch", {}).items():
+        rows = [v for v in (w.get("slots") or {}).values() if len(v) > 5]
+        if rows:
+            out[login] = {k: sum(v[i] or 0 for v in rows) for k, i in (("atk", 3), ("def", 4), ("sup", 5))}
+    return out
+
+
+def stat_digest(d: dict, stats: dict[str, dict]) -> dict | None:
+    """A finished fight's fighters counted by role and by their stats in steps of STAT_STEP: per role, stat and step
+    [fighters, fallen, sum of what they did]. Counts and sums only, no names; fighters with unknown stats are left
+    out. None for a fight nobody fought in (a story without a fight)."""
+    out: dict = {}
+    for f in d.get("fighters") or []:
+        known = stats.get((f.get("login") or "").lower())
+        for stat, did in STAT_PAIRS.get(f.get("role"), ()):
+            if not known or known.get(stat) is None:
+                continue
+            row = out.setdefault(f["role"], {}).setdefault(stat, {}).setdefault(
+                str(known[stat] // STAT_STEP * STAT_STEP), [0, 0, 0])
+            row[0] += 1
+            row[1] += not f.get("alive")
+            row[2] += (f.get(did) or 0) if did else 0
+    return out or None
+
+
 def record(snap: dict, prev: dict, cur: dict, t: int) -> dict:
     """One line of history: only what changed since `prev`, plus new fights."""
     rec: dict = {"t": t}
@@ -379,6 +415,11 @@ def record(snap: dict, prev: dict, cur: dict, t: int) -> dict:
     if fights:
         rec["fights"] = sorted(fights, key=lambda f: f["id"])
     extra: dict[int, dict] = {i: detail_digest(d) for i, d in snap.get("details", {}).items()}
+    if snap.get("details"):
+        stats = player_stats(cur)
+        for i, d in snap["details"].items():
+            if sx := stat_digest(d, stats):
+                extra[i]["sx"] = sx
     seen = set(prev.get("live_seen", []))
     for e in snap.get("live") or []:
         if e.get("archiveId") in live_ids(snap) and e["archiveId"] not in seen:

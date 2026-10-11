@@ -174,6 +174,19 @@ class StateTests(unittest.TestCase):
         rec = collect.record({"fights": [], "details": {}}, core, merged, 5)
         self.assertEqual(sorted(rec), ["details", "players", "t", "watch"])  # only profile data changed
 
+    def test_the_board_split_without_upgrades_is_replaced_by_the_profile_slots(self):
+        slots = [{"slot": "HELMET", "label": "Helm", "item": {"name": "h", "tier": 9, "attack": 60, "defense": 30,
+                                                              "support": 10}}]
+        watch = {"a": {"displayName": "A", "attack": 60, "defense": 30, "support": 10, "slots": slots}}
+        s = snap({"karni": [member("a", 100)]}, board=[("a", 100, 40, 30, 10)], watch=watch)
+        s["top"] = ["a"]
+        first = collect.state_from(s, {})
+        later = collect.state_from({**s, "watch": {}}, first)  # a later run: only the board, which lacks upgrades
+        self.assertEqual([later["details"]["a"][k] for k in ("atk", "def", "sup")], [60, 30, 10])
+        moved = snap({"karni": [member("a", 104)]}, board=[("a", 104, 44, 30, 10)])
+        moved["top"] = ["a"]
+        self.assertEqual(collect.state_from(moved, first)["details"]["a"]["atk"], 44)  # the gear moved: the board
+
     def test_board_player_without_a_guild(self):
         s = snap({"karni": [member("a", 100)]}, board=[("solo", 80, 1, 2, 3)])
         state = collect.state_from(s, {})

@@ -62,12 +62,12 @@ class DigestTests(unittest.TestCase):
         again = collect.record({**snap, "details": {}}, cur, collect.state_from({**snap, "details": {}}, cur), 2)
         self.assertNotIn("fightx", again)
 
-    def test_rules_and_chat_mode_are_kept_as_changes(self):
+    def test_rules_are_kept_as_changes(self):
         snap = {"fights": [], "guilds": {}, "boards": {}, "watch": {}, "rules": {"a": 1, "playWindowOpenNow": True},
                 "channels": [{"login": "sola", "enabled": True, "live": True, "chatMode": "SLOW"}]}
         cur = collect.state_from(snap, {})
         self.assertEqual(cur["rules"], {"a": 1})
-        self.assertEqual(cur["chat"], {"sola": "SLOW"})
+        self.assertNotIn("chat", cur)  # the chat mode is no longer kept (0.25.0)
         later = collect.state_from({**snap, "rules": {"a": 2}}, cur)
         self.assertEqual(collect.record(snap, cur, later, 2)["rules"], {"a": 2})
 

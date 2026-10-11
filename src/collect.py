@@ -269,6 +269,15 @@ def state_from(snap: dict, prev: dict) -> dict:
     for login, p in players.items():
         if (gs := scores.get(login, prev.get("players", {}).get(login, {}).get("gs"))) is not None:
             p["gs"] = gs
+    # The board's attack, defense and support leave out upgrades and stones (its gear score has them; checked
+    # 11.10.2026). The profile's gear per slot has everything: while its sum still matches the gear score, its split
+    # replaces the board's.
+    for login, w in watch.items():
+        if login in snap["watch"] or not w.get("slots"):
+            continue
+        split = [sum(v[i] or 0 for v in w["slots"].values() if len(v) > i) for i in (3, 4, 5)]
+        if sum(split) == players.get(login, {}).get("gs"):
+            details[login] = {**details.get(login, {}), "atk": split[0], "def": split[1], "sup": split[2]}
     # Seen before but in no guild and on no board now: left their guild. The last gear score stays known.
     for login, old in prev.get("players", {}).items():
         if login not in players:
@@ -276,7 +285,6 @@ def state_from(snap: dict, prev: dict) -> dict:
     return {"players": players, "details": {**prev.get("details", {}), **details}, "boards": boards,
             "guilds": guilds, "watch": watch,
             "channels": {c["login"]: bool(c.get("live")) for c in snap["channels"] if c.get("enabled")},
-            "chat": {c["login"]: c.get("chatMode") for c in snap["channels"] if c.get("enabled")},
             "rules": {k: v for k, v in (snap.get("rules") or {}).items() if k != "playWindowOpenNow"},
             "first_kills": (first_kills_state(snap["first_kills"]) if "first_kills" in snap
                             else prev.get("first_kills", [])),
@@ -291,7 +299,7 @@ def watch_entry(p: dict) -> dict:
     """What is kept of a detailed profile: survival, life, achievements, stat totals and the gear per slot."""
     slots = {s["slot"]: [s.get("label"), i.get("name"), i.get("tier"), i.get("attack"), i.get("defense"),
                          i.get("support"), i.get("durability"), int(i.get("source") in BOUND_SOURCES),
-                         i.get("socket")]
+                         i.get("socket"), int(bool(i.get("twoHanded")))]
              if (i := s.get("item")) else [s.get("label")]
              for s in p.get("slots") or []}
     return {"survival": p.get("survivalPercent"), "life": p.get("life"), "ach": p.get("achievementsUnlocked"),
@@ -345,7 +353,7 @@ def changed(old: dict, new: dict) -> dict:
 def record(snap: dict, prev: dict, cur: dict, t: int) -> dict:
     """One line of history: only what changed since `prev`, plus new fights."""
     rec: dict = {"t": t}
-    for key in ("players", "details", "guilds", "channels", "chat", "rules", "watch"):
+    for key in ("players", "details", "guilds", "channels", "rules", "watch"):
         if diff := changed(prev.get(key, {}), cur[key]):
             rec[key] = diff
     if boards := changed(prev.get("boards", {}), cur["boards"]):

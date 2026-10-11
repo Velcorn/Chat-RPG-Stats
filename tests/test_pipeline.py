@@ -128,8 +128,8 @@ class CommunityTests(unittest.TestCase):
         self.assertEqual(self.summary["rules"]["log"], [[T0 + 4 * 86_400, "questCooldownMinutes", 60, 45]])
         self.assertEqual(self.summary["rules"]["now"], {"questCooldownMinutes": 45})
 
-    def test_channel_stats_have_mode_and_live_share(self):
-        self.assertEqual(self.summary["channel_stats"]["sola"]["mode"], "SLOW")
+    def test_channel_stats_have_the_live_share(self):
+        self.assertNotIn("mode", self.summary["channel_stats"]["sola"])
         self.assertEqual(self.summary["channel_stats"]["sola"]["live_share"], 50.0)
 
     def test_guild_week_and_treasury_change(self):
@@ -208,6 +208,13 @@ class BuildTests(unittest.TestCase):
     def test_the_pages_the_game_shows_itself_are_not_built(self):
         for gone in ("quests", "silver", "achievements", "compendium"):
             self.assertNotIn(gone, self.summary)
+
+    def test_the_rank_line_starts_with_plain_gear_and_skips_short_absences(self):
+        from build import rank_series
+        series = [[0, 64], [100, None], [200, 5], [300, None], [400, 4], [5000, None], [9000, 3]]
+        self.assertEqual(rank_series(series, since=150, blip=600),
+                         [[200, 5], [400, 4], [5000, None], [9000, 3]])  # 300 was a blip, 5000 a real absence
+        self.assertEqual(rank_series([[200, None], [300, 7]], since=0), [[300, 7]])  # no gap at the start
 
     def test_a_value_that_dips_and_returns_is_no_rise(self):
         from build import gain
@@ -309,7 +316,7 @@ class BuildEdgeTests(unittest.TestCase):
         self.assertEqual(page["watch"]["survival"], 70)
         self.assertNotIn("quests", page["watch"])
         self.assertEqual(page["watch"]["slots"],
-                         {"HELMET": ["Helm", "Helm", 6, 1, 9, 2, 73, 1, "Angriff +4"], "BOOTS": ["Stiefel"]})
+                         {"HELMET": ["Helm", "Helm", 6, 1, 9, 2, 73, 1, "Angriff +4", 0], "BOOTS": ["Stiefel"]})
         self.assertEqual(page["split"]["atk"], 1)
 
     def test_guild_average_counts_active_members_only(self):

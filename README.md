@@ -9,8 +9,8 @@ Ranglisten, Verlauf und Prognosen für das Twitch-Chat-RPG [rpg.sola.rip](https:
 dein Ausrüstungswert, wann erreichst du den nächsten Rang oder die Top 100, wie verteilen ähnlich starke Spieler ihre
 Werte, wo stehst du in deiner Gilde, welche Kämpfe gewinnt man meistens. Die Seite hat vier Bereiche mit
 Unterseiten: Ranglisten (Ausrüstungswert, Kampfkraft, Aufsteiger), Gilden (Vergleich mit den ersten Siegen über die Bosse und eine Seite pro Gilde),
-Kämpfe (Kampfarten, Überleben, Kampfkraft, Wann und wo, Gilden, letzte Kämpfe) und Spiel (Regeln, Regeländerungen, Ausrüstungsformen), dazu eine Seite pro Spieler
-mit Teilen-Knopf. Die Startseite zeigt Kennzahlen, die Spielersuche, die Top 5, die Gilden und die Streamer mit Live-Status, Chat-Modus, Link zum Stream und Gildenstand.
+Kämpfe (Übersicht, Kampfkraft, letzte Kämpfe) und Spiel (Regeln, Regeländerungen, Ausrüstungsformen), dazu eine Seite pro Spieler
+mit Teilen-Knopf. Die Startseite zeigt Kennzahlen, die Spielersuche, die Top 5, die Gilden und die Streamer mit Live-Status, Kämpfen, Link zum Stream und Gildenstand.
 
 **Zur Seite: <https://velcorn.github.io/Chat-RPG-Stats/>**
 
@@ -34,7 +34,7 @@ zeigt:
 | Die letzten 20 Kämpfe aller Kanäle | Kampfarchiv | 1 |
 | Gefallene, Rollen, Schaden, Heilung und Verstärkung jedes neuen Kampfes (nur Summen) | Kampfbericht | 1 pro neuem Kampf, etwa 3 pro Lauf |
 | Durchschnittliche Kampfkraft und Empfehlung des zuletzt angezeigten Kampfes | laufender Kampf | 1 |
-| Kanäle | Kanalliste, Live-Status, Chat-Modus | 1 |
+| Kanäle | Kanalliste, Live-Status | 1 |
 | Regeln des Spiels (für den Änderungsverlauf) | Regeln | 1 |
 | Erste Siege der Gilden über jeden Boss | Erstkills | 1 pro Tag |
 | Spieler auf der Beobachtungsliste | Spielerseite | 1 pro Spieler |

@@ -4,3 +4,4 @@ _site/
 data/
 .ruff_cache/
 .coverage
+CLAUDE.local.md

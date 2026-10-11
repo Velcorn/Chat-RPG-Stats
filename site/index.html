@@ -123,6 +123,25 @@
          border-radius: 6px; padding: 6px 9px; font-size: 12px; white-space: nowrap; display: none; z-index: 2; }
   .tip strong { display: block; font-size: 14px; }
   .tip .key { display: inline-block; width: 12px; height: 2px; background: var(--series-1); vertical-align: middle; margin-right: 6px; }
+  .hero { background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 22%, var(--surface-1)) 0%, var(--surface-1) 60%); }
+  .hero .hl { color: var(--text-secondary); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+  .hv { display: grid; grid-template-columns: auto auto 1fr; align-items: center; column-gap: 12px; margin: 0 0 6px; }
+  .hv .rankpill { grid-column: 3; grid-row: 2; justify-self: end; }
+  .hv .pwl { align-self: start; font-size: 12px; text-transform: none; letter-spacing: 0; }
+  .hv .pwv { align-self: start; margin-top: 4px; font-size: 26px; font-weight: 650; line-height: 1; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+  .hv .big { font-size: 52px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .rankpill { display: flex; flex-direction: column; align-items: center; line-height: 1.1; padding: 6px 14px; border-radius: 999px;
+              font-size: 22px; font-weight: 650; background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+              border: 1px solid color-mix(in srgb, var(--text-primary) 14%, transparent); }
+  .rankpill small { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .08em; font-weight: 500; }
+  .hero .chips { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 13px; margin-bottom: 10px; }
+  .srs { display: grid; gap: 8px; margin: 6px 0; }
+  .sr { display: grid; grid-template-columns: 34px minmax(0, 1fr) 34px; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); }
+  .sr .bar { display: block; position: relative; margin: 0; height: 6px; border-radius: 3px; background: var(--surface-2); }
+  .sr .bar > div { height: 100%; border-radius: 3px; }
+  .sr .bar .peer { position: absolute; top: -3px; width: 2px; height: 12px; margin-left: -1px; background: var(--text-secondary); }
+  .sr b { color: var(--text-primary); text-align: right; font-size: 14px; font-variant-numeric: tabular-nums; }
+  .sr.atk .bar > div { background: var(--atk); } .sr.def .bar > div { background: var(--def); } .sr.sup .bar > div { background: var(--sup); }
   .gear { display: grid; }
   .grow { display: grid; grid-template-columns: 44px 34px minmax(0, 1fr) repeat(3, 62px); gap: 0 12px; align-items: center;
           padding: 8px 0; border-top: 1px solid var(--grid); }
@@ -169,10 +188,6 @@
   .bar { display: grid; grid-template-columns: 100px 1fr 80px; gap: 8px; align-items: center; font-size: 13px; }
   .bar .track { position: relative; height: 18px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
   .bar .fill { position: absolute; left: 0; top: 0; height: 9px; background: var(--c, var(--series-1)); }
-  .bar .peer { position: absolute; left: 0; bottom: 0; height: 9px; background: color-mix(in srgb, var(--c, var(--series-2)) 38%, transparent); }
-  .bar.atk { --c: var(--atk); } .bar.def { --c: var(--def); } .bar.sup { --c: var(--sup); }
-  .bar .name { display: flex; align-items: center; gap: 7px; }
-  .bar .name::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex: none; }
   .forms-col > .card:last-child { display: flex; flex-direction: column; }
   .forms-col > .card:last-child .wide-table { flex: 1; }
   .forms-col > .card:last-child table { height: 100%; }
@@ -193,11 +208,6 @@
     .forms .seen { display: block; }
   }
   .bar .val { text-align: right; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
-  .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
-  .legend .you { background: linear-gradient(90deg, var(--atk) 33%, var(--def) 33% 66%, var(--sup) 66%); }
-  .legend .peers { background: linear-gradient(90deg, color-mix(in srgb, var(--atk) 38%, transparent) 33%,
-                    color-mix(in srgb, var(--def) 38%, transparent) 33% 66%, color-mix(in srgb, var(--sup) 38%, transparent) 66%); }
-  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
   .note { color: var(--text-secondary); font-size: 13px; margin: 6px 0 0; }
   .log h3 { font-size: 14px; margin: 14px 0 6px; color: var(--text-secondary); font-weight: 600; }
   .log details { border-top: 1px solid var(--border, #2a2a28); padding: 6px 0; }
@@ -509,7 +519,9 @@ function tierChip(tier, bound, socket) {
     focus ? icon(`gem ${focus}`, GEM_SVG, `Stein: ${socket}`) : null);
 }
 function gearCard(slots, power) {
-  const rows = Object.values(slots);
+  // An empty shield slot beside a two-hander (index 9; older readings lack it: a staff or two-hander by name) is no gap.
+  const twoHanded = slots.WEAPON && (slots.WEAPON[9] ?? /stab|zweihänder|speer|hellebarde|bogen/i.test(slots.WEAPON[1] || ""));
+  const rows = Object.entries(slots).filter(([k, v]) => !(k === "SHIELD" && !v[1] && twoHanded)).map(([, v]) => v);
   const stat = (v, k, max) => el("span", { class: `s ${k}${v ? "" : " zero"}`, "data-l": k.toUpperCase() }, fmtInt(v), el("i", { style: `width:${Math.max(6, 100 * v / max)}%` }));
   const max = Math.max(1, ...rows.flatMap((v) => [v[3], v[4], v[5]]));
   const head = el("div", { class: "grow head" }, el("span", { title: "Haltbarkeit" }, "D"), el("span", { title: "Stufe" }, "T"), el("span", {}, "Gegenstand"),
@@ -539,13 +551,13 @@ function fightCard(st) {
       el("div", { class: "track" }, rate == null ? null : el("div", { class: "fill", style: `width:${rate}%` })),
       el("span", { class: "val" }, pct(st[wKey], st[nKey]))));
   }
-  return card("Kämpfe: Siegquote", bars, el("p", { class: "note" }, `Gefallen in ${pct(st.fallen, st.fights)} der Kämpfe, ${fmtInt(st.damage / Math.max(1, st.fights))} Schaden pro Kampf, höchste Bossstufe ${fmtInt(st.highestBossLevel)}.`));
+  return card("Kämpfe: Siegquote", bars, el("p", { class: "note" }, `Gefallen in ${pct(st.fallen, st.fights)} der Kämpfe, ${fmtInt(st.damage / Math.max(1, st.fights))} Schaden pro Kampf.`));
 }
 
 function shareText(p, login) {
   const f = p.forecast, g = p.guild;
   return [`${p.name}: Ausrüstungswert ${fmtInt(p.gear)}` + (p.day == null ? "" : ` (${signed(p.day)} in 24 Stunden)`),
-    `${f.exact ? "Rang" : "etwa Rang"} ${fmtInt(f.rank)}, stärker als ${fmtDec(p.standing.better, 1)} % der Spieler` + (g ? `, Gilde ${g.name}` : ""),
+    `${f.exact ? "Rang" : "etwa Rang"} ${fmtInt(f.rank)}, mehr Ausrüstung als ${fmtDec(p.standing.better, 1)} % der Spieler` + (g ? `, Gilde ${g.name}` : ""),
     `${location.origin}${location.pathname}#/spieler/${encodeURIComponent(login)}`].join("\n");
 }
 function shareButton(p, login) {
@@ -559,6 +571,37 @@ function shareButton(p, login) {
   return b;
 }
 
+// The gear at a glance, as on the game's own character page: the sum, Kampfkraft beside it, the rank, the change in
+// 24 hours, the gap to the next rank (or the lead at #1) and a bar per stat. A thin mark on each bar is the mean of
+// players with about the same gear, so the split reads at a glance.
+function gearHero(p) {
+  // The split: the gear per slot when it adds up to the gear score (it has upgrades and stones), else the profile's.
+  const slots = p.watch && p.watch.slots ? Object.values(p.watch.slots).filter((v) => v[1]) : [];
+  const sums = [3, 4, 5].map((i) => slots.reduce((a, v) => a + (v[i] || 0), 0));
+  const sp = slots.length && sums[0] + sums[1] + sums[2] === p.gear ? { atk: sums[0], def: sums[1], sup: sums[2] }
+    : p.split.atk != null ? p.split : null;
+  const f = p.forecast, peers = p.peers;
+  const rank = f.exact ? `#${f.rank}` : `~#${fmtInt(f.rank)}`;
+  const gap = f.next_gap != null ? `${fmtInt(f.next_gap)} bis #${fmtInt(f.rank - 1)}`
+    : f.lead != null ? `${fmtInt(f.lead)} vor #2` : "";
+  const max = Math.max(1, ...["atk", "def", "sup"].flatMap((k) => [sp ? sp[k] : 0, peers ? peers[k] : 0])) * 1.1;
+  const rows = sp ? [["ATK", "atk"], ["DEF", "def"], ["SUP", "sup"]].map(([label, k]) => el("div", { class: `sr ${k}` }, label,
+    el("div", { class: "bar" }, el("div", { style: `width:${100 * sp[k] / max}%` }),
+      peers ? el("i", { class: "peer", style: `left:${100 * peers[k] / max}%`, title: `Mittel von ${peers.n} Spielern um ${fmtInt(peers.gear)} Punkte: ${fmtInt(peers[k])}` }) : null),
+    el("b", {}, fmtInt(sp[k])))) : [el("p", { class: "note" }, "Die Aufteilung auf ATK, DEF und SUP kennt die Seite nur von Spielern mit Profil (Top 100, Beobachtungsliste, sonst etwa einmal am Tag).")];
+  return el("section", { class: "card hero" },
+    el("div", { class: "hv" }, el("div", { class: "hl" }, "Ausrüstungswert"),
+      p.power != null ? el("span", { class: "hl pwl" }, "Kampfkraft") : el("span"), el("span"),
+      el("span", { class: "big" }, fmtInt(p.gear)),
+      p.power != null ? el("span", { class: "pwv", title: "Ausrüstung plus Talente; der Rang zählt nur die Ausrüstung" }, fmtInt(p.power)) : el("span"),
+      el("span", { class: "rankpill", title: f.exact ? "Platz in der Rangliste des Spiels" : "geschätzt unter allen erfassten Spielern" }, rank, el("small", {}, "Rang"))),
+    el("div", { class: "chips" }, p.day == null ? null : el("span", {}, "24 h ", delta(p.day)),
+      gap ? el("span", { class: "muted" }, gap) : null,
+      p.pace == null ? null : el("span", { class: "muted", title: "Durchschnitt der letzten 7 Tage" }, `${signed(p.pace, 1)} / Tag`)),
+    el("div", { class: "srs" }, ...rows),
+    peers && sp ? el("p", { class: "note" }, `Strich: Mittel von ${peers.n} Spielern um ${fmtInt(peers.gear)} Punkte.`) : null);
+}
+
 async function viewPlayer(s, login) {
   let p;
   try { p = await load(`p/${encodeURIComponent(login)}.json`); }
@@ -567,37 +610,22 @@ async function viewPlayer(s, login) {
       el("a", { href: WATCH_FORM }, "Beobachtungsliste"), " dazu."))];
   }
   const f = p.forecast, g = p.guild;
-  const tiles = el("div", { class: "grid tiles" },
-    tile("Ausrüstungswert", fmtInt(p.gear), p.day == null ? "Änderung: nach einem Tag Verlauf" : `${signed(p.day)} in 24 Stunden`, p.power),
-    tile("Rang", f.exact ? `#${f.rank}` : `etwa #${fmtInt(f.rank)}`, f.exact ? "in der Rangliste des Spiels" : "unter allen erfassten Spielern"),
-    tile("Tempo", p.pace == null ? "-" : `${signed(p.pace, 1)} / Tag`, p.pace == null ? "nach 12 Stunden Verlauf" : "Durchschnitt der letzten 7 Tage"),
-    tile("Nächster Rang", f.next_gap == null ? "Platz 1" : count(f.next_gap, "Punkt", "Punkte"), f.next_days ? `bei deinem Tempo ${inDays(f.next_days)}` : ""));
+  const hero = gearHero(p);
 
   let top100;
   if (f.top100_gap == null) top100 = p.board_rank ? `drin, Platz ${p.board_rank}` : "-";
   else top100 = `${count(f.top100_gap, "Punkt", "Punkte")} bis zur Grenze` + (f.top100_days ? `, bei deinem Tempo ${inDays(f.top100_days)} (die Grenze steigt mit)`
     : p.pace == null ? "" : ", bei diesem Tempo holst du sie nicht ein (sie steigt mindestens so schnell)");
   const forecast = el("dl", { class: "facts" },
-    el("dt", {}, "Vergleich"), el("dd", {}, `Stärker als ${fmtDec(p.standing.better, 1)} % der ${fmtInt(p.standing.of)} erfassten Spieler.`),
-    p.power != null ? [el("dt", {}, "Kampfkraft"), el("dd", {}, `${fmtInt(p.power)} mit Talenten (der Ausrüstungswert zählt sie nicht und entscheidet über den Rang)`)] : null,
+    el("dt", {}, "Vergleich"), el("dd", {}, p.standing.better >= 99.95
+      ? `Die meiste Ausrüstung der ${fmtInt(p.standing.of)} erfassten Spieler.`
+      : `Mehr Ausrüstung als ${fmtDec(p.standing.better, 1)} % der ${fmtInt(p.standing.of)} erfassten Spieler.`),
+    el("dt", {}, "Nächster Rang"), el("dd", {}, f.next_gap == null ? "keiner, du stehst vorn"
+      : `${count(f.next_gap, "Punkt", "Punkte")}` + (f.next_days ? `, bei deinem Tempo ${inDays(f.next_days)}` : "")),
     el("dt", {}, "Top 100"), el("dd", {}, top100),
     el("dt", {}, "Tempo"), el("dd", {}, p.peers && p.peers.pace != null && p.pace != null
       ? `Spieler mit ähnlichem Wert legen im Mittel ${signed(p.peers.pace, 1)} pro Tag zu, du ${signed(p.pace, 1)}.`
       : "Der Vergleich kommt nach 12 Stunden Verlauf."));
-
-  const split = el("div", { class: "bars" });
-  if (p.peers) {
-    const mine = p.split.atk != null ? p.split : null;
-    const max = Math.max(1, ...["atk", "def", "sup"].flatMap((k) => [p.peers[k], mine ? mine[k] : 0]));
-    for (const [k, name] of [["atk", "Angriff"], ["def", "Verteidigung"], ["sup", "Unterstützung"]]) {
-      split.append(el("div", { class: `bar ${k}` }, el("span", { class: "name" }, name),
-        el("div", { class: "track" }, mine ? el("div", { class: "fill", style: `width:${100 * mine[k] / max}%` }) : null,
-          el("div", { class: "peer", style: `width:${100 * p.peers[k] / max}%` })),
-        el("span", { class: "val" }, mine ? `${fmtInt(mine[k])} / ${fmtInt(p.peers[k])}` : fmtInt(p.peers[k]))));
-    }
-    split.append(el("div", { class: "legend" }, mine ? el("span", {}, el("i", { class: "you" }), p.name) : null,
-      el("span", {}, el("i", { class: "peers" }), `Mittel von ${p.peers.n} Spielern um ${fmtInt(p.peers.gear)} Punkte`)));
-  } else split.append(el("p", { class: "note" }, "Noch keine vergleichbaren Spieler."));
 
   const guild = g ? el("dl", { class: "facts" },
     el("dt", {}, "Name"), el("dd", {}, el("a", { href: `#/gilden/${g.login}` }, g.name), ` (${count(g.members, "Mitglied", "Mitglieder")})`),
@@ -611,9 +639,7 @@ async function viewPlayer(s, login) {
     el("div", { class: "head start" }, el("h1", {}, p.name), g ? el("a", { href: `#/gilden/${g.login}` }, g.name) : null,
       p.active === false ? el("span", { class: "tag" }, "laut Gilde inaktiv") : null,
       gameLink(`/spieler/${login}`, "Im Spiel"), shareButton(p, login)),
-    tiles,
-    el("div", { class: "grid two" }, chartCard("Ausrüstungswert", p.series.gear, { until: s.generated }),
-      card("Verteilung gegenüber ähnlichen Spielern", split)),
+    el("div", { class: "grid two" }, hero, chartCard("Ausrüstungswert", p.series.gear, { until: s.generated })),
     el("div", { class: "grid two" }, card("Gilde", guild), card("Prognose", forecast)),
   ];
   const charts = [];
@@ -667,6 +693,7 @@ function viewGuildRace(s) {
     card("Alle Gilden nach Ø Ausrüstungswert", el("div", { class: "scroll" }, table(cols, ranked)),
       el("p", { class: "note" }, "Der Durchschnitt zählt nur aktive Mitglieder. Gilden mit weniger als 10 aktiven Mitgliedern stehen unten und gewinnen oben keine Kachel.")),
     chartCard("Silber in den Gildenkassen", s.economy.series.map((p) => [p.t, p.treasury]), { fmt: fmtSilver, until: s.generated }),
+    guildFightsCard(s),
     firstKillsCard(s))];
 }
 
@@ -708,15 +735,6 @@ function viewGuild(s, login) {
 }
 
 // ---- start page: the streamers, what is going on now, search ----
-const CHAT_MODES = {
-  NORMAL: ["Chat normal", "Jedes !quest im Chat wird beantwortet."],
-  SLOW: ["Chat langsam", "Nur jedes zehnte !quest im Chat wird beantwortet."],
-  SILENT: ["Chat still", "Im Chat wird kein !quest beantwortet."],
-};
-function chatPill(c) {
-  const m = c && CHAT_MODES[c.mode];
-  return m ? el("span", { class: "pill", title: m[1] }, m[0]) : null;
-}
 function channelLines(c) {
   if (!c) return null;
   return el("div", { class: "lines" },
@@ -731,13 +749,8 @@ function viewStart(s) {
   const streams = Object.entries(s.channels).map(([login, live]) => ({ login, live, guild: s.guilds.find((g) => g.login === login) }))
     .sort((a, b) => (b.live - a.live) || ((b.guild?.avg_gear || 0) - (a.guild?.avg_gear || 0)));
   const streamCard = ({ login, live, guild: g }) => card(null, el("div", { class: "stream" },
-    el("div", { class: "head" }, el("h2", {}, login), el("span", { class: "head" }, chatPill(s.channel_stats[login]),
-      el("span", { class: live ? "pill on" : "pill" }, live ? "Live" : "Offline"))),
+    el("div", { class: "head" }, el("h2", {}, login), el("span", { class: live ? "pill on" : "pill" }, live ? "Live" : "Offline")),
     g ? el("div", {}, el("a", { href: `#/gilden/${login}` }, g.name)) : el("div", { class: "muted" }, "Keine Gilde erfasst"),
-    g ? el("div", { class: "lines" },
-      el("div", {}, el("span", { class: "muted" }, "Mitglieder"), `${fmtInt(g.members)} (${fmtInt(g.active)} aktiv)`),
-      el("div", {}, el("span", { class: "muted" }, "Kasse"), fmtSilver(g.treasury)),
-      el("div", {}, el("span", { class: "muted" }, "Ø Ausrüstungswert (aktive)"), fmtDec(g.avg_gear, 1)),) : null,
     channelLines(s.channel_stats[login]),
     el("div", { class: "head" }, el("a", { href: `#/spieler/${login}` }, "Spielerseite"),
       el("a", { href: `https://www.twitch.tv/${login}`, target: "_blank", rel: "noopener" }, "Zum Stream auf Twitch"))));
@@ -803,64 +816,31 @@ function eraBar(s) {
 
 const pctv = (v) => v == null ? "-" : `${fmtDec(v, 1)} %`;
 const ROLE_LABELS = { TANK: "Schildträger", FIGHTER: "Kämpfer", SUPPORT: "Unterstützer" };
-const kindLabel = (k) => KINDS[k] || k;
-function barRows(rows) {
-  return el("div", { class: "bars" }, rows.map((r) => el("div", { class: "bar", style: "grid-template-columns:150px 1fr 90px" },
-    el("span", {}, r.label),
-    el("div", { class: "track" }, r.value == null ? null : el("div", { class: "fill", style: `width:${Math.min(100, r.value)}%;height:18px` })),
-    el("span", { class: "val" }, r.text))));
-}
 function detailNote(st) {
   return el("p", { class: "note" }, st.detail
     ? `Gerechnet aus den letzten ${st.days} Tagen: ${fmtInt(st.detail)} von ${fmtInt(st.fights)} Kämpfen mit Einzelheiten (die werden erst seit ${fmtSince(st.since_detail)} gesammelt).`
     : "Einzelheiten zu den Kämpfen (Gefallene, Rollen, Schaden) werden gerade erst gesammelt, hier erscheinen bald Zahlen.");
 }
-const fallenCols = [
-  { label: "Gefallen", num: true, title: "Anteil der Teilnehmer, die in gewonnenen Kämpfen gefallen sind (wer verliert, fällt ganz)", get: (r) => pctv(r.death_win) },
-];
 
-function viewSurvival(s) {
-  const st = stFor(s), t = st.total;
-  if (!st.detail) return [card("Wer fällt?", detailNote(st))];
-  return [
-    card("Wer fällt?", el("dl", { class: "facts" },
-      el("dt", {}, "In gewonnenen Kämpfen"), el("dd", {}, pctv(t.death_win)),
-      el("dt", {}, "In verlorenen Kämpfen"), el("dd", {}, t.death_loss === 100 ? "alle (100 %)" : pctv(t.death_loss)),
-      el("dt", {}, "Insgesamt"), el("dd", {}, `${pctv(t.death)} (${fmtInt(t.dead)} von ${fmtInt(t.people)} Teilnehmern)`),
-      el("dt", {}, "Ø Schaden pro Teilnehmer"), el("dd", {}, fmtInt(t.dmg)),
-      el("dt", {}, "Ø erlittener Schaden"), el("dd", {}, fmtInt(t.taken)),
-      el("dt", {}, "Ø Heilung"), el("dd", {}, fmtInt(t.heal)),
-      el("dt", {}, "Ø Verstärkung"), el("dd", {}, fmtInt(t.boost)),
-      el("dt", {}, "Ø Silber, wer überlebt"), el("dd", {}, signed(t.pay_alive)),
-      el("dt", {}, "Ø Silber, wer fällt"), el("dd", {}, signed(t.pay_dead))),
-      t.death_loss === 100 ? el("p", { class: "note" }, "Wer einen Kampf verliert, fällt mit der ganzen Gruppe. Damit die Zahlen etwas aussagen, zeigen die Tabellen darunter nur das Fallen in gewonnenen Kämpfen.") : null,
-      detailNote(st)),
-    card("Nach Rolle", barRows(st.roles.map((r) => ({ label: `${ROLE_LABELS[r.role]} (${pctv(r.share)} der Teilnehmer)`, value: r.death, text: `${pctv(r.death)} gefallen` }))),
-      el("p", { class: "note" }, "Balken: Anteil der Teilnehmer dieser Rolle, die in gewonnenen Kämpfen gefallen sind.")),
-    st.roles.some((r) => r.dmg != null) ? card("Was jede Rolle leistet", el("div", { class: "scroll" }, table([
-      { label: "Rolle", get: (r) => ROLE_LABELS[r.role] },
-      { label: "Ø Schaden", num: true, get: (r) => fmtInt(r.dmg) },
-      { label: "Ø erlitten", num: true, get: (r) => fmtInt(r.taken) },
-      { label: "Ø Heilung", num: true, get: (r) => fmtInt(r.heal) },
-      { label: "Ø Verstärkung", num: true, title: "Schaden, den Unterstützer anderen durch ihre Verstärkung dazugegeben haben", get: (r) => fmtInt(r.boost) },
-    ], st.roles)), el("p", { class: "note" }, "Je Teilnehmer und Kampf, über alle Kampfarten gemittelt, ohne Geschichten, in denen es nicht zum Kampf kam. Die Aufteilung nach Rolle wird erst seit dem 07.10.2026 gesammelt.")) : null,
-    card("Nach Kampfart", el("div", { class: "scroll" }, table([
-      { label: "Art", get: (r) => kindLabel(r.kind) },
-      { label: "Kämpfe", num: true, get: (r) => `${fmtInt(r.n)} (${fmtInt(r.detail)} mit Details)` },
-      { label: "Siege", num: true, get: (r) => pct(r.wins, r.n) },
-      ...fallenCols,
-      { label: "Ø Schaden", num: true, get: (r) => fmtInt(r.dmg) },
-      { label: "Ø erlitten", num: true, get: (r) => fmtInt(r.taken) },
-      { label: "Ø Heilung", num: true, get: (r) => fmtInt(r.heal) },
-      { label: "Ø Verstärkung", num: true, title: "Schaden, den Unterstützer anderen durch ihre Verstärkung dazugegeben haben", get: (r) => fmtInt(r.boost) },
-    ], st.kinds.filter((r) => r.detail)))),
-    card("Nach Kampf", el("div", { class: "scroll" }, table([
-      { label: "Kampf", get: fightLabel },
-      { label: "Kämpfe", num: true, get: (r) => fmtInt(r.detail) },
-      ...fallenCols,
-      { label: "Boss-Leben nach Niederlage", num: true, title: "Wie viel Leben der Boss in verlorenen Kämpfen noch hatte", get: (r) => pctv(r.boss_left) },
-      { label: "Boss-Leben", num: true, get: (r) => r.kind === "BOSS" ? fmtInt(r.maxhp) : "-" },
-    ], st.types.filter((r) => r.detail))))];
+// Who falls, by role and overall: the facts of the fights with details (rolled into the overview since 0.25.0).
+function survivalCards(st) {
+  const t = st.total;
+  if (!st.detail) return [card("Rollen und Überleben", detailNote(st))];
+  const roles = card("Rollen", el("div", { class: "scroll" }, table([
+    { label: "Rolle", get: (r) => ROLE_LABELS[r.role] },
+    { label: "Anteil", num: true, title: "Anteil an allen Teilnehmern", get: (r) => pctv(r.share) },
+    { label: "Gefallen", num: true, title: "in gewonnenen Kämpfen", get: (r) => pctv(r.death) },
+    { label: "Ø Schaden", num: true, get: (r) => fmtInt(r.dmg) },
+    { label: "Ø erlitten", num: true, get: (r) => fmtInt(r.taken) },
+    { label: "Ø Heilung", num: true, get: (r) => fmtInt(r.heal) },
+    { label: "Ø Verstärkung", num: true, title: "Schaden, den Unterstützer anderen durch ihre Verstärkung dazugegeben haben", get: (r) => fmtInt(r.boost) },
+  ], st.roles)), el("p", { class: "note" }, "Je Teilnehmer und Kampf, ohne Geschichten, in denen es nicht zum Kampf kam (seit dem 07.10.2026 gesammelt)."));
+  const facts = card("Überleben", el("dl", { class: "facts" },
+    el("dt", {}, "Gefallen in Siegen"), el("dd", {}, pctv(t.death_win)),
+    el("dt", {}, "in Niederlagen"), el("dd", {}, t.death_loss === 100 ? "alle (100 %)" : pctv(t.death_loss)),
+    el("dt", {}, "Ø Silber, wer überlebt"), el("dd", {}, signed(t.pay_alive)),
+    el("dt", {}, "Ø Silber, wer fällt"), el("dd", {}, signed(t.pay_dead))), detailNote(st));
+  return [el("div", { class: "grid two" }, roles, facts)];
 }
 
 function viewPower(s) {
@@ -889,33 +869,10 @@ function viewPower(s) {
       el("p", { class: "note" }, "So siehst du, ab welcher Gruppenstärke ein Kampf meist klappt: die Kampfkraft der Siege gegen die der Niederlagen."))];
 }
 
-function viewWhen(s) {
-  const st = stFor(s), top = Math.max(1, ...st.hours.map((h) => h.n));
-  const hours = st.hours.filter((h) => h.n || (h.hour >= 7 && h.hour < 24));
-  return [
-    card(`Kämpfe nach Uhrzeit (${st.days} Tage)`, barRows(hours.map((h) => ({ label: `${String(h.hour).padStart(2, "0")} bis ${String(h.hour + 1).padStart(2, "0")} Uhr`,
-      value: 100 * h.n / top, text: h.n ? `${fmtInt(h.n)} | ${pct(h.wins, h.n)}` : "-" }))),
-      el("p", { class: "note" }, "Berliner Zeit. Zahl der Kämpfe und Siegquote; der Balken zeigt die Zahl der Kämpfe.")),
-    card("Nach Kanal", el("div", { class: "scroll" }, table([
-      { label: "Kanal", get: (c) => "#" + c.channel },
-      { label: "Kämpfe", num: true, get: (c) => fmtInt(c.n) },
-      { label: "Siege", num: true, get: (c) => pct(c.wins, c.n) },
-      { label: "Ø Teilnehmer", num: true, get: (c) => fmtInt(c.fighters) },
-      { label: "Gefallen", num: true, title: "in gewonnenen Kämpfen", get: (c) => pctv(c.death_win) },
-    ], st.channels))),
-    card("Nach Tag", el("div", { class: "scroll" }, table([
-      { label: "Tag", get: (d) => new Date(d.day + "T12:00:00Z").toLocaleDateString("de-DE", { timeZone: TZ, weekday: "short", day: "2-digit", month: "2-digit" }) },
-      { label: "Kämpfe", num: true, get: (d) => fmtInt(d.n) },
-      { label: "Siege", num: true, get: (d) => pct(d.wins, d.n) },
-      { label: "Ø Teilnehmer", num: true, get: (d) => fmtInt(d.fighters) },
-      { label: "Gefallen", num: true, title: "in gewonnenen Kämpfen", get: (d) => pctv(d.death_win) },
-    ], st.daily.slice(-14).reverse())), detailNote(st))];
-}
-
-function viewGuildFights(s) {
+function guildFightsCard(s) {
   const rows = s.guild_fights || [];
   const known = rows.reduce((n, r) => n + r.raid_known, 0), raids = rows.reduce((n, r) => n + r.raids, 0);
-  return [card("Überfälle und beschworene Bosse je Gilde (30 Tage)", rows.length ? el("div", { class: "scroll" }, table([
+  return card("Überfälle und beschworene Bosse je Gilde (30 Tage)", rows.length ? el("div", { class: "scroll" }, table([
       { label: "Gilde", get: (r) => r.guild },
       { label: "Überfälle", num: true, get: (r) => fmtInt(r.raids) },
       { label: "Abgewehrt", num: true, get: (r) => r.raids ? `${fmtInt(r.raid_wins)} (${pct(r.raid_wins, r.raids)})` : "-" },
@@ -924,15 +881,12 @@ function viewGuildFights(s) {
       { label: "Bosse beschworen", num: true, get: (r) => fmtInt(r.bosses) },
       { label: "Davon besiegt", num: true, get: (r) => r.bosses ? `${fmtInt(r.boss_wins)} (${pct(r.boss_wins, r.bosses)})` : "-" },
     ], rows)) : el("p", { class: "note" }, "Noch keine Kämpfe mit Gildenangaben gesammelt."),
-    el("p", { class: "note" }, `Aus den Kampfberichten des Spiels, nur Kämpfe, deren Bericht eine Gilde nennt (seit 0.12.0 gesammelt). Die Kasse gilt bei ${fmtInt(known)} von ${fmtInt(raids)} Überfällen; wo der Bericht keine Kassenänderung nennt, fehlt sie.`))];
+    el("p", { class: "note" }, `Aus den Kampfberichten des Spiels, nur Kämpfe, deren Bericht eine Gilde nennt (seit 0.12.0 gesammelt). Die Kasse gilt bei ${fmtInt(known)} von ${fmtInt(raids)} Überfällen; wo der Bericht keine Kassenänderung nennt, fehlt sie.`));
 }
 
 function viewFights(s, sub) {
   const since = s.since ? el("p", { class: "note" }, `Erfasst wird seit ${fmtSince(s.since)}, frühere Kämpfe fehlen.`) : null;
-  if (sub === "ueberleben") return [eraBar(s), ...viewSurvival(s)];
   if (sub === "kraft") return [eraBar(s), ...viewPower(s)];
-  if (sub === "zeit") return [eraBar(s), ...viewWhen(s)];
-  if (sub === "gilden") return viewGuildFights(s);
   if (sub === "letzte") return [
     card("Letzte Kämpfe", el("div", { class: "scroll" }, table(RECENT_COLS(s), s.fights.recent)),
       el("p", { class: "note" }, "Der Kampfname führt zum Bericht im Spiel; alle Kämpfe: ", gameLink("/kampf", "Kämpfe im Spiel"), "."), since)];
@@ -941,15 +895,18 @@ function viewFights(s, sub) {
   const types = all.filter((g) => g.n >= FEW), few = all.filter((g) => g.n < FEW);
   return [
     eraBar(s),
-    card("Siegquote nach Kampfart (30 Tage)", types.length ? table([
+    card(`Kämpfe (${stFor(s).days} Tage)`, types.length ? el("div", { class: "scroll" }, table([
       { label: "Kampf", get: fightLabel },
       { label: "Kämpfe", num: true, get: (g) => fmtInt(g.n) },
       { label: "Siege", num: true, get: (g) => `${fmtInt(g.wins)} (${pct(g.wins, g.n)})` },
       { label: "Ø Teilnehmer", num: true, get: (g) => fmtInt(g.fighters) },
-    ], types) : el("p", { class: "note" }, "Noch keine Kämpfe erfasst."),
+      { label: "Gefallen", num: true, title: "Anteil der Teilnehmer, die in gewonnenen Kämpfen gefallen sind", get: (g) => pctv(g.death_win) },
+      { label: "Boss-Leben bei Niederlage", num: true, title: "Wie viel Leben der Boss in verlorenen Kämpfen noch hatte", get: (g) => g.kind === "BOSS" ? pctv(g.boss_left) : "" },
+    ], types)) : el("p", { class: "note" }, "Noch keine Kämpfe erfasst."),
     few.length ? el("p", { class: "note" }, `Weniger als ${FEW} Kämpfe: ${few.map((g) => `${fightLabel(g)} (${g.wins} von ${g.n} gewonnen)`).join(", ")}.`) : null,
     el("p", { class: "note" }, "Aus dem Kampfarchiv des Spiels (alle Kanäle). Wenige Kämpfe einer Art sagen noch wenig. ",
-      gameLink("/kampf", "Kämpfe im Spiel")), since)];
+      gameLink("/kampf", "Kämpfe im Spiel")), since),
+    ...survivalCards(stFor(s))];
 }
 
 // ---- search ----
@@ -1131,8 +1088,7 @@ const SECTIONS = {
   gilden: { subs: (s) => [["vergleich", "Vergleich"], ...s.guilds.map((g) => [g.login, g.login])], render: viewGuild },
   spiel: { subs: () => [["regeln", "Regeln"], ["aenderungen", "Regeländerungen"], ["formen", "Formen"]],
            render: viewGame },
-  kaempfe: { subs: () => [["arten", "Kampfarten"], ["ueberleben", "Überleben"], ["kraft", "Kampfkraft"],
-                          ["zeit", "Wann und wo"], ["gilden", "Gilden"], ["letzte", "Letzte Kämpfe"]],
+  kaempfe: { subs: () => [["uebersicht", "Übersicht"], ["kraft", "Kampfkraft"], ["letzte", "Letzte Kämpfe"]],
              render: viewFights },
 };
 async function route() {

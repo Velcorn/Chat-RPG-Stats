@@ -3,6 +3,20 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.25.0 (11.10.2026)
+
+**Neu**
+- Spielerseite: Die Ausrüstung steht oben in einer Karte wie auf der Charakterseite des Spiels: große Zahl, Kampfkraft, Rang, Änderung in 24 Stunden, Abstand zum nächsten Rang (auf Platz 1 der Vorsprung auf Platz 2), Tempo und Balken für ATK, DEF und SUP mit einem Strich für das Mittel ähnlicher Spieler. Die vier Kacheln und die Karte "Verteilung" sind darin aufgegangen.
+
+**Verbessert**
+- Kämpfe hat nur noch drei Unterseiten: Übersicht (je Kampf Siege, Teilnehmer, Gefallene und Boss-Leben, dazu Rollen und Überleben), Kampfkraft und Letzte Kämpfe. Überfälle und Bosse je Gilde stehen jetzt im Gilden-Vergleich, Kämpfe nach Uhrzeit, Kanal und Tag entfallen.
+- Die Kanalkarten auf der Startseite zeigen nur noch Live-Status, Live-Anteil, Kämpfe und Links; Mitglieder und Kasse stehen auf der Gildenseite. Der Chat-Modus ("Chat langsam") ist weg: Quests laufen über die Seite des Spiels.
+- Rangverlauf ohne Lücken: Er beginnt mit der Rangliste nach Ausrüstungswert (04.10.) und überspringt kurze Aussetzer.
+- Die Spielerseite nennt keine Bossstufe mehr (es gibt nur noch eine je Boss). "Stärker als 100 %" heißt jetzt "Die meiste Ausrüstung der erfassten Spieler". Neben einem Zweihänder fehlt die leere Schild-Zeile.
+
+**Behoben**
+- ATK, DEF und SUP in der Rangliste und auf der Spielerseite zählen jetzt Verbesserungen und Steine mit. Die Rangliste des Spiels nennt die Werte ohne sie; die Seite nimmt die Summen der Ausrüstung aus dem letzten Profil, solange sie zum Ausrüstungswert passen.
+
 ## 0.24.0 (10.10.2026)
 
 **Entfernt**

@@ -250,14 +250,13 @@ def recent_fights(h: History, n: int = 50) -> list[dict]:
 
 
 def channel_stats(h: History, state: dict, fights_by_channel: list[dict]) -> dict:
-    """Per streamer: chat mode, share of runs live, and the fight numbers of their channel."""
+    """Per streamer: share of runs live, and the fight numbers of their channel."""
     fights = {c["channel"]: c for c in fights_by_channel}
     out = {}
     for login in state.get("channels", {}):
         live, seen = h.live_runs.get(login, [0, 0])
         f = fights.get(login, {})
-        out[login] = {"mode": state.get("chat", {}).get(login),
-                      "live_share": rounded(100 * live / seen, 1) if seen else None,
+        out[login] = {"live_share": rounded(100 * live / seen, 1) if seen else None,
                       "fights": f.get("n", 0), "wins": f.get("wins", 0), "fighters": f.get("fighters"),
                       "death": f.get("death_win")}
     return out
@@ -275,6 +274,25 @@ def economy(h: History, now: float, days: int = 30) -> dict:
     return {"series": points}
 
 
+def rank_series(series: list, since: float | None = None, blip: float = 3600) -> list:
+    """The rank line of a player page: from the day the board shows plain gear (`GEAR_SINCE`; before, it ranked
+    Kampfkraft, another order), without the runs off the board at its start and without short absences (at most
+    `blip` seconds between two ranks: a page read in the middle of an update). Longer ones stay gaps."""
+    since = GEAR_SINCE if since is None else since
+    pts = [p for p in series if p[0] >= since]
+    while pts and pts[0][1] is None:
+        pts.pop(0)
+    out = []
+    for i, (t, v) in enumerate(pts):
+        if v is None:
+            back = next((q for q in reversed(pts[:i]) if q[1] is not None), None)
+            ahead = next((q for q in pts[i + 1:] if q[1] is not None), None)
+            if back and ahead and ahead[0] - back[0] <= blip:
+                continue
+        out.append([t, v])
+    return out
+
+
 def player_page(login, h, state, now, rank, paces, with_split, top100_gear, top100_pace, guild_members,
                 gear_sorted) -> dict:
     players, details = state["players"], state["details"]
@@ -283,10 +301,13 @@ def player_page(login, h, state, now, rank, paces, with_split, top100_gear, top1
     my_pace = paces.get(login)
     higher = sorted({x["gs"] for x in players.values() if x.get("gs") is not None and x["gs"] > g})
     next_gap = higher[0] - g + 1 if higher else None
+    lower = max((x["gs"] for k, x in players.items() if k != login and x.get("gs") is not None and x["gs"] <= g),
+                default=None)
     on_board = h.rank[login][-1][1] if h.rank.get(login) else None
     forecast = {"rank": on_board or rank(g), "exact": on_board is not None, "next_gap": next_gap,
                 "next_days": rounded(next_gap / my_pace, 1) if next_gap and my_pace and my_pace > 0 else None,
-                "top100_gap": None, "top100_days": None}
+                "top100_gap": None, "top100_days": None,
+                "lead": g - lower if next_gap is None and lower is not None else None}
     if top100_gear is not None and g <= top100_gear:
         gap = top100_gear - g + 1
         forecast["top100_gap"] = gap
@@ -331,7 +352,7 @@ def player_page(login, h, state, now, rank, paces, with_split, top100_gear, top1
             "board_rank": on_board,
             "split": {k: details.get(login, {}).get(k) for k in ("atk", "def", "sup", "silver", "quests")},
             "peers": split,
-            "series": {"gear": h.gs[login], "rank": h.rank.get(login, []),
+            "series": {"gear": h.gs[login], "rank": rank_series(h.rank.get(login, [])),
                        "silver": [[t, d.get("silver")] for t, d in h.details.get(login, [])
                                   if d.get("silver") is not None]},
             "watch": watch or None}

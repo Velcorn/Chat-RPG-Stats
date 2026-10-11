@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.27.3 (12.10.2026)
+
+**Behoben**
+- Formen: Die Anteile stehen mit einer Nachkommastelle und ergeben in jeder Zeile genau 100 % (vorher z. B. "des Segens" 19/19/63 und "Wappenschild" 9/75/15).
+
 ## 0.27.2 (11.10.2026)
 
 **Oberfläche**

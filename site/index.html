@@ -1087,18 +1087,28 @@ function viewChanges(s) {
 const FORMS = {"armor": [["Angriff", [["des Schlächters", 11, 44, 14, 0], ["des Berserkers", 9, 31, 17, 0], ["des Jägers", 12, 38, 16, 9], ["des Duellanten", 9, 26, 17, 5], ["des Kriegspriesters", 11, 29, 12, 17]]], ["Verteidigung", [["der Festung", 9, 7, 41, 0], ["des Bollwerks", 9, 5, 36, 7], ["des Wächters", 9, 12, 36, 0], ["des Tempelritters", 11, 3, 38, 17], ["des Veteranen", 9, 10, 31, 7]]], ["Unterstützung", [["des Pilgers", 9, 0, 17, 31], ["des Erzmagiers", 9, 12, 7, 29], ["des Kreuzritters", 9, 7, 14, 27], ["des Paladins", 9, 0, 22, 26], ["des Hospitaliters", 9, 5, 19, 24]]]], "w1": [["Angriff", [["des Schlächters", 12, 60, 3, 0], ["des Ritters", 9, 41, 7, 0], ["des Prinzen", null, 80.56, 19.44, 0], ["des Kriegspriesters", 9, 38, 5, 5], ["des Schildbrechers", 9, 36, 12, 0], ["des Sonnenordens", 9, 34, 7, 7]]]], "w2": [["Angriff", [["des Zerstörers", 9, 91, 5, 0], ["des Kriegsherrn", 7, 65, 11, 0], ["des Inquisitors", 3, 29, 4, 3], ["des Bergfrieds", 8, 64, 22, 0], ["der Morgenröte", 9, 67, 14, 15]]], ["Unterstützung", [["des Lichts", 9, 14, 14, 68], ["des Sturms", 5, 14, 3, 39], ["der Heilung", 9, 10, 24, 62], ["des Zorns", 9, 19, 19, 58], ["der Wacht", 6, 3, 23, 40]]]], "ring": [["Angriff", [["des Zorns", 9, 16, 5, 6], ["des Sturms", 9, 14, 3, 10]]], ["Verteidigung", [["des Schutzes", 11, 7, 20, 6]]], ["Unterstützung", [["des Segens", 9, 5, 5, 17], ["des Paladins", 9, 3, 11, 13]]]], "shield": [["Verteidigung", [["Turmschild", 7, 2, 36, 0], ["Tempelschild", 9, 0, 41, 7], ["Rundschild", 9, 7, 41, 0], ["Wappenschild", 10, 5, 40, 8], ["Kampfschild", 8, 11, 32, 0]]]]};
 
 const FORM_ORIENT = { Angriff: "atk", Verteidigung: "def", Unterstützung: "sup" };
+// Percents to one decimal that add up to exactly 100 (largest remainder, in tenths): whole percents gave 19/19/63 for
+// 5/5/17, and evening that out made equal values unequal.
+function percents100(shares) {
+  const tenths = shares.map((v) => v * 10), out = tenths.map(Math.floor);
+  const order = tenths.map((v, i) => [v - out[i], i]).sort((a, b) => b[0] - a[0]);
+  const missing = 1000 - out.reduce((a, b) => a + b, 0);
+  for (let k = 0; k < missing; k++) out[order[k][1]]++;
+  return out.map((v) => v / 10);
+}
+const pct1 = (v) => `${v.toLocaleString("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
 function formsCard(title, groups, note) {
   const shares = (r) => { const t = r[1] ? r[2] + r[3] + r[4] : 100; return [r[2], r[3], r[4]].map((v) => 100 * v / t); };
   const rows = groups.flatMap(([orient, list]) => [
     el("tr", { class: `group ${FORM_ORIENT[orient]}` }, el("td", { colspan: "6" }, orient)),
     ...list.map((r) => {
-      const sh = shares(r), main = ["atk", "def", "sup"].indexOf(FORM_ORIENT[orient]);
+      const sh = shares(r), pc = percents100(sh), main = ["atk", "def", "sup"].indexOf(FORM_ORIENT[orient]);
       const seen = r[1] ? `Stufe ${r[1]}: ${r[2]}/${r[3]}/${r[4]}` : "nicht gesehen";
       return el("tr", {},
         el("td", {}, `... ${r[0]}`, el("span", { class: r[1] ? "seen" : "seen unseen" }, seen)),
-        el("td", { class: "mix" }, el("div", { class: "mixbar", title: sh.map((v) => `${fmtDec(v, 0)} %`).join(" / ") },
+        el("td", { class: "mix" }, el("div", { class: "mixbar", title: pc.map(pct1).join(" / ") },
           ...["atk", "def", "sup"].map((k, i) => el("span", { class: k, style: `width:${sh[i]}%` })))),
-        ...sh.map((v, i) => el("td", { class: i === main ? "num main" : "num" }, `${fmtDec(v, 0)} %`)),
+        ...pc.map((v, i) => el("td", { class: i === main ? "num main" : "num" }, pct1(v))),
         el("td", { class: r[1] ? "num seen-col" : "num seen-col unseen" }, seen));
     })]);
   return card(title, el("div", { class: "wide-table" }, el("table", { class: "forms" },

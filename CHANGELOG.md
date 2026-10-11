@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.26.2 (11.10.2026)
+
+**Verbessert**
+- Formen: 14 Formen auf höheren Stufen nachgeprüft (bis Stufe 12, aus den Profilen der Top 100 und der Beobachtungsliste). Die Spalte "Gesehen" nennt die neuen Werte, die Anteile verschieben sich um höchstens etwa einen Prozentpunkt. Keine neue Form, keine widerspricht der Tabelle; "des Prinzen" ist weiter nicht zu sehen.
+
 ## 0.26.1 (11.10.2026)
 
 **Behoben**

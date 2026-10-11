@@ -360,6 +360,13 @@ class HelperTests(unittest.TestCase):
         self.assertEqual(build.value_at(series, DAY - 1), 10)
         self.assertEqual(build.pace(series, 2 * DAY), 5.0)
         self.assertIsNone(build.pace([[0, 10]], 3600))  # under 12 h of data
+        self.assertIsNone(build.pace([], 3600))
+
+    def test_history_drops_a_player_off_the_board_and_merges_fight_digests(self):
+        h = build.History([{"t": 1, "boards": {"gear": [["a", 9], ["b", 8]]}, "fightx": {"5": {"dead": [1, 0, 0]}}},
+                           {"t": 2, "boards": {"gear": [["a", 9]]}, "fightx": {"5": {"power": 300}}}])
+        self.assertEqual(h.rank["b"], [[1, 2], [2, None]])
+        self.assertEqual(h.fightx[5], {"dead": [1, 0, 0], "power": 300})
 
 
 if __name__ == "__main__":

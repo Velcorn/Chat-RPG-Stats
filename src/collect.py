@@ -51,10 +51,6 @@ class Site:
     def get(self, path: str):
         return json.loads(self.fetch(path, "application/json"))
 
-    def text(self, path: str) -> str:
-        """A page or script of the site itself (not the JSON API)."""
-        return self.fetch(path, "*/*").decode("utf-8")
-
 
 def read_watchlist(path: Path) -> list[str]:
     if not path.exists():

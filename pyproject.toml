@@ -25,3 +25,6 @@ package = false
 [tool.coverage.run]
 source = ["src"]
 omit = ["tests/*", ".venv/*"]
+
+[tool.coverage.report]
+exclude_also = ['if __name__ == "__main__":']

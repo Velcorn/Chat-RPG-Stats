@@ -16,7 +16,7 @@ import collect
 
 
 class FakeSite:
-    """Answers by path; a path mapped to an int raises that HTTP status."""
+    """Answers by path; a path mapped to an int raises that HTTP status, one mapped to an exception raises it."""
 
     def __init__(self, answers):
         self.answers, self.paths, self.requests = answers, [], 0
@@ -27,9 +27,9 @@ class FakeSite:
         answer = self.answers[path]
         if isinstance(answer, int):
             raise urllib.error.HTTPError(collect.BASE + path, answer, "x", {}, io.BytesIO())
+        if isinstance(answer, Exception):
+            raise answer
         return answer
-
-    text = get
 
 
 def answers(**extra):
@@ -120,6 +120,33 @@ class SnapshotTests(unittest.TestCase):
         s = collect.snapshot(site, [])
         self.assertEqual((list(s["sweep"]), s["sweep_after"]), (["x1"], "x1"))
         self.assertIn("/api/rules", site.paths)
+
+    def test_a_fight_detail_page_that_is_gone_is_skipped(self):
+        fights = {"/api/combat/history": [{"id": 6}, {"id": 5}], "/api/combat/history/6": {"fighters": []}}
+        s = collect.snapshot(FakeSite(answers(**fights, **{"/api/combat/history/5": 404})), [], prev=KEPT)
+        self.assertEqual(list(s["details"]), [6])
+        with self.assertRaises(urllib.error.HTTPError):
+            collect.snapshot(FakeSite(answers(**fights, **{"/api/combat/history/5": 500})), [], prev=KEPT)
+
+    def test_an_unreachable_daily_page_costs_nothing(self):
+        site = FakeSite(answers(**{"/api/guilds/first-kills": urllib.error.URLError("weg")}))
+        s = collect.snapshot(site, [], daily={"first_kills": "2026-10-04"}, prev=KEPT)
+        self.assertFalse({"first_kills", "days"} & set(s))
+
+    def test_a_failing_top_profile_ends_the_top_read_without_marking_the_day(self):
+        day = "2026-10-09"
+        gone = collect.snapshot(FakeSite(answers(**{"/api/players/a": 404})), [], top_day=day)
+        self.assertEqual((gone["watch"], gone["days"]), ({}, {"top": day}))  # a missing player: the read is complete
+        for error in (503, urllib.error.URLError("weg")):
+            s = collect.snapshot(FakeSite(answers(**{"/api/players/a": error})), [], top_day=day)
+            self.assertEqual((s["watch"], "days" in s), ({}, False), error)  # read again on the next run
+
+    def test_an_unreachable_profile_ends_the_sweep(self):
+        page = {"guild": {"name": "Karni"}, "members": [member(n, 100) for n in ("x1", "x2")]}
+        for error in (503, urllib.error.URLError("weg")):
+            site = FakeSite(answers(**{"/api/guilds/karni": page, "/api/players/x1": error}))
+            s = collect.snapshot(site, [], prev=KEPT)
+            self.assertEqual((s["sweep"], "sweep_after" in s), ({}, False), error)  # the same slice next run
 
     def test_other_http_errors_are_raised(self):
         with self.assertRaises(urllib.error.HTTPError):
@@ -293,6 +320,12 @@ class MainTests(unittest.TestCase):
             collect.main()
         lines = (data / "days" / "2026-09-30.jsonl").read_text().splitlines()
         self.assertEqual(json.loads(lines[1])["players"], {"a": {"gear": 105, "gs": 105}})
+
+    def test_a_profiles_part_is_marked_in_the_day_file(self):
+        _, data, _, _ = self.run_main(now=self.NOON)
+        self.run_main(now=self.NOON, args=("--part", "profiles"), data=data)
+        lines = (data / "days" / "2026-09-30.jsonl").read_text().splitlines()
+        self.assertEqual([json.loads(line).get("part") for line in lines], [None, "profiles"])
 
     def test_nothing_happens_outside_the_play_window(self):
         code, data, out, printed = self.run_main(now=self.NIGHT)

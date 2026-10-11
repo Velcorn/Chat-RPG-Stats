@@ -62,6 +62,14 @@ class DigestTests(unittest.TestCase):
         again = collect.record({**snap, "details": {}}, cur, collect.state_from({**snap, "details": {}}, cur), 2)
         self.assertNotIn("fightx", again)
 
+    def test_record_counts_fighters_by_their_known_stats(self):
+        fighters = [{"login": "A", "role": "TANK", "alive": False, "damageTaken": 30},
+                    {"login": "fremd", "role": "TANK", "alive": True, "damageTaken": 99}]  # unknown stats: left out
+        snap = {"fights": [{"id": 5, "kind": "BOSS"}], "details": {5: {"fighters": fighters}}, "guilds": {},
+                "boards": {}, "watch": {}, "channels": []}
+        cur = {**collect.state_from(snap, {}), "details": {"a": {"atk": 10, "def": 254, "sup": 3}}}
+        self.assertEqual(collect.record(snap, {}, cur, 1)["fightx"][5]["sx"], {"TANK": {"def": {"250": [1, 1, 30]}}})
+
     def test_rules_are_kept_as_changes(self):
         snap = {"fights": [], "guilds": {}, "boards": {}, "watch": {}, "rules": {"a": 1, "playWindowOpenNow": True},
                 "channels": [{"login": "sola", "enabled": True, "live": True, "chatMode": "SLOW"}]}

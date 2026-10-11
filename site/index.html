@@ -139,6 +139,7 @@
   .sr { display: grid; grid-template-columns: 34px minmax(0, 1fr) 34px; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); }
   .sr .bar { display: block; position: relative; margin: 0; height: 6px; border-radius: 3px; background: var(--surface-2); }
   .sr .bar > div { height: 100%; border-radius: 3px; }
+  .sr .bar .band { position: absolute; top: -2px; height: 10px; border-radius: 2px; background: color-mix(in srgb, var(--text-secondary) 30%, transparent); }
   .sr .bar .peer { position: absolute; top: -3px; width: 2px; height: 12px; margin-left: -1px; background: var(--text-secondary); }
   .sr b { color: var(--text-primary); text-align: right; font-size: 14px; font-variant-numeric: tabular-nums; }
   .sr.atk .bar > div { background: var(--atk); } .sr.def .bar > div { background: var(--def); } .sr.sup .bar > div { background: var(--sup); }
@@ -598,14 +599,17 @@ function gearHero(p) {
   const sums = [3, 4, 5].map((i) => slots.reduce((a, v) => a + (v[i] || 0), 0));
   const sp = slots.length && sums[0] + sums[1] + sums[2] === p.gear ? { atk: sums[0], def: sums[1], sup: sums[2] }
     : p.split.atk != null ? p.split : null;
-  const f = p.forecast, peers = p.peers;
+  const f = p.forecast, cls = p.peers && p.peers.cls;
   const rank = f.exact ? `#${f.rank}` : `~#${fmtInt(f.rank)}`;
   const gap = f.next_gap != null ? `${fmtInt(f.next_gap)} bis #${fmtInt(f.rank - 1)}`
     : f.lead != null ? `${fmtInt(f.lead)} vor #2` : "";
-  const max = Math.max(1, ...["atk", "def", "sup"].flatMap((k) => [sp ? sp[k] : 0, peers ? peers[k] : 0])) * 1.1;
+  const max = Math.max(1, ...["atk", "def", "sup"].flatMap((k) => [sp ? sp[k] : 0, cls ? (cls.band ? cls.band[k][1] : cls.med[k]) : 0])) * 1.1;
+  const at = (v) => `${100 * v / max}%`;
+  const clsName = cls && `${cls.n} ${cls.n === 1 ? "Spieler" : "Spielern"} mit ${{ atk: "ATK", def: "DEF", sup: "SUP" }[cls.main]} als Hauptwert um ${fmtInt(cls.gear)} Punkte`;
   const rows = sp ? [["ATK", "atk"], ["DEF", "def"], ["SUP", "sup"]].map(([label, k]) => el("div", { class: `sr ${k}` }, label,
     el("div", { class: "bar" }, el("div", { style: `width:${100 * sp[k] / max}%` }),
-      peers ? el("i", { class: "peer", style: `left:${100 * peers[k] / max}%`, title: `Mittel von ${peers.n} Spielern um ${fmtInt(peers.gear)} Punkte: ${fmtInt(peers[k])}` }) : null),
+      cls && cls.band ? el("i", { class: "band", style: `left:${at(cls.band[k][0])};width:${at(cls.band[k][1] - cls.band[k][0])}`, title: `Mittlere Hälfte: ${fmtInt(cls.band[k][0])} bis ${fmtInt(cls.band[k][1])}` }) : null,
+      cls ? el("i", { class: "peer", style: `left:${at(cls.med[k])}`, title: `Median von ${clsName}: ${fmtInt(cls.med[k])}` }) : null),
     el("b", {}, fmtInt(sp[k])))) : [el("p", { class: "note" }, "Die Aufteilung auf ATK, DEF und SUP kennt die Seite nur von Spielern mit Profil (Top 100, Beobachtungsliste, sonst etwa einmal am Tag).")];
   return el("section", { class: "card hero" },
     el("div", { class: "hv" }, el("div", { class: "hl" }, "Ausrüstungswert"),
@@ -617,7 +621,7 @@ function gearHero(p) {
       gap ? el("span", { class: "muted" }, gap) : null,
       p.pace == null ? null : el("span", { class: "muted", title: "Durchschnitt der letzten 7 Tage" }, `${signed(p.pace, 1)} / Tag`)),
     el("div", { class: "srs" }, ...rows),
-    peers && sp ? el("p", { class: "note" }, `Strich: Mittel von ${peers.n} Spielern um ${fmtInt(peers.gear)} Punkte.`) : null);
+    cls && sp ? el("p", { class: "note" }, `Strich: Median von ${clsName}${cls.band ? ", Band: ihre mittlere Hälfte" : ""}.`) : null);
 }
 
 async function viewPlayer(s, login) {

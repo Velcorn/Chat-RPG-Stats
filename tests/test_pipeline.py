@@ -193,6 +193,9 @@ class BuildTests(unittest.TestCase):
     def test_peers_are_the_other_players_with_a_known_split(self):
         fast = json.loads((self.out / "p" / "fast.json").read_text())
         self.assertEqual(fast["peers"]["n"], 2)  # top and slow
+        # the stat bars compare within the class: "fast" (all attack) next to "top" (90/60/50), not the tank "slow"
+        self.assertEqual(fast["peers"]["cls"], {"main": "atk", "n": 1, "gear": 207,
+                                                "med": {"atk": 90, "def": 60, "sup": 50}})
         self.assertEqual(fast["split"]["atk"], 170)  # read from its own profile
 
     def test_fight_groups(self):
@@ -361,6 +364,18 @@ class HelperTests(unittest.TestCase):
         self.assertEqual(build.pace(series, 2 * DAY), 5.0)
         self.assertIsNone(build.pace([[0, 10]], 3600))  # under 12 h of data
         self.assertIsNone(build.pace([], 3600))
+
+    def test_class_peers_have_a_median_and_from_four_on_the_middle_half(self):
+        details = {"me": {"atk": 50, "def": 200, "sup": 10}, "fighter": {"atk": 300, "def": 50, "sup": 10},
+                   **{f"t{i}": {"atk": 10 * i, "def": 200 + 10 * i, "sup": 5} for i in range(5)}}
+        players = {x: {"gs": 260} for x in details}
+        cls = build.class_peers("me", 260, players, details, list(details))
+        self.assertEqual((cls["main"], cls["n"], cls["med"]["def"]), ("def", 5, 220))  # the fighter is left out
+        self.assertEqual(cls["band"]["def"], [210, 230])
+        few = build.class_peers("me", 260, players, details, ["me", "fighter", "t1"])
+        self.assertEqual((few["n"], "band" in few), (1, False))
+        self.assertIsNone(build.class_peers("me", 260, players, details, ["me", "fighter"]))
+        self.assertEqual(build.main_stat({"atk": 5, "def": 5, "sup": 1}), "atk")  # a tie: the first
 
     def test_history_drops_a_player_off_the_board_and_merges_fight_digests(self):
         h = build.History([{"t": 1, "boards": {"gear": [["a", 9], ["b", 8]]}, "fightx": {"5": {"dead": [1, 0, 0]}}},

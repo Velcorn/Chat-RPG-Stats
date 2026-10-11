@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.28.0 (12.10.2026)
+
+**Oberfläche**
+- Spielerseite: Der Vergleich auf den Balken für ATK, DEF und SUP zählt nur noch Spieler derselben Klasse (gleicher Hauptwert) mit ähnlichem Ausrüstungswert. Der Strich ist ihr Median, ein helles Band zeigt ihre mittlere Hälfte. Vorher mischte das Mittel Schildträger, Kämpfer und Unterstützer.
+
 ## 0.27.4 (12.10.2026)
 
 **Oberfläche**

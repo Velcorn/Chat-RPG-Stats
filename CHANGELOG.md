@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.27.4 (12.10.2026)
+
+**Oberfläche**
+- Formen: Die Anteile stehen wieder als ganze Prozent und ergeben trotzdem 100 %: Was die Rundung übrig lässt, steckt im Hauptwert (fett), gleiche Werte bleiben gleich ("des Segens" 19/19/62).
+
 ## 0.27.3 (12.10.2026)
 
 **Behoben**

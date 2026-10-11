@@ -19,7 +19,8 @@ import fightstats
 
 DAY = 86400
 PEERS_MIN = 8
-PEERS_BAND = 4  # class peers from which on the stat bars show the middle half
+PEERS_CLASS_MIN = 20  # class peers for the stat bars: within 10 % of the gear score, else this many nearest
+PEERS_BAND = 4  # class peers from which on the stat bars show the band (10 % to 90 %)
 
 
 def replay(days: Path):
@@ -301,20 +302,20 @@ def main_stat(d: dict) -> str:
 
 
 def class_peers(login: str, g: int, players: dict, details: dict, with_split: list) -> dict | None:
-    """The players with the same main stat and a similar gear score (within 5 % or 10, else the nearest PEERS_MIN):
-    per stat the median and the quartiles [25 %, 75 %] (from PEERS_BAND players on)."""
+    """The players with the same main stat and a similar gear score (within 10 % or 10 points, else the nearest
+    PEERS_CLASS_MIN): per stat the median and the band [10 %, 90 %] (from PEERS_BAND players on)."""
     main = main_stat(details[login])
     same = sorted((x for x in with_split if x != login and main_stat(details[x]) == main),
                   key=lambda x: abs(players[x]["gs"] - g))
-    close = [x for x in same if abs(players[x]["gs"] - g) <= max(10, g * 0.05)]
-    peers = close if len(close) >= PEERS_MIN else same[:PEERS_MIN]
+    close = [x for x in same if abs(players[x]["gs"] - g) <= max(10, g * 0.1)]
+    peers = close if len(close) >= PEERS_CLASS_MIN else same[:PEERS_CLASS_MIN]
     if not peers:
         return None
     out = {"main": main, "n": len(peers), "gear": round(statistics.mean(players[x]["gs"] for x in peers)),
            "med": {k: rounded(statistics.median(details[x][k] for x in peers), 1) for k in ("atk", "def", "sup")}}
     if len(peers) >= PEERS_BAND:
-        out["band"] = {k: [rounded(q, 1) for q in statistics.quantiles([details[x][k] for x in peers], n=4,
-                                                                         method="inclusive")[::2]]
+        out["band"] = {k: [rounded(q, 1) for q in statistics.quantiles([details[x][k] for x in peers], n=10,
+                                                                         method="inclusive")[::8]]
                        for k in ("atk", "def", "sup")}
     return out
 
@@ -350,7 +351,7 @@ def player_page(login, h, state, now, rank, paces, with_split, top100_gear, top1
         split["pace"] = rounded(statistics.median(known)) if (known := [paces[x] for x in peers
                                                                           if paces.get(x) is not None]) else None
         # The marker on the stat bars compares within the class only (the same main stat: a tank's attack next to
-        # fighters' says little): the median and, from PEERS_BAND players on, the middle half.
+        # fighters' says little): the median and, from PEERS_BAND players on, the band from 10 % to 90 %.
         if login in with_split:
             split["cls"] = class_peers(login, g, players, details, with_split)
 

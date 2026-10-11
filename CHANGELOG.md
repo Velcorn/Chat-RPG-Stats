@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.28.1 (12.10.2026)
+
+**Oberfläche**
+- Spielerseite: Strich und Band auf den Balken für ATK, DEF und SUP sind deutlicher. Der Vergleich nimmt mehr Spieler derselben Klasse (bis 10 % Abstand im Ausrüstungswert, sonst die 20 nächsten), und das Band reicht von 10 bis 90 % statt über die mittlere Hälfte.
+
 ## 0.28.0 (12.10.2026)
 
 **Oberfläche**

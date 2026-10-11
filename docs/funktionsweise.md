@@ -77,9 +77,10 @@ Eine Startseite und vier Bereiche mit einer zweiten Tab-Zeile, damit keine Seite
   Grenze (Median der Plätze 90 bis 100), denn die Grenze steigt mit.
 - **Vergleich mit ähnlichen Spielern:** Seit 0.28.0 nur innerhalb der Klasse: Spieler mit bekannter Verteilung (Top 100,
   Beobachtungsliste und die gelesenen Profile), deren größter Wert derselbe ist wie deiner (ATK, DEF oder SUP als Hauptwert)
-  und deren Ausrüstungswert höchstens 5 % (mindestens 10 Punkte) von deinem abweicht; sind das weniger als 8, die 8 nächsten
-  dieser Klasse. Der Strich auf dem Balken ist ihr Median, das helle Band dahinter ihre mittlere Hälfte (25 bis 75 %, ab 4
-  Spielern). Vorher war der Strich das Mittel über alle Klassen, und der Angriff eines Schildträgers neben dem von Kämpfern
+  und deren Ausrüstungswert höchstens 10 % (mindestens 10 Punkte) von deinem abweicht; sind das weniger als 20, die 20
+  nächsten dieser Klasse (seit 0.28.1; vorher 5 % und 8). Der Strich auf dem Balken ist ihr Median, das helle Band dahinter
+  reicht von 10 bis 90 % (ab 4 Spielern; die 10 % ganz oben und unten fehlen, damit Ausreißer es nicht aufblähen; 0.28.0
+  zeigte nur die mittlere Hälfte). Vorher war der Strich das Mittel über alle Klassen, und der Angriff eines Schildträgers neben dem von Kämpfern
   sagte wenig. Das Tempo ("Spieler mit ähnlichem Wert legen im Mittel ... zu") zählt weiter alle Klassen. Angriff ist rot,
   Verteidigung blau, Unterstützung grün. Die Aufteilung kommt aus der Ausrüstung je Platz, wenn sie zum Ausrüstungswert passt: Die Rangliste des Spiels nennt ATK, DEF und SUP ohne Verbesserungen und Steine (geprüft am 11.10.2026), seit 0.25.0 ersetzt der Sammler sie durch die Summen der Ausrüstung aus dem letzten Profil, solange diese zum Wert passen. Das gilt auch für die Spalten ATK, DEF und SUP der Rangliste.
 - **Gilde:** Mitglied seit (Beitrittsdatum aus der Gildenliste), Platz bei Ausrüstungswert und Spenden innerhalb der Gilde,

@@ -365,13 +365,13 @@ class HelperTests(unittest.TestCase):
         self.assertIsNone(build.pace([[0, 10]], 3600))  # under 12 h of data
         self.assertIsNone(build.pace([], 3600))
 
-    def test_class_peers_have_a_median_and_from_four_on_the_middle_half(self):
+    def test_class_peers_have_a_median_and_from_four_on_a_band_of_80_percent(self):
         details = {"me": {"atk": 50, "def": 200, "sup": 10}, "fighter": {"atk": 300, "def": 50, "sup": 10},
                    **{f"t{i}": {"atk": 10 * i, "def": 200 + 10 * i, "sup": 5} for i in range(5)}}
         players = {x: {"gs": 260} for x in details}
         cls = build.class_peers("me", 260, players, details, list(details))
         self.assertEqual((cls["main"], cls["n"], cls["med"]["def"]), ("def", 5, 220))  # the fighter is left out
-        self.assertEqual(cls["band"]["def"], [210, 230])
+        self.assertEqual(cls["band"]["def"], [204, 236])
         few = build.class_peers("me", 260, players, details, ["me", "fighter", "t1"])
         self.assertEqual((few["n"], "band" in few), (1, False))
         self.assertIsNone(build.class_peers("me", 260, players, details, ["me", "fighter"]))

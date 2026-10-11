@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.26.1 (11.10.2026)
+
+**Behoben**
+- Spieler auf der Beobachtungsliste außerhalb der Top 100 hatten auf ihrer Seite keine Ausrüstung und Statistik, obwohl ihr Profil bei jedem Lauf gelesen wurde (seit 0.23.0, der Lauf in zwei Teilen: der erste Teil, nach dem die Seite gebaut wird, vergaß ihre Profile).
+
 ## 0.26.0 (11.10.2026)
 
 **Verbessert**

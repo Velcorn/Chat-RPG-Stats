@@ -87,7 +87,7 @@ def snapshot(site: Site, watchlist: list[str], detail_after: int = 0, daily: dic
     (`top_day` is today's date then), so every one of them is as old as the same morning.
     `part` splits a run in two so the page can be published after the quick first one: "core" asks everything but the
     profiles, "profiles" only the profiles (who is due comes from the last state `prev`), "all" is both."""
-    snap: dict = {"guilds": {}, "watch": {}, "details": {}, "sweep": {}}
+    snap: dict = {"guilds": {}, "watch": {}, "details": {}, "sweep": {}, "listed": list(watchlist)}
     if part == "profiles":
         snap |= {"fights": [], "boards": {}}
         return read_profiles(site, snap, watchlist, sweep_after, top_day, prev or {})
@@ -265,8 +265,10 @@ def state_from(snap: dict, prev: dict) -> dict:
     for login, p in snap.get("sweep", {}).items():
         details[login] = {**prev.get("details", {}).get(login, {}), "atk": p.get("attack"), "def": p.get("defense"),
                           "sup": p.get("support"), "silver": p.get("silver")}
-    # Watchlist and top 100: what was read this run; the top 100's others keep their last reading (read once a day).
-    watch: dict[str, dict] = {login: w for login, w in prev.get("watch", {}).items() if login in snap.get("top", ())}
+    # Watchlist and top 100: what was read this run, else what was kept from the last state: the top 100's (read once a day) and the watchlist's (a core part reads no profile; the
+    # profiles part after it reads them again).
+    keep = {*snap.get("top", ()), *snap.get("listed", ())}
+    watch: dict[str, dict] = {login: w for login, w in prev.get("watch", {}).items() if login in keep}
     for login, p in snap["watch"].items():
         watch[login] = watch_entry(p)
         details[login] = {**details.get(login, {}), "atk": p.get("attack"), "def": p.get("defense"),

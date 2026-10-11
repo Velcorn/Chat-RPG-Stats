@@ -58,6 +58,12 @@ class SnapshotTests(unittest.TestCase):
         self.assertEqual(site.requests, 8)  # the board's one player included
         self.assertEqual((list(s["watch"]), s["days"]), (["a"], {"top": "2026-10-09"}))  # read like the watchlist
 
+    def test_a_core_part_keeps_the_watchlist_profiles_it_does_not_read(self):
+        # 0.23.0 to 0.26.0 dropped them: the page, built after the core part, had no gear for listed players
+        prev = {"watch": {"fan": {"slots": {"HELMET": ["Helm", "h", 9, 5, 5, 5]}}, "gone": {"slots": {}}}}
+        s = collect.snapshot(FakeSite(answers()), ["fan"], part="core", prev=prev)
+        self.assertEqual(sorted(collect.state_from(s, prev)["watch"]), ["fan"])  # "gone" is off the list and the top
+
     def test_between_the_morning_reads_a_top_profile_is_read_when_its_gear_moved(self):
         moved = {"watch": {"a": {"slots": {"HELMET": ["Helm", "h", 9, 50, 30, 16]}}}}  # 96, the board says 100
         for prev, read in ((KEPT, []), (moved, ["a"]), ({}, ["a"])):  # no profile yet: read too

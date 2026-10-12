@@ -3,6 +3,12 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.31.1 (12.10.2026)
+
+**Oberfläche**
+- Ausrüstung auf dem Handy: Das "+x" sitzt weiter rechts und mit mehr Abstand zur Trennlinie über dem Wert, wie eine normale Hochzahl.
+- Verläufe: Die markierten Sprünge (+ und -) sind besser lesbar: größere, kräftigere Zahlen mit dunklem Rand und größere Punkte.
+
 ## 0.31.0 (12.10.2026)
 
 **Neu**

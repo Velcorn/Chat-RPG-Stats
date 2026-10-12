@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.30.0 (12.10.2026)
+
+**Oberfläche**
+- Ausrüstung: Was Schriftrollen und Stein einem Stück geben, steht als grünes "+x" neben dem Wert, den sie erhöhen (die Aufteilung beim Überfahren oder Antippen); das "+4" im Namen und der Edelstein am Stufenfeld fallen weg, das Schloss sitzt unten rechts. Eine kurze Legende erklärt beides, auf dem Handy zeigt ein Antippen den Tooltip. Ältere Lesungen zeigen die Stufe der Verbesserung noch als Marke hinter dem Namen, bis das Profil neu gelesen ist.
+
 ## 0.29.1 (12.10.2026)
 
 **Behoben**

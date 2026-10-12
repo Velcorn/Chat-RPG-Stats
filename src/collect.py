@@ -310,7 +310,8 @@ def watch_entry(p: dict) -> dict:
     """What is kept of a detailed profile: survival, life, achievements, stat totals and the gear per slot."""
     slots = {s["slot"]: [s.get("label"), i.get("name"), i.get("tier"), i.get("attack"), i.get("defense"),
                          i.get("support"), i.get("durability"), int(i.get("source") in BOUND_SOURCES),
-                         i.get("socket"), int(bool(i.get("twoHanded")))]
+                         i.get("socket"), int(bool(i.get("twoHanded"))), i.get("upgrade") or 0, i.get("upgradeFocus"),
+                         int(bool(i.get("bossLoot")))]
              if (i := s.get("item")) else [s.get("label")]
              for s in p.get("slots") or []}
     return {"survival": p.get("survivalPercent"), "life": p.get("life"), "ach": p.get("achievementsUnlocked"),

@@ -200,9 +200,17 @@
                 border: 1px solid color-mix(in srgb, var(--c, var(--accent)) 90%, transparent); text-shadow: 0 1px 2px rgba(0, 0, 0, .55); }
   .grow .chip .ico { position: absolute; top: -6px; width: 12px; height: 12px; filter: drop-shadow(0 0 1px rgba(0, 0, 0, .9)); }
   .grow .chip .ico svg { display: block; width: 100%; height: 100%; }
-  .grow .chip .lock { left: -4px; color: var(--text-primary); }
-  .grow .chip .gem { right: -3px; }
-  .grow .chip .gem.atk { color: var(--atk); } .grow .chip .gem.def { color: var(--def); } .grow .chip .gem.sup { color: var(--sup); }
+  .grow .chip .lock { left: auto; top: auto; right: -5px; bottom: -5px; color: var(--text-primary); }
+  .grow .s { position: relative; padding-right: 22px; }
+  .grow .s .add { position: absolute; left: calc(100% - 20px); top: -1px; font-size: 10px; font-weight: 700; color: var(--good); line-height: 1; cursor: help; white-space: nowrap; }
+  .grow .piece .tag[data-tip], .grow .chip .ico { cursor: help; }
+  .gear-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12px; color: var(--text-secondary); margin-top: 10px; }
+  .gear-legend .ico { display: inline-block; width: 12px; height: 12px; margin-right: 5px; vertical-align: -2px; }
+  .gear-legend .ico svg { display: block; width: 100%; height: 100%; }
+  .gear-legend > span { display: inline-flex; align-items: center; }
+  .gear-legend .plus { font-size: 11px; font-weight: 700; margin-right: 5px; color: var(--good); }
+  #tapTip { position: absolute; z-index: 20; max-width: 260px; padding: 5px 9px; border-radius: 6px; font-size: 12px; background: var(--surface-2);
+            border: 1px solid var(--border); color: var(--text-primary); pointer-events: none; box-shadow: 0 2px 8px rgba(0, 0, 0, .4); }
   .grow .piece { min-width: 0; overflow-wrap: anywhere; }
   .grow .dur { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--text-secondary); }
   .grow .dur.worn { color: var(--warning); } .grow .dur.broken { color: var(--critical); }
@@ -214,7 +222,8 @@
   .grow .s.sum { font-size: 15px; color: var(--c); }
   @media (max-width: 600px) {
     /* phone: durability under the tier, the stats in three narrow columns */
-    .grow { grid-template-columns: 30px minmax(0, 1fr) repeat(3, 32px); gap: 0 5px; padding: 6px 0; font-size: 14px; }
+    .grow { grid-template-columns: 30px minmax(0, 1fr) repeat(3, 42px); gap: 0 6px; padding: 6px 0; font-size: 14px; }
+    .grow .s { padding-right: 16px; } .grow .s .add { font-size: 9px; top: -2px; left: calc(100% - 15px); }
     .grow.head { padding-bottom: 6px; font-size: 10px; }
     .grow.head > :first-child { display: none; }
     .grow .chip { grid-column: 1; grid-row: 1; }
@@ -940,37 +949,72 @@ const TIERS = [null, ["Holz", "#91443d"], ["Kupfer", "#a37f53"], ["Eisen", "#7e7
   ["Gold", "#e0b539"], ["Platin", "#83c4af"], ["Kobalt", "#4d5f85"], ["Purpur", "#9f322f"], ["Adamant", "#6aae56"],
   ["Himmlisch", "#d9a074"], ["Schicksal", "#24768d"], ["Altair", "#c98b27"], ["Nova", "#99553b"]];  // colors sampled from the item icons
 const LOCK_SVG = '<svg viewBox="0 0 12 12"><path d="M3.2 5.5V3.8a2.8 2.8 0 0 1 5.6 0v1.7" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="1.5" y="5.2" width="9" height="6.3" rx="1.5" fill="currentColor"/></svg>';
-const GEM_SVG = '<svg viewBox="0 0 12 12"><path d="M3 1h6l3 3.6L6 11.5 0 4.6z" fill="currentColor"/><path d="M0 4.6h12M4 4.6 6 1l2 3.6M4 4.6l2 6.9 2-6.9" fill="none" stroke="rgba(255,255,255,.55)" stroke-width=".7"/></svg>';
-const icon = (cls, svg, title) => { const n = el("span", { class: `ico ${cls}`, title }); n.innerHTML = svg; return n; };
-function tierChip(tier, bound, socket) {
+const icon = (cls, svg, title) => { const n = el("span", { class: `ico ${cls}`, ...(title ? { title, "data-tip": title } : {}) }); n.innerHTML = svg; return n; };
+// A tap shows what a mouse shows on hover (phones have no hover): the text of the nearest [data-tip] in a bubble.
+document.addEventListener("click", (ev) => {
+  const t = ev.target.closest("[data-tip]"), bub = $("tapTip");
+  if (!t) { bub.hidden = true; return; }
+  bub.textContent = t.dataset.tip; bub.hidden = false;
+  const r = t.getBoundingClientRect();
+  bub.style.left = Math.max(8, Math.min(innerWidth - bub.offsetWidth - 8, r.left + r.width / 2 - bub.offsetWidth / 2)) + "px";
+  bub.style.top = (r.top + scrollY - bub.offsetHeight - 6) + "px";
+});
+function tierChip(tier, bound) {
   const t = TIERS[tier];
-  const focus = socket ? (/^Angriff/.test(socket) ? "atk" : /^Verteidigung/.test(socket) ? "def" : "sup") : null;
   return el("span", { class: "chip", style: t ? `--c:${t[1]}` : "", title: t ? `Stufe ${tier}, ${t[0]}` : "" }, tier,
-    bound ? icon("lock", LOCK_SVG, "Gebunden: nicht für den Markt") : null,
-    focus ? icon(`gem ${focus}`, GEM_SVG, `Stein: ${socket}`) : null);
+    bound ? icon("lock", LOCK_SVG, "Gebunden: nicht für den Markt") : null);
+}
+// What scrolls and a stone add to a worn piece, per stat: [{k, v, kind, level}]. The stone's value is in its text
+// ("Angriff +4"); the scrolls' points are what the piece has over a plain one of its tier (5 per tier plus 3, a
+// two-hander double, a ring 3 per tier) less the stone. Boss loot has its own values: there only a full +4 is known
+// (6 points, a ring 4). Readings before 0.30.0 lack the level and its stat: the level then comes from the name and
+// goes next to it.
+const STAT_OF = { ATTACK: "atk", DEFENSE: "def", SUPPORT: "sup" };
+function extras(slot, v) {
+  const out = [];
+  const gem = /^(Angriff|Verteidigung|Unterstützung) \+(\d+)/.exec(v[8] || "");
+  const gemPts = gem ? +gem[2] : 0;
+  if (gem) out.push({ k: { Angriff: "atk", Verteidigung: "def", "Unterstützung": "sup" }[gem[1]], v: gemPts, kind: "gem" });
+  const level = v.length > 10 ? v[10] : +((/ \+(\d+)$/.exec(v[1]) || [])[1] || 0);
+  if (level) {
+    const ring = /^RING/.test(slot), base = ring ? 3 * v[2] : (5 * v[2] + 3) * (v[9] ? 2 : 1);
+    const pts = v[12] ? (level >= 4 ? (ring ? 4 : 6) : null) : v[3] + v[4] + v[5] - base - gemPts;
+    out.push({ k: STAT_OF[v[11]] && pts > 0 ? STAT_OF[v[11]] : null, v: pts, kind: "scroll", level });
+  }
+  return out;
 }
 function gearCard(slots, power) {
   // An empty shield slot beside a two-hander (index 9; older readings lack it: a staff or two-hander by name) is no gap.
   const twoHanded = slots.WEAPON && (slots.WEAPON[9] ?? /stab|zweihänder|speer|hellebarde|bogen/i.test(slots.WEAPON[1] || ""));
-  const rows = Object.entries(slots).filter(([k, v]) => !(k === "SHIELD" && !v[1] && twoHanded)).map(([, v]) => v);
-  const stat = (v, k, max) => el("span", { class: `s ${k}${v ? "" : " zero"}`, "data-l": k.toUpperCase() }, fmtInt(v), el("i", { style: `width:${Math.max(6, 100 * v / max)}%` }));
+  const entries = Object.entries(slots).filter(([k, v]) => !(k === "SHIELD" && !v[1] && twoHanded)), rows = entries.map(([, v]) => v);
+  // A stat with what scrolls and a stone add to it, together, raised beside the number (hover or tap splits it).
+  const stat = (v, k, max, adds) => {
+    const mine = adds.filter((a) => a.k === k), sum = mine.reduce((n, a) => n + a.v, 0);
+    const tip = `${k.toUpperCase()} +${sum}: ` + mine.map((a) => a.kind === "gem" ? `Stein +${a.v}` : `Schriftrollen (Stufe ${a.level}) +${a.v}`).join(", ");
+    return el("span", { class: `s ${k}${v ? "" : " zero"}`, "data-l": k.toUpperCase() },
+      fmtInt(v), el("span", { class: "adds" }, sum ? el("sup", { class: "add", title: tip, "data-tip": tip }, `+${sum}`) : null),
+      el("i", { style: `width:${Math.max(6, 100 * v / max)}%` }));
+  };
   const max = Math.max(1, ...rows.flatMap((v) => [v[3], v[4], v[5]]));
   const head = el("div", { class: "grow head" }, el("span", { title: "Haltbarkeit" }, "D"), el("span", { title: "Stufe" }, "T"), el("span", {}, "Gegenstand"),
     el("span", { class: "s atk" }, "ATK"), el("span", { class: "s def" }, "DEF"), el("span", { class: "s sup" }, "SUP"));
-  const lines = rows.map((v) => {
+  const lines = entries.map(([slot, v]) => {
     if (!v[1]) return el("div", { class: "grow" }, el("span", { class: "dur" }), el("span", { class: "chip" }, "-"), el("span", { class: "piece muted" }, `${v[0]}: leer`));
-    const d = v[6];
+    const d = v[6], adds = extras(slot, v);
     return el("div", { class: "grow" }, el("span", { class: `dur ${d == null ? "" : d < 25 ? "broken" : d < 50 ? "worn" : d >= 100 ? "full" : ""}` }, d == null ? "" : `${fmtInt(d)} %`),
-      tierChip(v[2], v[7], v[8]),
-      el("span", { class: "piece", title: v[1] }, v[1].charAt(0).toUpperCase() + v[1].slice(1)),
-      stat(v[3], "atk", max), stat(v[4], "def", max), stat(v[5], "sup", max));
+      tierChip(v[2], v[7]),
+      el("span", { class: "piece", title: v[1] }, v[1].charAt(0).toUpperCase() + v[1].slice(1).replace(/ \+\d+$/, ""),
+        ...adds.filter((a) => !a.k).map((a) => el("span", { class: "tag", title: `Schriftrollen +${a.level}`, "data-tip": `Schriftrollen +${a.level}, Wert unbekannt` }, `+${a.level}`))),
+      stat(v[3], "atk", max, adds), stat(v[4], "def", max, adds), stat(v[5], "sup", max, adds));
   });
   const tot = [3, 4, 5].map((i) => rows.reduce((a, v) => a + (v[1] ? v[i] : 0), 0));
   const sum = el("div", { class: "grow sum" }, el("span", { class: "lead" }, "Gesamt:", el("br"), `Ausrüstungswert ${fmtInt(tot[0] + tot[1] + tot[2])}`,
       power == null ? null : el("span", { class: "kk", title: "Ausrüstung plus Talente; der Rang zählt nur die Ausrüstung" },
         `Kampfkraft ${fmtInt(power)}`)),
     ...["atk", "def", "sup"].map((k, i) => el("span", { class: `s sum ${k}`, "data-l": k.toUpperCase() }, fmtInt(tot[i]))));
-  return card("Ausrüstung", el("div", { class: "gear" }, head, ...lines, sum));
+  const legend = el("div", { class: "gear-legend" }, el("span", {}, icon("lock", LOCK_SVG, ""), "gebunden"),
+    el("span", {}, el("b", { class: "plus" }, "+10"), "Schriftrollen und Stein"));
+  return card("Ausrüstung", el("div", { class: "gear" }, head, ...lines, sum), legend);
 }
 
 function fightCard(st) {
@@ -1642,5 +1686,6 @@ async function route() {
 window.addEventListener("hashchange", route);
 route();
 </script>
+<div id="tapTip" hidden></div>
 </body>
 </html>

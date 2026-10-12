@@ -90,7 +90,10 @@ Eine Startseite und vier Bereiche mit einer zweiten Tab-Zeile, damit keine Seite
 - **Quest-Fehlerquote (Beobachtungsliste):** gescheiterte Quests geteilt durch alle Quests (geschafft plus gescheitert),
   in Klammern hinter der Zeile "Quests".
 - **Schadensminderung (Beobachtungsliste):** der Wert "Mindert Schaden" der Spielerseite im Spiel (`survivalPercent`), also
-  der Anteil des eingehenden Schadens, den die Verteidigung abfängt.
+  der Anteil des eingehenden Schadens, den die Verteidigung abfängt. Das Spiel rechnet ihn als 100 x DEF / (DEF + 80)
+  (auf ganze Prozent gerundet, an den Werten der Profile geprüft). Seit 0.32.0 zeigt die Karte "Statistik" diese Kurve bis
+  Verteidigung 500 mit dem Wert des Spielers und darunter, wie viel zehn Punkte mehr noch bringen (bei Verteidigung 234:
+  +0,8 Punkte); die Zeile "Schadensminderung" steht direkt über der Kurve.
 - **Ausrüstung** (nur Beobachtungsliste): eine Zeile je Stück mit Haltbarkeit (D), Stufe (T, nach Material eingefärbt, mit kleinem Schloss unten rechts bei gebundenen Stücken), Name ohne das "+4" der Verbesserung und ATK/DEF/SUP; seit 0.30.0 steht, was Schriftrollen und Stein einem Stück geben, als grünes "+x" hochgestellt rechts neben dem Wert, den sie erhöhen (zusammengezählt, die Aufteilung beim Überfahren oder Antippen; die Punkte der Schriftrollen sind, was das Stück über einem einfachen seiner Stufe hat, 5 je Stufe plus 3, Zweihänder doppelt, Ringe 3 je Stufe, abzüglich des Steins; Bossbeute hat eigene Werte, dort gilt ein volles +4 als 6 Punkte, beim Ring 4; ohne bekannten Wert steht die Stufe als Marke hinter dem Namen, so auch bei Lesungen vor 0.30.0, denen Stufe und Ziel der Verbesserung fehlen); eine Legende darunter, und auf dem Handy zeigt ein Antippen von Schloss oder "+x" den Text des Tooltips; darunter die
   Summe und die Kampfkraft. Die Zahlen tragen die Farben des Spiels (ATK rot, DEF blau, SUP grün) mit einem kurzen Balken im Verhältnis zum
   stärksten Wert; eine Haltbarkeit unter 50 % ist gelb, unter 25 % rot. Auf dem Handy rutschen die Werte unter den Namen.

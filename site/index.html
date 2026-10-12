@@ -119,6 +119,7 @@
   .chart .bandlabel { fill: var(--text-muted); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; }
   .chart .hair { stroke: var(--text-muted); stroke-width: 1; }
   .chart .empty { fill: var(--text-muted); font-size: 13px; }
+  .chart.redchart svg { height: 150px; }
   .rolebar { display: grid; grid-template-columns: 64px minmax(0, 1fr) 76px; gap: 10px; align-items: center; margin: 8px 0; font-size: 13px; }
   .rolebar .rtrack { display: flex; height: 26px; border-radius: 6px; overflow: hidden; gap: 2px; }
   .rolebar .rseg { display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; min-width: 4px; }
@@ -1186,8 +1187,12 @@ async function viewPlayer(s, login) {
     out.push(el("h2", { class: "divider" }, "Beobachtungsliste und Top 100"));
     out.push(el("div", { class: "grid two" }, fightCard(st),
       card("Statistik", el("dl", { class: "facts" },
-        el("dt", {}, "Schadensminderung"), el("dd", {}, `${fmtInt(p.watch.survival)} %, Leben ${fmtInt(p.watch.life)}`),
-        STAT_ROWS.flatMap(([name, fn]) => [el("dt", {}, name), el("dd", {}, fn(st))])))));
+        STAT_ROWS.flatMap(([name, fn]) => [el("dt", {}, name), el("dd", {}, fn(st))])),
+        // the damage reduction directly above its curve
+        el("dl", { class: "facts", style: "margin-top:14px" },
+          el("dt", {}, "Schadensminderung"), el("dd", {}, `${fmtInt(p.watch.survival)} %, Leben ${fmtInt(p.watch.life)}`)),
+        split ? (() => { const b = el("div", { class: "chart redchart" }); requestAnimationFrame(() => reductionCurve(b, split.def, p.watch.survival)); return b; })() : null,
+        split ? el("p", { class: "note" }, `Schadensminderung nach Verteidigung. Jeder Punkt bringt weniger: +10 DEF mindern den Schaden bei dir nur noch um ${fmtDec(gainPer10(split.def), 1)} Punkte.`) : null)));
     if (p.watch.slots && Object.keys(p.watch.slots).length) out.push(gearCard(p.watch.slots, p.power));
   } else {
     out.push(card("Mehr Statistik", el("p", { class: "note" }, "Ausrüstung je Platz und Kampfquoten gibt es für die Top 100 (am Morgen und nach jeder Änderung der Ausrüstung aktualisiert) und für Spieler auf der ",
@@ -1196,6 +1201,26 @@ async function viewPlayer(s, login) {
   return out;
 }
 
+// Damage reduction as the game computes it: round(100 d / (d + 80)) for the defense d; each point adds less.
+const reduction = (d) => 100 * d / (d + 80);
+const gainPer10 = (d) => reduction(d + 10) - reduction(d);
+function reductionCurve(box, def, survival) {
+  box.replaceChildren();
+  const W = Math.max(240, box.clientWidth), H = 150, m = { l: 36, r: 12, t: 12, b: 26 }, top = Math.max(500, Math.ceil((def + 60) / 100) * 100);
+  const x = (d) => m.l + d / top * (W - m.l - m.r), y = (r) => m.t + (1 - r / 100) * (H - m.t - m.b);
+  const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Schadensminderung nach Verteidigung" });
+  box.append(svg);
+  const axis = sv("g", { class: "axis" });
+  for (const r of [0, 25, 50, 75, 100]) axis.append(sv("line", { x1: m.l, x2: W - m.r, y1: y(r), y2: y(r), class: "gridline" }), sv("text", { x: m.l - 6, y: y(r) + 4, "text-anchor": "end" }, `${r} %`));
+  for (let d = 0; d <= top; d += 100) axis.append(sv("text", { x: x(d), y: H - 8, "text-anchor": d === 0 ? "start" : d === top ? "end" : "middle" }, d));
+  svg.append(axis);
+  const pts = []; for (let d = 0; d <= top; d += top / 60) pts.push([d, reduction(d)]);
+  svg.append(sv("path", { d: pts.map(([d, r], i) => `${i ? "L" : "M"}${x(d).toFixed(1)},${y(r).toFixed(1)}`).join(""), class: "line" }));
+  svg.append(sv("line", { x1: x(def), x2: x(def), y1: y(reduction(def)), y2: H - m.b, class: "mark me" }), sv("line", { x1: m.l, x2: x(def), y1: y(reduction(def)), y2: y(reduction(def)), class: "mark me" }),
+    sv("circle", { cx: x(def), cy: y(reduction(def)), r: 5, class: "tme" }),
+    sv("text", { x: x(def) + 8, y: y(reduction(def)) + 18, class: "marklabel me" }, `DEF ${fmtInt(def)}: ${fmtInt(survival ?? Math.round(reduction(def)))} %`));
+  svg.append(sv("text", { x: W - m.r, y: m.t + 4, "text-anchor": "end", class: "marklabel" }, "100 x DEF / (DEF + 80)"));
+}
 function viewGuildRace(s) {
   const per = (g, v) => v == null || !g.members ? null : v / g.members;
   const cols = [

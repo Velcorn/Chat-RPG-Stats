@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.32.0 (12.10.2026)
+
+**Neu**
+- Spielerseite (Top 100 und Beobachtungsliste): Unter "Statistik" zeigt eine kleine Kurve die Schadensminderung nach Verteidigung (100 x DEF / (DEF + 80), wie das Spiel rechnet) mit dem Wert des Spielers und dem Hinweis, wie wenig zehn Punkte Verteidigung mehr noch bringen. Die Zeile "Schadensminderung" steht direkt über der Kurve.
+
 ## 0.31.2 (12.10.2026)
 
 **Oberfläche**

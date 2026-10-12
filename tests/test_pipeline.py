@@ -257,10 +257,22 @@ class BuildEdgeTests(unittest.TestCase):
         self.assertEqual(summary["top100"]["gear"], 500 - 99 + 4)
         self.assertEqual(summary["top100"]["pace"], 2.0)
         self.assertEqual(summary["top100"]["series"], [[T0 + d * DAY, 401 + 2 * d] for d in range(3)])
+        roles = summary["top100"]["roles"]  # the made-up board is all 10/10/10: the first stat wins a tie, so fighters
+        self.assertEqual([(r["top"], r["n"], r["fighter"]) for r in roles],
+                         [(10, 10, 10), (25, 25, 25), (50, 50, 50), (100, 100, 100)])
         builds = json.loads((out / "builds.json").read_text())
         self.assertEqual((len(builds), builds[0][:3]), (100, [10, 10, 10]))  # no names, only the split and the score
         page = json.loads((out / "p" / "p050.json").read_text())
         self.assertIsNone(page["forecast"]["top100_gap"])  # already in
+
+    def test_the_top_roles_come_from_the_main_stat_of_the_gear(self):
+        pipe = Pipeline()
+        board = [(f"p{i:03d}", 500 - i, *((5, 90, 5) if i % 4 == 0 else (5, 5, 90) if i % 4 == 1 else (90, 5, 5)))
+                 for i in range(100)]
+        pipe.run(snap({"karni": [member(lo, g) for lo, g, *_ in board]}, board=board), T0)
+        summary, _ = pipe.build(T0)
+        top10 = summary["top100"]["roles"][0]
+        self.assertEqual((top10["tank"], top10["support"], top10["fighter"]), (3, 3, 4))  # ranks 1-10: i % 4 = 0, 1, 2
 
     def test_the_gear_score_comes_from_the_profile_and_the_board_not_from_the_guild_pages_power(self):
         pipe = Pipeline()

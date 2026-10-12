@@ -180,6 +180,16 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
         board_rows.append({**row(login), "rank": i + 1, "rank_change": None if prev is None else prev - (i + 1),
                            **{k: details.get(login, {}).get(k) for k in ("atk", "def", "sup")}})
 
+    # The roles of the top places, read from the main stat of the gear (the game doesn't publish the chosen role):
+    # {"top": n, "n": players with a known split, "tank": .., "fighter": .., "support": ..} for the top 10/25/50/100.
+    role_of = {"def": "tank", "atk": "fighter", "sup": "support"}
+    top_roles = []
+    for top in (10, 25, 50, 100):
+        known = [r for r in board_rows[:top] if all(r[k] is not None for k in ("atk", "def", "sup"))]
+        top_roles.append({"top": top, "n": len(known), "tank": 0, "fighter": 0, "support": 0})
+        for r in known:
+            top_roles[-1][role_of[main_stat(r)]] += 1
+
     # The Kampfkraft ranking (gear plus talents): the game ranks by the gear score, but its guild pages give the
     # Kampfkraft of every member, so this is the top 100 of everyone known, not only of the game's board.
     power = {login: p["gear"] for login, p in players.items() if p.get("gear") is not None}
@@ -216,7 +226,8 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
                "active": sum(1 for p in players.values() if p.get("active")),
                "board": board_rows, "power_board": power_rows,
                "risers": {"day": risers(DAY), "week": risers(7 * DAY)},
-               "top100": {"gear": top100_gear, "pace": rounded(top100_pace), "series": h.border},
+               "top100": {"gear": top100_gear, "pace": rounded(top100_pace), "series": h.border,
+                          "roles": top_roles},
                "guilds": sorted(guild_rows, key=lambda g: -(g.get("gear") or 0)),
                "fights": {"recent": recent_fights(h),
                           "total": len(h.fights)},

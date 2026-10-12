@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.31.0 (12.10.2026)
+
+**Neu**
+- Ranglisten > Ausrüstungswert: Die Karte "Rollen in der Top 100" zeigt je Top 10, 25, 50 und 100 den Anteil Schildträger, Kämpfer und Unterstützer. Die Rolle wird am größten Wert der Ausrüstung gelesen (Verteidigung, Angriff oder Unterstützung), die gewählte Rolle nennt das Spiel nicht.
+
 ## 0.30.2 (12.10.2026)
 
 **Oberfläche**

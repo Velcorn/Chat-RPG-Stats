@@ -119,6 +119,13 @@
   .chart .bandlabel { fill: var(--text-muted); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; }
   .chart .hair { stroke: var(--text-muted); stroke-width: 1; }
   .chart .empty { fill: var(--text-muted); font-size: 13px; }
+  .rolebar { display: grid; grid-template-columns: 64px minmax(0, 1fr) 76px; gap: 10px; align-items: center; margin: 8px 0; font-size: 13px; }
+  .rolebar .rtrack { display: flex; height: 26px; border-radius: 6px; overflow: hidden; gap: 2px; }
+  .rolebar .rseg { display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; min-width: 4px; }
+  .rseg.atk, .rkey.atk { background: var(--atk); } .rseg.def, .rkey.def { background: var(--def); } .rseg.sup, .rkey.sup { background: var(--sup); }
+  .rolebar .rn { text-align: right; font-size: 12px; }
+  .legend .rkey { width: 10px; height: 10px; border-radius: 2px; }
+  @media (max-width: 640px) { .rolebar { grid-template-columns: 52px minmax(0, 1fr); } .rolebar .rn { display: none; } }
   .chart svg { touch-action: pan-y; user-select: none; -webkit-user-select: none; }
   .chart .glow { fill: none; stroke: var(--series-1); stroke-width: 7; opacity: .28; }
   .chart .line2 { fill: none; stroke: var(--series-2); stroke-width: 2; stroke-dasharray: 6 4; stroke-linejoin: round; }
@@ -888,6 +895,30 @@ function fallChart(box, rows, { color, statName, doneName }) {
 }
 
 // ---- views ----
+// Whole percents of `counts` that add up to 100 (largest remainder).
+function wholePercents(counts) {
+  const total = counts.reduce((a, b) => a + b, 0) || 1, raw = counts.map((c) => 100 * c / total), out = raw.map(Math.floor);
+  const order = raw.map((v, i) => [v - out[i], i]).sort((a, b) => b[0] - a[0]);
+  for (let k = 0; k < 100 - out.reduce((a, b) => a + b, 0); k++) out[order[k][1]]++;
+  return out;
+}
+// The roles in the top 10/25/50/100 as one bar each, read from the main stat of the gear (tank = DEF, fighter = ATK,
+// supporter = SUP): the game doesn't say which role a player picked.
+const ROLE_MIX = [["tank", "Schildträger", "def"], ["fighter", "Kämpfer", "atk"], ["support", "Unterstützer", "sup"]];
+function roleMixCard(s) {
+  const rows = (s.top100.roles || []).filter((r) => r.n);
+  if (!rows.length) return null;
+  const bars = rows.map((r) => {
+    const pc = wholePercents(ROLE_MIX.map(([k]) => r[k]));
+    return el("div", { class: "rolebar" }, el("span", { class: "rl" }, `Top ${r.top}`),
+      el("div", { class: "rtrack" }, ...ROLE_MIX.map(([k, name, cls], i) => r[k]
+        ? el("span", { class: `rseg ${cls}`, style: `flex:${r[k]}`, title: `${name}: ${r[k]} von ${r.n}` }, pc[i] >= 8 ? `${pc[i]} %` : "") : null)),
+      el("span", { class: "muted rn" }, `${r.n} Spieler`));
+  });
+  const legend = el("div", { class: "legend" }, ...ROLE_MIX.map(([, name, cls]) => el("span", {}, el("i", { class: `rkey ${cls}` }), name)));
+  return card("Rollen in der Top 100", ...bars, legend, el("p", { class: "note" },
+    "Die Rolle ist der größte Wert der Ausrüstung: viel Verteidigung = Schildträger, viel Angriff = Kämpfer, viel Unterstützung = Unterstützer. Welche Rolle ein Spieler im Kampf wählt, nennt das Spiel nicht; wer mehrere gleich große Werte hat, zählt nach dem ersten (ATK, DEF, SUP). Gezählt sind die Spieler mit bekannter Verteilung."));
+}
 function viewRanks(s, sub) {
   const scroll = (title, cols, rows) => [card(title, el("div", { class: "scroll" }, table(cols, rows)))];
   if (sub === "kampfkraft") return [
@@ -918,6 +949,7 @@ function viewRanks(s, sub) {
       el("p", { class: "note" }, "Gezählt wird nur, was über dem eigenen Höchstwert der Vorwoche liegt. Bei manchen Spielern bricht der gemessene Wert zwischendurch ein (am 08. und 09.10.2026 bei etwa zwei Dutzend auf 0 bis 60 % ihrer Ausrüstung) und kehrt zurück; der Wiederanstieg zählt nicht als Aufstieg."))];
   }
   return [
+    ...[roleMixCard(s)].filter(Boolean),
     ...scroll("Rangliste Ausrüstungswert (Top 100)", [
       { label: "#", num: true, get: (r) => r.rank },
       { label: "", title: "Plätze seit gestern", get: (r) => r.rank_change ? delta(r.rank_change) : "" },

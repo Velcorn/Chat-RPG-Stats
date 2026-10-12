@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.29.1 (12.10.2026)
+
+**Behoben**
+- Die markierten Sprünge in den Verläufen überlappen sich nicht mehr (auf dem Handy lagen zwei Zahlen übereinander).
+
 ## 0.29.0 (12.10.2026)
 
 **Neu**

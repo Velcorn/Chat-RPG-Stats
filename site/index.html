@@ -511,7 +511,9 @@ function lineChart(box, points, { label, fmt = fmtInt, invert = false, until, em
       const dv = change(pts[i - 1].v, pts[i].v);
       if (Math.abs(dv) >= 0.12 * (hi - lo) && x(last.t) - x(pts[i].t) > 46) jumps.push([Math.abs(dv), dv, pts[i]]);
     }
-    for (const [, dv, p] of jumps.sort((u, w) => w[0] - u[0]).slice(0, 3)) {
+    const picked = [];  // the biggest first, none closer than 36 px to another
+    for (const j of jumps.sort((u, w) => w[0] - u[0])) if (picked.length < 3 && picked.every((q) => Math.abs(x(q[2].t) - x(j[2].t)) > 36)) picked.push(j);
+    for (const [, dv, p] of picked) {
       const up = dv > 0, ly = y(p.v) + ((up !== invert) ? -9 : 15);
       svg.append(sv("circle", { cx: x(p.t), cy: y(p.v), r: 3.5, class: `jump ${up ? "good" : "bad"}` }),
         sv("text", { x: x(p.t), y: Math.min(H - m.b - 2, Math.max(m.t + 8, ly)), "text-anchor": "middle", class: `jumplabel ${up ? "good" : "bad"}` },

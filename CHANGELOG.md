@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.31.2 (12.10.2026)
+
+**Oberfläche**
+- Formen: Die Tabelle rechnet jetzt auch verbesserte und gefasste Stücke ein (deren Schriftrollen- und Steinpunkte werden herausgerechnet) und ist damit auf höheren Stufen genauer: zwölf Formen haben neue Werte von Stufe 10 bis 12 statt 9 (z. B. Berserker 38/20/0, Paladins 0/28/35, Zorns 18/6/6). Nur "des Prinzen" fehlt weiter in den Daten.
+
 ## 0.31.1 (12.10.2026)
 
 **Oberfläche**

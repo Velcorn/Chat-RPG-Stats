@@ -1,4 +1,5 @@
 """Fight statistics: the digests the collector keeps and the sums the build makes of them."""
+import itertools
 import unittest
 from datetime import UTC, datetime
 
@@ -171,6 +172,36 @@ class WhoseTests(unittest.TestCase):
                                    "won": 300, "bosses": 2, "boss_wins": 1})
         self.assertEqual((rows[1]["guild"], rows[1]["raids"], rows[1]["raid_known"]), ("Anders", 1, 0))
         self.assertEqual(fightstats.guild_fights(fights, {}, NOW), [])
+
+
+class WinOddsTests(unittest.TestCase):
+    def test_the_curve_rises_through_the_fights_and_crosses_half_between_them(self):
+        now = fightstats.iso_ts("2026-10-11T12:00:00Z")
+        fights, extra = [], {}
+        for i, (power, won) in enumerate([(70, 0), (75, 0), (80, 0), (85, 1), (90, 0), (95, 1), (100, 1), (110, 1)]):
+            fights.append({"id": i, "kind": "BOSS", "name": "Drache", "outcome": "VICTORY" if won else "DEFEAT",
+                           "endedAt": "2026-10-11T10:00:00Z"})
+            extra[i] = {"power": power, "rec": 100}
+        fights.append({"id": 99, "kind": "BOSS", "name": "alt", "outcome": "DEFEAT", "endedAt": "2026-09-01T10:00:00Z"})
+        extra[99] = {"power": 50, "rec": 100}  # older than 30 days
+        odds = fightstats.win_odds(fights, extra, now)
+        self.assertEqual((odds["n"], odds["points"][0]), (8, [0.7, 0, "Drache"]))
+        fit = odds["fit"]
+        self.assertLess(fit[0][1], 20)
+        self.assertGreater(fit[-1][1], 80)
+        self.assertTrue(all(a[1] <= b[1] for a, b in itertools.pairwise(fit)))
+        self.assertTrue(0.8 < odds["mid"] < 0.95)
+
+    def test_few_fights_or_one_outcome_give_no_curve(self):
+        now = fightstats.iso_ts("2026-10-11T12:00:00Z")
+        fights = [{"id": i, "kind": "BOSS", "name": "D", "outcome": "VICTORY", "endedAt": "2026-10-11T10:00:00Z"}
+                  for i in range(9)]
+        extra = {i: {"power": 90 + i, "rec": 100} for i in range(9)}
+        self.assertEqual(fightstats.win_odds(fights, extra, now)["fit"], [])
+        self.assertEqual(fightstats.win_odds(fights[:3], extra, now)["n"], 3)
+
+    def test_the_fit_stops_on_a_flat_problem(self):
+        self.assertEqual(fightstats.logistic_fit([1.0, 1.0], [0, 1], ridge=0), (0.0, 0.0))
 
 
 if __name__ == "__main__":

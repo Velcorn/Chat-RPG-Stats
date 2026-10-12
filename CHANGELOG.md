@@ -3,6 +3,17 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.29.0 (12.10.2026)
+
+**Neu**
+- Alle Verläufe lassen sich vergrößern: über einen Zeitraum ziehen (auf dem Handy mit zwei Fingern), Doppelklick oder "Alles" zurück; Knöpfe für die letzten 24 Stunden und 7 Tage. Der Hinweis nennt die Änderung zum Wert davor und seit dem Anfang des Ausschnitts, die größten Sprünge sind markiert, die Linie zeichnet sich beim Öffnen.
+- Spielerseite: Vergleichslinie im Verlauf des Ausrüstungswerts (Grenze Top 100, Platz 1, nächster Platz, beliebiger Spieler), "Verteilung der Werte" als Dreieck aus ATK, DEF und SUP mit allen bekannten Spielern, Verteilung der Ausrüstungswerte als Säulen.
+- Startseite: Verteilung der Ausrüstungswerte aller Spieler mit der Grenze zur Top 100.
+- Kämpfe > Kampfkraft: Siegchance der Bosse nach Kampfkraft der Gruppe als Punkte und Kurve.
+
+**Oberfläche**
+- Werte und Überleben in Bosssiegen: Kurven mit Sicherheitsband statt Balken.
+
 ## 0.28.1 (12.10.2026)
 
 **Oberfläche**

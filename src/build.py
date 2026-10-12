@@ -39,6 +39,7 @@ class History:
         self.guild: dict[str, list] = defaultdict(list)      # login -> [[t, guild login or None], ...]
         self.details: dict[str, list] = defaultdict(list)    # login -> [[t, {atk, def, sup, silver, quests}], ...]
         self.rank: dict[str, list] = defaultdict(list)       # login -> [[t, rank on the gear board or None], ...]
+        self.border: list[list] = []                         # [[t, gear score of place 100], ...] (only changes)
         self.guilds: dict[str, list] = defaultdict(list)     # guild -> [[t, treasury, members, active, gear], ...]
         self.fights: list[dict] = []
         self.fightx: dict[int, dict] = defaultdict(dict)  # fight id -> detail and live digests (since 0.9.0)
@@ -73,6 +74,8 @@ class History:
                 for i, login in enumerate(new):
                     put(self.rank[login], t, i + 1)
                 board = new
+                if len(new) >= 100:
+                    put(self.border, t, rec["boards"]["gear"][99][1])
             for g, v in rec.get("guilds", {}).items():
                 full = guild_now[g] = {**guild_now.get(g, {}), **v}
                 self.guilds[g].append([t, *(full.get(k) for k in ("treasury", "members", "active", "gear"))])
@@ -213,7 +216,7 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
                "active": sum(1 for p in players.values() if p.get("active")),
                "board": board_rows, "power_board": power_rows,
                "risers": {"day": risers(DAY), "week": risers(7 * DAY)},
-               "top100": {"gear": top100_gear, "pace": rounded(top100_pace)},
+               "top100": {"gear": top100_gear, "pace": rounded(top100_pace), "series": h.border},
                "guilds": sorted(guild_rows, key=lambda g: -(g.get("gear") or 0)),
                "fights": {"recent": recent_fights(h),
                           "total": len(h.fights)},
@@ -222,6 +225,7 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
                         "before": fightstats.fight_stats(h.fights, h.fightx, now, hi=fightstats.UPDATE)},
                "guild_fights": fightstats.guild_fights(h.fights, h.fightx, now),
                "stat_curves": fightstats.stat_curves(h.fights, h.fightx, now),
+               "win_odds": fightstats.win_odds(h.fights, h.fightx, now),
                "first_kills": state.get("first_kills", []),
                "channels": state.get("channels", {}),
                "channel_stats": channel_stats(h, state, summary_stats["channels"]),
@@ -238,6 +242,9 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
                                            for login, p in players.items() if p.get("gs") is not None),
                                           key=lambda r: -r[2]))
     with_split = [x for x in gear if all(details.get(x, {}).get(k) is not None for k in ("atk", "def", "sup"))]
+    # Every known split without names, for the build map: [attack, defense, support, gear score].
+    write(target / "builds.json", [[details[x]["atk"], details[x]["def"], details[x]["sup"], gear[x]]
+                                   for x in with_split])
     gear_sorted = sorted(gear.values())
     for login in gear:
         write(target / "p" / f"{login}.json", player_page(login, h, state, now, rank, paces, with_split,

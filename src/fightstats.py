@@ -6,6 +6,7 @@ average gear and power and the recommendation). Digests exist only for fights co
 """
 from __future__ import annotations
 
+import math
 from collections import defaultdict
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -214,3 +215,47 @@ def stat_curves(fights: list[dict], extra: dict[int, dict], now: float, days: in
                         for stat, rows in stats.items()} for role, stats in b["sums"].items()}
         out.append({"boss": b["boss"], "fights": b["fights"], "roles": roles})
     return sorted(out, key=lambda r: -r["fights"])
+
+
+def logistic_fit(xs: list[float], ys: list[int], ridge: float = 0.001, steps: int = 50) -> tuple[float, float]:
+    """Intercept and slope of p(win) = 1 / (1 + e^-(a + b x)) by Newton's method, with a little ridge on the slope
+    so that fights that split cleanly (all lost below, all won above) still give a finite curve."""
+    a = b = 0.0
+    for _ in range(steps):
+        ga = gb = haa = hab = hbb = 0.0
+        for x, y in zip(xs, ys, strict=True):
+            p = 1 / (1 + math.exp(-max(-30.0, min(30.0, a + b * x))))
+            w = p * (1 - p)
+            ga, gb = ga + y - p, gb + (y - p) * x
+            haa, hab, hbb = haa + w, hab + w * x, hbb + w * x * x
+        gb -= ridge * b
+        hbb += ridge
+        det = haa * hbb - hab * hab
+        if det <= 1e-12:
+            break
+        da, db = (hbb * ga - hab * gb) / det, (haa * gb - hab * ga) / det
+        a, b = a + da, b + db
+        if abs(da) + abs(db) < 1e-9:
+            break
+    return a, b
+
+
+def win_odds(fights: list[dict], extra: dict[int, dict], now: float, days: int = 30) -> dict:
+    """Boss fights of the last `days` whose live view gave the group's average Kampfkraft and the recommendation:
+    each as [Kampfkraft / recommendation, won, boss], and a logistic curve through them ([[ratio, win %], ...]) with
+    the ratio at which it crosses 50 % (`mid`). Few fights or one outcome only: no curve."""
+    points = []
+    for f in fights:
+        d, t = extra.get(f["id"], {}), iso_ts(f.get("endedAt"))
+        if f.get("kind") == "BOSS" and d.get("power") and d.get("rec") and t and t >= now - days * DAY:
+            points.append([round(d["power"] / d["rec"], 3), int(f.get("outcome") == "VICTORY"), f.get("name")])
+    out: dict = {"n": len(points), "points": points, "fit": [], "mid": None}
+    if len(points) < 8 or len({p[1] for p in points}) < 2:
+        return out
+    a, b = logistic_fit([p[0] for p in points], [p[1] for p in points])
+    lo, hi = min(p[0] for p in points), max(p[0] for p in points)
+    pad = (hi - lo) * 0.08 or 0.05
+    xs = [lo - pad + (hi - lo + 2 * pad) * i / 40 for i in range(41)]
+    out["fit"] = [[round(x, 3), round(100 / (1 + math.exp(-max(-30.0, min(30.0, a + b * x)))), 1)] for x in xs]
+    out["mid"] = round(-a / b, 3) if b > 0 and lo - pad <= -a / b <= hi + pad else None
+    return out

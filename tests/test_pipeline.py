@@ -256,6 +256,9 @@ class BuildEdgeTests(unittest.TestCase):
         summary, out = pipe.build(T0 + 2 * DAY)
         self.assertEqual(summary["top100"]["gear"], 500 - 99 + 4)
         self.assertEqual(summary["top100"]["pace"], 2.0)
+        self.assertEqual(summary["top100"]["series"], [[T0 + d * DAY, 401 + 2 * d] for d in range(3)])
+        builds = json.loads((out / "builds.json").read_text())
+        self.assertEqual((len(builds), builds[0][:3]), (100, [10, 10, 10]))  # no names, only the split and the score
         page = json.loads((out / "p" / "p050.json").read_text())
         self.assertIsNone(page["forecast"]["top100_gap"])  # already in
 

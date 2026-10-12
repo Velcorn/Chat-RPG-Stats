@@ -119,6 +119,45 @@
   .chart .bandlabel { fill: var(--text-muted); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; }
   .chart .hair { stroke: var(--text-muted); stroke-width: 1; }
   .chart .empty { fill: var(--text-muted); font-size: 13px; }
+  .chart svg { touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+  .chart .glow { fill: none; stroke: var(--series-1); stroke-width: 7; opacity: .28; }
+  .chart .line2 { fill: none; stroke: var(--series-2); stroke-width: 2; stroke-dasharray: 6 4; stroke-linejoin: round; }
+  .chart .end2 { fill: var(--series-2); stroke: var(--surface-1); stroke-width: 2; }
+  .chart .sel { fill: var(--series-1); opacity: .16; stroke: var(--series-1); stroke-opacity: .6; }
+  .chart .hit { cursor: crosshair; }
+  .chart .jump { fill: var(--surface-1); stroke-width: 2; } .chart .jump.good { stroke: var(--good); } .chart .jump.bad { stroke: var(--critical); }
+  .chart .jumplabel { font-size: 10.5px; font-weight: 700; } .chart .jumplabel.good { fill: var(--good); } .chart .jumplabel.bad { fill: var(--critical); }
+  .chart .draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 1.2s ease-out forwards; }
+  .chart .fadein { animation: fade 1s ease-out both; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  @keyframes fade { from { opacity: 0; } }
+  .chart .bin { fill: color-mix(in srgb, var(--series-1) 55%, transparent); } .chart .bin:hover { fill: var(--series-1); }
+  .chart .bin.hot { fill: var(--series-2); }
+  .chart .mark { stroke-width: 2; } .chart .mark.me { stroke: var(--series-2); } .chart .mark.ref { stroke: var(--text-muted); stroke-dasharray: 4 3; }
+  .chart .marklabel { font-size: 11px; font-weight: 650; fill: var(--text-secondary); } .chart .marklabel.me { fill: var(--series-2); }
+  .chart .tri { fill: color-mix(in srgb, var(--text-primary) 3%, transparent); stroke: var(--border); }
+  .chart .corner { font-size: 12px; font-weight: 700; } .chart .corner.atk { fill: var(--atk); } .chart .corner.def { fill: var(--def); } .chart .corner.sup { fill: var(--sup); }
+  .chart .dot { opacity: .22; } .chart .dot.atk { fill: var(--atk); } .chart .dot.def { fill: var(--def); } .chart .dot.sup { fill: var(--sup); }
+  .chart .tme { fill: var(--text-primary); stroke: var(--page); stroke-width: 2; } .chart .me-halo { fill: none; stroke: var(--text-primary); stroke-width: 2; opacity: .6; }
+  .tern-box svg { height: auto; max-width: 440px; margin: 0 auto; }
+  .chart .dot.near { opacity: .95; }
+  .chart .fit { stroke: var(--text-primary); }
+  .chart .odot, .odot-key { stroke: var(--surface-1); stroke-width: 1.5; opacity: .9; }
+  .b0 { fill: #3987e5; background: #3987e5; } .b1 { fill: #d99a1c; background: #d99a1c; } .b2 { fill: #2fae6d; background: #2fae6d; }
+  .b3 { fill: #e5534b; background: #e5534b; } .b4 { fill: #a77de0; background: #a77de0; } .b5 { fill: #3fb8c4; background: #3fb8c4; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+  .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+  .chart .ci { opacity: .2; } .chart .ci.atk { fill: var(--atk); } .chart .ci.def { fill: var(--def); } .chart .ci.sup { fill: var(--sup); }
+  .chart .fall { fill: none; stroke-width: 2.4; stroke-linejoin: round; } .chart .fall.atk { stroke: var(--atk); } .chart .fall.def { stroke: var(--def); } .chart .fall.sup { stroke: var(--sup); }
+  .chart .fdot { stroke: var(--surface-1); stroke-width: 1.5; } .chart .fdot.atk { fill: var(--atk); } .chart .fdot.def { fill: var(--def); } .chart .fdot.sup { fill: var(--sup); }
+  .chart-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+  .chart-head h2 { margin: 0; }
+  .chart-ctl { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  select.cmp, input.cmp { font: inherit; font-size: 12px; padding: 2px 6px; border-radius: 6px; background: var(--surface-2); color: var(--text-primary); border: 1px solid var(--border); }
+  input.cmp { width: 120px; }
+  .tip .tipline { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+  .tip .key.k2 { background: var(--series-2); height: 0; border-top: 2px dashed var(--series-2); }
+  @media (prefers-reduced-motion: reduce) { .chart .draw, .chart .fadein { animation: none; stroke-dashoffset: 0; } }
   .tip { position: absolute; pointer-events: none; background: var(--surface-2); border: 1px solid var(--border);
          border-radius: 6px; padding: 6px 9px; font-size: 12px; white-space: nowrap; display: none; z-index: 2; }
   .tip strong { display: block; font-size: 14px; }
@@ -146,14 +185,6 @@
   .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   @media (max-width: 900px) { .grid.three { grid-template-columns: minmax(0, 1fr); } }
   .statrole h2 { margin-bottom: 2px; }
-  .statgrid { display: grid; grid-template-columns: 44px minmax(0, 1fr) minmax(0, 1fr); gap: 6px 12px; align-items: center; font-size: 13px; font-variant-numeric: tabular-nums; }
-  .statgrid .h { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-secondary); }
-  .statgrid .k { color: var(--text-secondary); }
-  .statgrid .v { display: grid; grid-template-columns: minmax(0, 1fr) 46px; align-items: center; gap: 8px; text-align: right; }
-  .minibar { display: block; height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
-  .minibar i { display: block; height: 100%; border-radius: 3px; }
-  .minibar.fell i { background: var(--text-muted); } .minibar.atk i { background: var(--atk); }
-  .minibar.def i { background: var(--def); } .minibar.sup i { background: var(--sup); }
   .gear { display: grid; }
   .grow { display: grid; grid-template-columns: 44px 34px minmax(0, 1fr) repeat(3, 62px); gap: 0 12px; align-items: center;
           padding: 8px 0; border-top: 1px solid var(--grid); }
@@ -339,7 +370,9 @@ function seg(options, current, onPick) {
   return box;
 }
 
-// ---- chart (a line chart drawn as steps: a value holds until the next change) ----
+// ---- charts ----
+// Line charts are steps: a value holds until the next change. Every one zooms: drag across it (two fingers on a
+// phone) to look closer, double-click or "Alles" to go back; the buttons above pick the last 24 hours or 7 days.
 function niceTicks(lo, hi, n = 4) {
   if (lo === hi) { lo -= 1; hi += 1; }
   const raw = (hi - lo) / n, mag = 10 ** Math.floor(Math.log10(raw));
@@ -355,114 +388,491 @@ function sv(tag, attrs = {}, text) {
   if (text != null) n.textContent = text;
   return n;
 }
+const REDUCED_MOTION = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const DAY_S = 86400, MIN_SPAN = 1800;
+let chartIds = 0;
+// The points within [a, b], led by the value that holds at a (a step line starts there).
+function stepSlice(points, a, b) {
+  const inside = points.filter((p) => p.t >= a && p.t <= b);
+  const before = points.filter((p) => p.t < a).pop();
+  return before && (!inside.length || inside[0].t > a) ? [{ t: a, v: before.v }, ...inside] : inside;
+}
+function stepAt(points, t) { let v = null; for (const p of points) { if (p.t > t) break; v = p.v; } return v; }
+// A tooltip that stays inside its chart.
+function placeTip(tip, left, width) {
+  tip.style.display = "block";
+  tip.style.left = Math.min(Math.max(0, left - tip.offsetWidth / 2), width - tip.offsetWidth) + "px";
+  tip.style.top = "-8px";
+}
+
+// `compare`: further series [{name, points}] drawn dashed for comparison. Returns a handle to set the visible span
+// (`range(seconds)`, `reset()`) and the comparison (`setCompare(list)`); `onView(view)` hears every change of span.
 function lineChart(box, points, { label, fmt = fmtInt, invert = false, until, empty = "noch keine Daten",
-  missing = invert ? "nicht in den Top 100" : "-" }) {
-  box.replaceChildren();
-  if (until && points.length && until > points[points.length - 1].t) points = [...points, { t: until, v: points[points.length - 1].v }];
-  const lastPt = points.filter((p) => p.v != null).pop();
-  const endText = lastPt ? (invert ? "#" + lastPt.v : fmt(lastPt.v)) : "";
-  const W = Math.max(220, box.clientWidth), H = 220, m = { l: 60, r: 28 + endText.length * 7.6, t: 10, b: 22 };
-  const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": label });
-  box.append(svg);
-  const pts = points.filter((p) => p.v != null);
-  if (pts.length === 0) {
-    svg.append(sv("text", { x: W / 2, y: H / 2, "text-anchor": "middle", class: "empty" }, empty));
-    return;
-  }
-  const t0 = Math.min(...points.map((p) => p.t)), t1 = Math.max(...points.map((p) => p.t));
-  let lo = Math.min(...pts.map((p) => p.v)), hi = Math.max(...pts.map((p) => p.v));
-  let ticks = niceTicks(lo, hi).filter((v) => Number.isInteger(v));
-  if (invert) ticks = [...new Set(ticks.map((v) => Math.max(1, v)))];
-  if (!ticks.length) ticks = [lo];
-  lo = Math.min(lo, ticks[0]); hi = Math.max(hi, ticks[ticks.length - 1]);
-  if (lo === hi) hi = lo + 1;
-  const x = (t) => m.l + (t1 === t0 ? 0.5 : (t - t0) / (t1 - t0)) * (W - m.l - m.r);
-  const y = (v) => { const f = (v - lo) / (hi - lo); return m.t + (invert ? f : 1 - f) * (H - m.t - m.b); };
-  const axis = sv("g", { class: "axis" });
-  for (const v of ticks) {
-    axis.append(sv("line", { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), class: "gridline" }));
-    axis.append(sv("text", { x: m.l - 8, y: y(v) + 4, "text-anchor": "end" }, invert ? "#" + v : fmtInt(v)));
-  }
-  const xt = t1 === t0 ? 0 : Math.max(1, Math.min(4, Math.floor((W - m.l - m.r) / 75)));
-  for (let i = 0; i <= xt; i++) {
-    const t = t0 + (t1 - t0) * i / xt;
-    axis.append(sv("text", { x: x(t), y: H - 4, "text-anchor": xt === 0 ? "middle" : i === 0 ? "start" : i === xt ? "end" : "middle" },
-      (t1 - t0) > 2 * 86400 ? new Date(t * 1000).toLocaleDateString("de-DE", { timeZone: TZ, day: "2-digit", month: "2-digit" }) : fmtClock(t)));
-  }
-  svg.append(axis);
-  // Step line (a value holds until the next snapshot); gaps (e.g. rank outside the top 100) break it. The area
-  // runs toward the better side (up for ranks), so more fill is always better. Ranks get Top 10/25/50 bands.
-  const runs = []; let cur = null;
-  for (const p of points) { if (p.v == null) { cur = null; continue; } if (!cur) runs.push(cur = []); cur.push(p); }
-  const base = invert ? m.t : H - m.b;
-  const gid = "g" + Math.random().toString(36).slice(2, 7);
-  const grad = sv("linearGradient", { id: gid, x1: 0, x2: 0, y1: invert ? 1 : 0, y2: invert ? 0 : 1 });
-  grad.append(sv("stop", { offset: "0%", "stop-color": "var(--series-1)", "stop-opacity": ".34" }),
-    sv("stop", { offset: "100%", "stop-color": "var(--series-1)", "stop-opacity": "0" }));
-  const defs = sv("defs"); defs.append(grad); svg.append(defs);
-  if (invert) {
-    [[1, 10, "Top 10", .07], [10, 25, "Top 25", .11], [25, 50, "Top 50", .07]].forEach(([from, to, name, opacity]) => {
-      const ya = y(Math.max(lo, from)), yb = y(Math.min(hi, to));
-      if (to < lo || from > hi || yb <= ya) return;
-      svg.insertBefore(sv("rect", { x: m.l, y: ya, width: W - m.l - m.r, height: yb - ya, class: "band", opacity }), axis);
-      // The name goes in the middle of its band, at the left or the right end, wherever the line leaves room (the
-      // line is a step: a point holds its value until the next). No room on either side, or a thin band: no label.
-      if (yb - ya < 16) return;
-      const mid = (ya + yb) / 2, wide = 74;
-      const hits = (x0, x1) => pts.some((p, i) => {
-        const a = x(p.t), next = pts[i + 1], b = next ? x(next.t) : W - m.r;
-        const flat = b >= x0 && a <= x1 && Math.abs(y(p.v) - mid) < 10;  // the level of this point
-        const step = next && b >= x0 && b <= x1 && Math.min(y(p.v), y(next.v)) < mid + 10 && Math.max(y(p.v), y(next.v)) > mid - 10;
-        return flat || step;  // or the step up or down to the next one
+  missing = invert ? "nicht in den Top 100" : "-", compare = [], onView } = {}) {
+  const extend = (ps) => until && ps.length && until > ps[ps.length - 1].t ? [...ps, { t: until, v: ps[ps.length - 1].v }] : ps;
+  points = extend(points);
+  let others = compare.map((c) => ({ ...c, points: extend(c.points) }));
+  const full = points.length ? [points[0].t, points[points.length - 1].t] : [0, 0];
+  const id = ++chartIds;
+  let view = null, fresh = !REDUCED_MOTION;
+  const valueText = (v) => v == null ? missing : invert ? "#" + v : fmt(v);
+  const change = (a, b) => invert ? a - b : b - a;  // up is better: for ranks that is a smaller number
+  const changeText = (d) => d === 0 ? "+-0" : (d > 0 ? "+" : "-") + (invert ? fmtInt(Math.abs(d)) + (Math.abs(d) === 1 ? " Platz" : " Plätze") : fmt(Math.abs(d)));
+
+  function draw() {
+    box.replaceChildren();
+    const [a, b] = view || full;
+    const vis = stepSlice(points, a, b), pts = vis.filter((p) => p.v != null);
+    const visOthers = others.map((o) => ({ ...o, vis: stepSlice(o.points, a, b).filter((p) => p.v != null) }));
+    const last = pts[pts.length - 1];
+    const endText = last ? valueText(last.v) : "";
+    const W = Math.max(220, box.clientWidth), H = 220, m = { l: 60, r: 28 + endText.length * 7.6, t: 14, b: 22 };
+    const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": label });
+    box.append(svg);
+    if (!pts.length) {
+      svg.append(sv("text", { x: W / 2, y: H / 2, "text-anchor": "middle", class: "empty" }, empty));
+      return;
+    }
+    const t0 = a, t1 = b;
+    const values = [...pts, ...visOthers.flatMap((o) => o.vis)].map((p) => p.v);
+    let lo = Math.min(...values), hi = Math.max(...values);
+    let ticks = niceTicks(lo, hi).filter((v) => Number.isInteger(v));
+    if (invert) ticks = [...new Set(ticks.map((v) => Math.max(1, v)))];
+    if (!ticks.length) ticks = [lo];
+    lo = Math.min(lo, ticks[0]); hi = Math.max(hi, ticks[ticks.length - 1]);
+    if (lo === hi) hi = lo + 1;
+    const x = (t) => m.l + (t1 === t0 ? 0.5 : (t - t0) / (t1 - t0)) * (W - m.l - m.r);
+    const tAt = (px) => t0 + Math.min(1, Math.max(0, (px - m.l) / (W - m.l - m.r))) * (t1 - t0);
+    const y = (v) => { const f = (v - lo) / (hi - lo); return m.t + (invert ? f : 1 - f) * (H - m.t - m.b); };
+    const defs = sv("defs");
+    const gid = `cg${id}`, fid = `cf${id}`;
+    const grad = sv("linearGradient", { id: gid, x1: 0, x2: 0, y1: invert ? 1 : 0, y2: invert ? 0 : 1 });
+    grad.append(sv("stop", { offset: "0%", "stop-color": "var(--series-1)", "stop-opacity": ".38" }),
+      sv("stop", { offset: "70%", "stop-color": "var(--series-1)", "stop-opacity": ".06" }),
+      sv("stop", { offset: "100%", "stop-color": "var(--series-1)", "stop-opacity": "0" }));
+    const blur = sv("filter", { id: fid, x: "-10%", y: "-30%", width: "120%", height: "160%" });
+    blur.append(sv("feGaussianBlur", { stdDeviation: "3.5" }));
+    defs.append(grad, blur);
+    svg.append(defs);
+    const axis = sv("g", { class: "axis" });
+    for (const v of ticks) {
+      axis.append(sv("line", { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), class: "gridline" }));
+      axis.append(sv("text", { x: m.l - 8, y: y(v) + 4, "text-anchor": "end" }, invert ? "#" + v : fmtInt(v)));
+    }
+    const span = t1 - t0, long = span <= 2 * DAY_S && span > DAY_S / 2;
+    const xt = span === 0 ? 0 : Math.max(1, Math.min(5, Math.floor((W - m.l - m.r) / (long ? 130 : 80))));
+    const dayFmt = (t) => new Date(t * 1000).toLocaleDateString("de-DE", { timeZone: TZ, day: "2-digit", month: "2-digit" });
+    for (let i = 0; i <= xt; i++) {
+      const t = t0 + span * i / (xt || 1);
+      axis.append(sv("text", { x: x(t), y: H - 4, "text-anchor": xt === 0 ? "middle" : i === 0 ? "start" : i === xt ? "end" : "middle" },
+        span > 2 * DAY_S ? dayFmt(t) : long ? `${dayFmt(t)} ${fmtClock(t)}` : fmtClock(t)));
+    }
+    svg.append(axis);
+    // Ranks get Top 10/25/50 bands, named where the line leaves room.
+    if (invert) {
+      [[1, 10, "Top 10", .07], [10, 25, "Top 25", .11], [25, 50, "Top 50", .07]].forEach(([from, to, name, opacity]) => {
+        const ya = y(Math.max(lo, from)), yb = y(Math.min(hi, to));
+        if (to < lo || from > hi || yb <= ya) return;
+        svg.insertBefore(sv("rect", { x: m.l, y: ya, width: W - m.l - m.r, height: yb - ya, class: "band", opacity }), axis);
+        if (yb - ya < 16) return;
+        const mid = (ya + yb) / 2, wide = 74;
+        const hits = (x0, x1) => pts.some((p, i) => {
+          const pa = x(p.t), next = pts[i + 1], pb = next ? x(next.t) : W - m.r;
+          const flat = pb >= x0 && pa <= x1 && Math.abs(y(p.v) - mid) < 10;
+          const step = next && pb >= x0 && pb <= x1 && Math.min(y(p.v), y(next.v)) < mid + 10 && Math.max(y(p.v), y(next.v)) > mid - 10;
+          return flat || step;
+        });
+        const left = !hits(m.l, m.l + wide), right = !hits(W - m.r - wide, W - m.r);
+        if (left || right) svg.insertBefore(sv("text", { x: left ? m.l + 8 : W - m.r - 8, y: mid + 4, class: "bandlabel",
+          "text-anchor": left ? "start" : "end" }, name), axis);
       });
-      const left = !hits(m.l, m.l + wide), right = !hits(W - m.r - wide, W - m.r);
-      if (left || right) svg.insertBefore(sv("text", { x: left ? m.l + 8 : W - m.r - 8, y: mid + 4, class: "bandlabel",
-        "text-anchor": left ? "start" : "end" }, name), axis);
+    }
+    // Step paths; gaps (e.g. a rank outside the top 100) break the line. The area runs toward the better side.
+    const stepPath = (ps) => {
+      const runs = []; let cur = null;
+      for (const p of ps) { if (p.v == null) { cur = null; continue; } if (!cur) runs.push(cur = []); cur.push(p); }
+      return runs.map((run) => run.map((p, i) => i === 0 ? `M${x(p.t).toFixed(1)},${y(p.v).toFixed(1)}`
+        : `H${x(p.t).toFixed(1)}V${y(p.v).toFixed(1)}`).join("")).join("");
+    };
+    const base = invert ? m.t : H - m.b;
+    let area = "";
+    { const runs = []; let cur = null;
+      for (const p of vis) { if (p.v == null) { cur = null; continue; } if (!cur) runs.push(cur = []); cur.push(p); }
+      for (const run of runs) area += run.map((p, i) => i === 0 ? `M${x(p.t).toFixed(1)},${y(p.v).toFixed(1)}`
+        : `H${x(p.t).toFixed(1)}V${y(p.v).toFixed(1)}`).join("") + `L${x(run[run.length - 1].t).toFixed(1)},${base}L${x(run[0].t).toFixed(1)},${base}Z`; }
+    const d = stepPath(vis);
+    svg.append(sv("path", { d: area, fill: `url(#${gid})`, class: fresh ? "fadein" : "" }));
+    visOthers.forEach((o, i) => svg.append(sv("path", { d: stepPath(o.vis), class: `line2 c${i}` })));
+    svg.append(sv("path", { d, class: "glow", filter: `url(#${fid})` }));
+    svg.append(sv("path", { d, class: fresh ? "line draw" : "line", ...(fresh ? { pathLength: 1 } : {}) }));
+    // The biggest moves in view get a dot and their size (at most three, each a real share of the scale).
+    const jumps = [];
+    for (let i = 1; i < pts.length; i++) {
+      const dv = change(pts[i - 1].v, pts[i].v);
+      if (Math.abs(dv) >= 0.12 * (hi - lo) && x(last.t) - x(pts[i].t) > 46) jumps.push([Math.abs(dv), dv, pts[i]]);
+    }
+    for (const [, dv, p] of jumps.sort((u, w) => w[0] - u[0]).slice(0, 3)) {
+      const up = dv > 0, ly = y(p.v) + ((up !== invert) ? -9 : 15);
+      svg.append(sv("circle", { cx: x(p.t), cy: y(p.v), r: 3.5, class: `jump ${up ? "good" : "bad"}` }),
+        sv("text", { x: x(p.t), y: Math.min(H - m.b - 2, Math.max(m.t + 8, ly)), "text-anchor": "middle", class: `jumplabel ${up ? "good" : "bad"}` },
+          (dv > 0 ? "+" : "-") + fmtInt(Math.abs(dv))));
+    }
+    svg.append(sv("circle", { cx: x(last.t), cy: y(last.v), r: 9, class: "halo" }),
+      sv("circle", { cx: x(last.t), cy: y(last.v), r: 4.5, class: "end" }));
+    const pillW = endText.length * 7.6 + 12;
+    svg.append(sv("rect", { x: x(last.t) + 12, y: y(last.v) - 11, width: pillW, height: 22, rx: 11, class: "pill" }),
+      sv("text", { x: x(last.t) + 18, y: y(last.v) + 4, class: "endlabel" }, endText));
+
+    const hair = sv("line", { y1: m.t, y2: H - m.b, class: "hair", visibility: "hidden" });
+    const dot = sv("circle", { r: 4.5, class: "end", visibility: "hidden" });
+    const dots2 = visOthers.map((o, i) => sv("circle", { r: 3.5, class: `end2 c${i}`, visibility: "hidden" }));
+    const sel = sv("rect", { y: m.t, height: H - m.t - m.b, class: "sel", visibility: "hidden" });
+    const hit = sv("rect", { x: m.l, y: 0, width: W - m.l - m.r, height: H, fill: "transparent", class: "hit" });
+    svg.append(hair, dot, ...dots2, sel, hit);
+    const tip = el("div", { class: "tip" });
+    box.append(tip);
+    const pxOf = (ev) => { const r = svg.getBoundingClientRect(); return (ev.clientX - r.left) * W / r.width; };
+    const hide = () => { for (const n of [hair, dot, ...dots2]) n.setAttribute("visibility", "hidden"); tip.style.display = "none"; };
+    function hover(px) {
+      let best = vis[0];
+      for (const p of vis) if (Math.abs(x(p.t) - px) < Math.abs(x(best.t) - px)) best = p;
+      const t = px < x(best.t) - 1 || px > x(best.t) + 1 ? tAt(px) : best.t;
+      const v = stepAt(vis, t), cx = x(t);
+      hair.setAttribute("x1", cx); hair.setAttribute("x2", cx); hair.setAttribute("visibility", "visible");
+      if (v != null) { dot.setAttribute("cx", cx); dot.setAttribute("cy", y(v)); dot.setAttribute("visibility", "visible"); }
+      else dot.setAttribute("visibility", "hidden");
+      const idx = vis.findLastIndex((p) => p.t <= t);
+      const prev = vis.slice(0, idx).reverse().find((p) => p.v != null && p.v !== v);
+      const first = pts[0];
+      const lines = [el("strong", {}, valueText(v)), el("span", { class: "key" }), el("span", { class: "muted" }, `${label} | ${fmtTime(t)}`)];
+      if (v != null && prev) lines.push(el("div", { class: "tipline" }, `${changeText(change(prev.v, v))} zum Wert davor`));
+      if (v != null && first && first.t < t) lines.push(el("div", { class: "tipline" }, `${changeText(change(first.v, v))} seit ${fmtTime(first.t)}`));
+      visOthers.forEach((o, i) => {
+        const ov = stepAt(o.vis, t);
+        if (ov == null) { dots2[i].setAttribute("visibility", "hidden"); return; }
+        dots2[i].setAttribute("cx", cx); dots2[i].setAttribute("cy", y(ov)); dots2[i].setAttribute("visibility", "visible");
+        lines.push(el("div", { class: "tipline" }, el("span", { class: `key k2 c${i}` }), `${o.name}: ${valueText(ov)}`,
+          v != null ? el("span", { class: "muted" }, ` (${changeText(change(ov, v))})`) : null));
+      });
+      tip.replaceChildren(...lines);
+      placeTip(tip, cx * svg.getBoundingClientRect().width / W, svg.getBoundingClientRect().width);
+    }
+    // Drag to zoom into a span; two fingers pinch; double-click resets.
+    const touches = new Map();
+    let drag = null, pinch = null;
+    hit.addEventListener("pointerdown", (ev) => {
+      hit.setPointerCapture(ev.pointerId);
+      touches.set(ev.pointerId, pxOf(ev));
+      if (touches.size === 2) {
+        const [p, q] = [...touches.values()];
+        pinch = { d: Math.abs(p - q) || 1, mid: tAt((p + q) / 2), span: t1 - t0 };
+        drag = null; sel.setAttribute("visibility", "hidden");
+      } else { drag = { x0: pxOf(ev), moved: false }; hover(drag.x0); }
+    });
+    hit.addEventListener("pointermove", (ev) => {
+      if (!touches.has(ev.pointerId)) { hover(pxOf(ev)); return; }
+      touches.set(ev.pointerId, pxOf(ev));
+      if (pinch && touches.size === 2) {
+        const [p, q] = [...touches.values()];
+        const s = Math.max(MIN_SPAN, pinch.span * pinch.d / (Math.abs(p - q) || 1));
+        setView([pinch.mid - s / 2, pinch.mid + s / 2]);
+        return;
+      }
+      if (!drag) return;
+      const px = pxOf(ev);
+      if (Math.abs(px - drag.x0) > 6) {
+        drag.moved = true;
+        const l = Math.max(m.l, Math.min(px, drag.x0)), r = Math.min(W - m.r, Math.max(px, drag.x0));
+        sel.setAttribute("x", l); sel.setAttribute("width", r - l); sel.setAttribute("visibility", "visible");
+        hide();
+      } else hover(px);
+    });
+    const release = (ev) => {
+      touches.delete(ev.pointerId);
+      if (pinch) { if (!touches.size) pinch = null; return; }
+      if (drag && drag.moved) {
+        const px = pxOf(ev), ta = tAt(Math.min(px, drag.x0)), tb = tAt(Math.max(px, drag.x0));
+        drag = null; sel.setAttribute("visibility", "hidden");
+        if (tb - ta >= MIN_SPAN / 2) setView([ta, Math.max(tb, ta + MIN_SPAN)]);
+        return;
+      }
+      drag = null;
+      if (ev.pointerType === "mouse") return;  // a tap keeps its tooltip until the next touch
+    };
+    hit.addEventListener("pointerup", release);
+    hit.addEventListener("pointercancel", (ev) => { touches.delete(ev.pointerId); drag = pinch = null; sel.setAttribute("visibility", "hidden"); hide(); });
+    hit.addEventListener("pointerleave", (ev) => { if (ev.pointerType === "mouse" && !drag) hide(); });
+    hit.addEventListener("dblclick", () => setView(null));
+    fresh = false;
+  }
+  function setView(v) {
+    if (v) {
+      let [a, b] = v;
+      const s = Math.min(Math.max(b - a, MIN_SPAN), full[1] - full[0]);
+      if (a < full[0]) a = full[0];
+      b = a + s;
+      if (b > full[1]) { b = full[1]; a = b - s; }
+      v = b - a >= full[1] - full[0] - 1 ? null : [a, b];
+    }
+    view = v;
+    draw();
+    if (onView) onView(view);
+  }
+  draw();
+  return {
+    range: (seconds) => setView([full[1] - seconds, full[1]]),
+    reset: () => setView(null),
+    setCompare: (list) => { others = list.map((c) => ({ ...c, points: extend(c.points) })); draw(); },
+    span: full[1] - full[0],
+  };
+}
+
+// A chart card: range buttons (only those shorter than the data), a reset after a drag-zoom, and with
+// `opts.compare` a picker for a comparison line ([{key, label, load: async () => ({name, points})}]).
+function chartCard(title, series, opts = {}) {
+  const box = el("div", { class: "chart", title: "Ziehen zum Vergrößern, Doppelklick für alles" });
+  const pts = series.map(([t, v]) => ({ t, v }));
+  const span = pts.length ? Math.max(opts.until || 0, pts[pts.length - 1].t) - pts[0].t : 0;
+  const ranges = [["day", "24 h", DAY_S], ["week", "7 T", 7 * DAY_S], ["all", "Alles", 0]].filter(([, , s]) => s < span);
+  let ctl = null;
+  const buttons = ranges.length > 1 ? seg(ranges.map(([k, l]) => [k, l]), "all", (k) => {
+    const s = ranges.find((r) => r[0] === k)[2];
+    if (s) ctl.range(s); else ctl.reset();
+  }) : null;
+  const press = (k) => { if (buttons) for (const b of buttons.children) b.setAttribute("aria-pressed", String(b.textContent === k)); };
+  const onView = (v) => {
+    if (!v) return press("Alles");
+    const r = ranges.find(([, , s]) => s && Math.abs(v[1] - v[0] - s) < 60 && v[1] >= span + pts[0].t - 60);
+    press(r ? r[1] : "");
+  };
+  let picker = null, asked = null;
+  if (opts.compare && opts.compare.length) {
+    picker = el("select", { class: "cmp", "aria-label": "Vergleich" }, el("option", { value: "" }, "ohne Vergleich"),
+      ...opts.compare.map((c) => el("option", { value: c.key }, c.label)));
+    const show = async (c, arg) => { try { const got = await c.load(arg); ctl.setCompare(got ? [got] : []); } catch { ctl.setCompare([]); } };
+    // "anderer Spieler": a name field with the known players as suggestions.
+    asked = el("input", { class: "cmp", type: "search", placeholder: "Name", list: "cmp-names", hidden: "" });
+    asked.addEventListener("change", () => show(opts.compare.find((x) => x.ask), asked.value.trim().toLowerCase()));
+    picker.addEventListener("change", async () => {
+      const c = opts.compare.find((x) => x.key === picker.value);
+      asked.hidden = !(c && c.ask);
+      if (!c) return ctl.setCompare([]);
+      if (c.ask) {
+        if (!document.getElementById("cmp-names")) {
+          const list = el("datalist", { id: "cmp-names" });
+          document.body.append(list);
+          load("players.json").then((ps) => list.replaceChildren(...ps.slice(0, 1500).map((q) => el("option", { value: q[0] }, q[1])))).catch(() => {});
+        }
+        return asked.focus();
+      }
+      show(c);
     });
   }
-  let d = "", area = "";
-  for (const run of runs) {
-    let seg = "";
-    run.forEach((p, i) => { const px = x(p.t).toFixed(1), py = y(p.v).toFixed(1); seg += i === 0 ? `M${px},${py}` : `H${px}V${py}`; });
-    d += seg;
-    area += `${seg}L${x(run[run.length - 1].t).toFixed(1)},${base}L${x(run[0].t).toFixed(1)},${base}Z`;
-  }
-  svg.append(sv("path", { d: area, fill: `url(#${gid})` }));
-  svg.append(sv("path", { d, class: "line" }));
-  const last = pts[pts.length - 1];
-  svg.append(sv("circle", { cx: x(last.t), cy: y(last.v), r: 9, class: "halo" }));
-  svg.append(sv("circle", { cx: x(last.t), cy: y(last.v), r: 4.5, class: "end" }));
-  const endLabel = endText, pillW = endLabel.length * 7.6 + 12;
-  svg.append(sv("rect", { x: x(last.t) + 12, y: y(last.v) - 11, width: pillW, height: 22, rx: 11, class: "pill" }));
-  svg.append(sv("text", { x: x(last.t) + 18, y: y(last.v) + 4, class: "endlabel" }, endLabel));
+  requestAnimationFrame(() => { ctl = lineChart(box, pts, { label: title, ...opts, compare: [], onView }); });
+  return el("section", { class: "card" }, el("div", { class: "chart-head" }, el("h2", {}, title), el("div", { class: "chart-ctl" }, picker, asked, buttons)), box);
+}
 
-  const hair = sv("line", { y1: m.t, y2: H - m.b, class: "hair", visibility: "hidden" });
-  const dot = sv("circle", { r: 4, class: "end", visibility: "hidden" });
-  const hit = sv("rect", { x: m.l, y: 0, width: W - m.l - m.r, height: H, fill: "transparent" });
-  svg.append(hair, dot, hit);
+// ---- distribution, build map, odds and fall curves ----
+// Gear scores of everyone known as a histogram, with the viewed player and the top-100 border marked.
+function histogram(box, values, { marks = [], step, label = "Ausrüstungswert" } = {}) {
+  box.replaceChildren();
+  if (!values.length) return;
+  const lo = Math.min(...values), hi = Math.max(...values);
+  step = step || Math.max(5, niceTicks(0, hi - lo, 30)[1] || 10);
+  const start = Math.floor(lo / step) * step, n = Math.floor((hi - start) / step) + 1;
+  const bins = Array(n).fill(0);
+  for (const v of values) bins[Math.floor((v - start) / step)]++;
+  const W = Math.max(260, box.clientWidth), H = 200, m = { l: 44, r: 12, t: 22, b: 22 };
+  const top = Math.max(...bins);
+  const yt = niceTicks(0, top, 3).filter((v) => Number.isInteger(v));
+  const ymax = Math.max(top, yt[yt.length - 1]);
+  const x = (v) => m.l + (v - start) / (n * step) * (W - m.l - m.r), y = (c) => H - m.b - c / ymax * (H - m.t - m.b);
+  const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": label });
+  box.append(svg);
+  const axis = sv("g", { class: "axis" });
+  for (const v of yt) {
+    axis.append(sv("line", { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), class: "gridline" }),
+      sv("text", { x: m.l - 6, y: y(v) + 4, "text-anchor": "end" }, fmtInt(v)));
+  }
+  for (const v of niceTicks(start, start + n * step, Math.max(2, Math.floor((W - m.l - m.r) / 70)))) {
+    if (v >= start && v <= start + n * step) axis.append(sv("text", { x: x(v), y: H - 4, "text-anchor": "middle" }, fmtInt(v)));
+  }
+  svg.append(axis);
+  const bw = (W - m.l - m.r) / n;
   const tip = el("div", { class: "tip" });
   box.append(tip);
-  hit.addEventListener("pointermove", (ev) => {
-    const r = svg.getBoundingClientRect(), px = (ev.clientX - r.left) * W / r.width;
-    let best = points[0];
-    for (const p of points) if (Math.abs(x(p.t) - px) < Math.abs(x(best.t) - px)) best = p;
-    const cx = x(best.t);
-    hair.setAttribute("x1", cx); hair.setAttribute("x2", cx); hair.setAttribute("visibility", "visible");
-    if (best.v != null) { dot.setAttribute("cx", cx); dot.setAttribute("cy", y(best.v)); dot.setAttribute("visibility", "visible"); }
-    else dot.setAttribute("visibility", "hidden");
-    tip.replaceChildren(el("strong", {}, best.v == null ? missing : (invert ? "#" + best.v : fmt(best.v))),
-      el("span", { class: "key" }), el("span", { class: "muted" }, `${label} | ${fmtTime(best.t)}`));
-    tip.style.display = "block";
-    const left = cx * r.width / W;
-    tip.style.left = Math.min(Math.max(0, left - tip.offsetWidth / 2), r.width - tip.offsetWidth) + "px";
-    tip.style.top = "-6px";
+  bins.forEach((c, i) => {
+    const from = start + i * step, hot = marks.some((mk) => mk.v >= from && mk.v < from + step && mk.cls === "me");
+    const r = sv("rect", { x: x(from) + 0.5, y: y(c), width: Math.max(1, bw - 1), height: H - m.b - y(c), rx: Math.min(2, bw / 4),
+      class: hot ? "bin hot" : "bin" });
+    r.addEventListener("pointerenter", () => {
+      tip.replaceChildren(el("strong", {}, count(c, "Spieler", "Spieler")), el("span", { class: "muted" }, `${fmtInt(from)} bis ${fmtInt(from + step - 1)}`));
+      placeTip(tip, (x(from) + bw / 2) * svg.getBoundingClientRect().width / W, svg.getBoundingClientRect().width);
+    });
+    r.addEventListener("pointerleave", () => { tip.style.display = "none"; });
+    svg.append(r);
   });
-  hit.addEventListener("pointerleave", () => { hair.setAttribute("visibility", "hidden"); dot.setAttribute("visibility", "hidden"); tip.style.display = "none"; });
+  marks.forEach((mk, i) => {
+    if (mk.v == null) return;
+    const mx = x(mk.v);
+    svg.append(sv("line", { x1: mx, x2: mx, y1: m.t - 4, y2: H - m.b, class: `mark ${mk.cls}` }),
+      sv("text", { x: mx + (mx > W * 0.75 ? -4 : 4), y: m.t - 8 + i * 12, "text-anchor": mx > W * 0.75 ? "end" : "start", class: `marklabel ${mk.cls}` }, mk.label));
+  });
 }
-function chartCard(title, series, opts) {
+function distributionCard(title, marks, note) {
   const box = el("div", { class: "chart" });
-  requestAnimationFrame(() => lineChart(box, series.map(([t, v]) => ({ t, v })), { label: title, ...opts }));
-  return card(title, box);
+  load("players.json").then((ps) => requestAnimationFrame(() => histogram(box, ps.map((p) => p[2]), { marks }))).catch(() => {});
+  return card(title, box, note ? el("p", { class: "note" }, note) : null);
+}
+
+// Every known split as a dot in a triangle (attack bottom left, defense on top, support bottom right), colored by
+// the main stat; the viewed player is the ring.
+const STAT_KEYS = ["atk", "def", "sup"];
+function buildMap(box, builds, me, { near = null } = {}) {
+  box.replaceChildren();
+  const W = Math.max(260, Math.min(box.clientWidth, 440)), side = W - 40, h = side * Math.sqrt(3) / 2, H = h + 46;
+  const A = [20, 18 + h], D = [20 + side / 2, 18], S = [20 + side, 18 + h];
+  const at = (a, d, s) => { const t = a + d + s || 1; return [(a * A[0] + d * D[0] + s * S[0]) / t, (a * A[1] + d * D[1] + s * S[1]) / t]; };
+  const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Verteilung der Werte", class: "tern" });
+  box.append(svg);
+  svg.append(sv("path", { d: `M${A}L${D}L${S}Z`, class: "tri" }));
+  for (const f of [0.2, 0.4, 0.6, 0.8]) {  // lines of equal share for each stat
+    const g = [[at(f, 1 - f, 0), at(f, 0, 1 - f)], [at(1 - f, f, 0), at(0, f, 1 - f)], [at(1 - f, 0, f), at(0, 1 - f, f)]];
+    for (const [p, q] of g) svg.append(sv("line", { x1: p[0], y1: p[1], x2: q[0], y2: q[1], class: "gridline" }));
+  }
+  svg.append(sv("text", { x: A[0], y: A[1] + 16, class: "corner atk" }, "ATK"),
+    sv("text", { x: D[0], y: D[1] - 6, "text-anchor": "middle", class: "corner def" }, "DEF"),
+    sv("text", { x: S[0], y: S[1] + 16, "text-anchor": "end", class: "corner sup" }, "SUP"));
+  // Everyone dim, the players of a similar gear score (within 10 %) on top and strong.
+  const isNear = (b) => near != null && Math.abs(b[3] - near) <= Math.max(10, near * 0.1);
+  builds = builds.filter((b) => b[0] + b[1] + b[2] > 0);
+  const shown = [...builds.filter((b) => !isNear(b)), ...builds.filter(isNear)];
+  const g = sv("g", { class: "dots" });
+  for (const b of shown) {
+    const [px, py] = at(b[0], b[1], b[2]), main = STAT_KEYS[[b[0], b[1], b[2]].indexOf(Math.max(b[0], b[1], b[2]))];
+    g.append(sv("circle", { cx: px.toFixed(1), cy: py.toFixed(1), r: isNear(b) ? 3.4 : 1.8, class: `dot ${main}${isNear(b) ? " near" : ""}` }));
+  }
+  svg.append(g);
+  const tip = el("div", { class: "tip" });
+  box.append(tip);
+  const share = (b) => { const t = b[0] + b[1] + b[2] || 1; return b.slice(0, 3).map((v) => Math.round(100 * v / t)); };
+  if (me) {
+    const [px, py] = at(me.atk, me.def, me.sup);
+    svg.append(sv("circle", { cx: px, cy: py, r: 9, class: "me-halo" }), sv("circle", { cx: px, cy: py, r: 5, class: "tme" }));
+  }
+  const hit = sv("rect", { x: 0, y: 0, width: W, height: H, fill: "transparent" });
+  svg.append(hit);
+  hit.addEventListener("pointermove", (ev) => {
+    const r = svg.getBoundingClientRect(), px = (ev.clientX - r.left) * W / r.width, py = (ev.clientY - r.top) * W / r.width;
+    let best = null, bd = 144;
+    for (const b of shown) { const [qx, qy] = at(b[0], b[1], b[2]); const dd = (qx - px) ** 2 + (qy - py) ** 2; if (dd < bd) { bd = dd; best = b; } }
+    if (!best) { tip.style.display = "none"; return; }
+    const [sa, sd, ss] = share(best);
+    tip.replaceChildren(el("strong", {}, `${fmtInt(best[3])} Punkte`), el("span", { class: "muted" }, `ATK ${sa} % | DEF ${sd} % | SUP ${ss} %`));
+    placeTip(tip, px * r.width / W, r.width);
+  });
+  hit.addEventListener("pointerleave", () => { tip.style.display = "none"; });
+  return builds.filter(isNear).length;
+}
+function buildMapCard(me, gear) {
+  const box = el("div", { class: "chart tern-box" }), info = el("p", { class: "note" });
+  load("builds.json").then((builds) => requestAnimationFrame(() => {
+    const n = buildMap(box, builds, me, { near: gear });
+    info.textContent = `${count(builds.length, "Spieler", "Spieler")} mit bekannter Verteilung, kräftig die ${fmtInt(n)} um ${fmtInt(gear)} Punkte (bis 10 % Abstand). Je näher ein Punkt an einer Ecke liegt, desto mehr steckt in diesem Wert; die Farbe ist der Hauptwert.${me ? " Der Ring ist dieser Spieler." : ""}`;
+  })).catch(() => {});
+  return card("Verteilung der Werte", box, info);
+}
+
+// Boss wins against the group's Kampfkraft relative to the recommendation: each fight a dot (won on top, lost at the
+// bottom), the fitted chance as a curve.
+function oddsChart(box, odds) {
+  box.replaceChildren();
+  const W = Math.max(260, box.clientWidth), H = 230, m = { l: 44, r: 14, t: 16, b: 34 };
+  const xs = odds.points.map((p) => p[0]).concat(odds.fit.map((p) => p[0]));
+  const lo = Math.min(...xs), hi = Math.max(...xs);
+  const x = (v) => m.l + (v - lo) / (hi - lo || 1) * (W - m.l - m.r), y = (pc) => m.t + (1 - pc / 100) * (H - m.t - m.b);
+  const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Siegchance" });
+  box.append(svg);
+  const axis = sv("g", { class: "axis" });
+  for (const pc of [0, 25, 50, 75, 100]) axis.append(sv("line", { x1: m.l, x2: W - m.r, y1: y(pc), y2: y(pc), class: "gridline" }),
+    sv("text", { x: m.l - 6, y: y(pc) + 4, "text-anchor": "end" }, `${pc} %`));
+  for (const v of niceTicks(lo * 100, hi * 100, 5)) if (v / 100 >= lo && v / 100 <= hi) axis.append(sv("text", { x: x(v / 100), y: H - 16, "text-anchor": "middle" }, `${v} %`));
+  axis.append(sv("text", { x: (m.l + W - m.r) / 2, y: H - 2, "text-anchor": "middle" }, "Ø Kampfkraft der Gruppe in % der Empfehlung"));
+  svg.append(axis);
+  svg.append(sv("line", { x1: x(1), x2: x(1), y1: m.t, y2: H - m.b, class: "mark ref" }));
+  const bosses = [...new Set(odds.points.map((p) => p[2]))];
+  const tip = el("div", { class: "tip" });
+  box.append(tip);
+  odds.points.forEach((p, i) => {
+    const jitter = ((i * 37) % 11 - 5) * 1.6, py = y(p[1] ? 100 : 0) + (p[1] ? 8 : -8) + jitter;
+    const c = sv("circle", { cx: x(p[0]), cy: py, r: 4.5, class: `odot b${bosses.indexOf(p[2]) % 6}` });
+    c.addEventListener("pointerenter", () => {
+      tip.replaceChildren(el("strong", {}, p[1] ? "gewonnen" : "verloren"), el("span", { class: "muted" }, `${p[2]}, ${fmtInt(100 * p[0])} % der Empfehlung`));
+      placeTip(tip, x(p[0]) * svg.getBoundingClientRect().width / W, svg.getBoundingClientRect().width);
+    });
+    c.addEventListener("pointerleave", () => { tip.style.display = "none"; });
+    svg.append(c);
+  });
+  if (odds.fit.length) {
+    const d = odds.fit.map((p, i) => `${i ? "L" : "M"}${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`).join("");
+    svg.insertBefore(sv("path", { d, class: "line fit" }), svg.querySelector(".odot"));
+    if (odds.mid != null) svg.append(sv("circle", { cx: x(odds.mid), cy: y(50), r: 5, class: "end" }),
+      sv("text", { x: x(odds.mid) + 8, y: y(50) - 8, class: "marklabel" }, `50 % bei ${fmtInt(100 * odds.mid)} %`));
+  }
+  return bosses;
+}
+function oddsCard(odds) {
+  if (!odds || !odds.n) return card("Siegchance nach Kampfkraft", el("p", { class: "note" }, "Noch keine Bosskämpfe mit Kampfkraft erfasst."));
+  const box = el("div", { class: "chart" }), legend = el("div", { class: "legend" });
+  requestAnimationFrame(() => {
+    const bosses = oddsChart(box, odds);
+    legend.replaceChildren(...bosses.map((b, i) => el("span", {}, el("i", { class: `odot-key b${i % 6}` }), b.replace(/^(Die|Das|Der) /, ""))));
+  });
+  return card("Siegchance nach Kampfkraft", box, legend, el("p", { class: "note" },
+    `${count(odds.n, "Bosskampf", "Bosskämpfe")} der letzten 30 Tage, deren Durchschnitte das Spiel noch zeigte: oben die gewonnenen, unten die verlorenen. Die Kurve ist die geschätzte Siegchance (logistische Regression über alle Bosse)${odds.fit.length ? "" : "; für eine Kurve fehlen noch Kämpfe oder Niederlagen"}.`));
+}
+
+// Fall rate per step of a role's own stat, with its 95 % range (Wilson): the fewer fighters, the wider.
+function wilson(k, n, z = 1.96) {
+  if (!n) return [0, 100];
+  const p = k / n, d = 1 + z * z / n, c = p + z * z / (2 * n), e = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n));
+  return [100 * Math.max(0, (c - e) / d), 100 * Math.min(1, (c + e) / d)];
+}
+function fallChart(box, rows, { color, statName, doneName }) {
+  box.replaceChildren();
+  if (rows.length < 2) { box.append(el("p", { class: "note" }, "Noch zu wenige Teilnahmen.")); return; }
+  const W = Math.max(220, box.clientWidth), H = 190, m = { l: 40, r: 12, t: 12, b: 34 };
+  const lo = rows[0].k, hi = rows[rows.length - 1].k + STAT_STEP;
+  const x = (v) => m.l + (v - lo) / (hi - lo) * (W - m.l - m.r), y = (pc) => m.t + (1 - pc / 100) * (H - m.t - m.b);
+  const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": `Gefallen nach ${statName}` });
+  box.append(svg);
+  const axis = sv("g", { class: "axis" });
+  for (const pc of [0, 25, 50, 75, 100]) axis.append(sv("line", { x1: m.l, x2: W - m.r, y1: y(pc), y2: y(pc), class: "gridline" }),
+    sv("text", { x: m.l - 6, y: y(pc) + 4, "text-anchor": "end" }, `${pc} %`));
+  for (const v of niceTicks(lo, hi, Math.max(2, Math.floor((W - m.l - m.r) / 60)))) if (v >= lo && v <= hi) axis.append(sv("text", { x: x(v), y: H - 18, "text-anchor": "middle" }, fmtInt(v)));
+  axis.append(sv("text", { x: (m.l + W - m.r) / 2, y: H - 2, "text-anchor": "middle" }, statName));
+  svg.append(axis);
+  const mid = (r) => x(r.k + STAT_STEP / 2);
+  const bands = rows.map((r) => wilson(Math.round(r.n * r.fell / 100), r.n));
+  const upper = rows.map((r, i) => `${i ? "L" : "M"}${mid(r).toFixed(1)},${y(bands[i][1]).toFixed(1)}`).join("");
+  const lower = rows.map((r, i) => `L${mid(r).toFixed(1)},${y(bands[i][0]).toFixed(1)}`).reverse().join("");
+  svg.append(sv("path", { d: upper + lower + "Z", class: `ci ${color}` }));
+  svg.append(sv("path", { d: rows.map((r, i) => `${i ? "L" : "M"}${mid(r).toFixed(1)},${y(r.fell).toFixed(1)}`).join(""), class: `fall ${color}` }));
+  const nmax = Math.max(...rows.map((r) => r.n));
+  const tip = el("div", { class: "tip" });
+  box.append(tip);
+  rows.forEach((r, i) => {
+    const c = sv("circle", { cx: mid(r), cy: y(r.fell), r: 2.5 + 4 * Math.sqrt(r.n / nmax), class: `fdot ${color}` });
+    c.addEventListener("pointerenter", () => {
+      tip.replaceChildren(el("strong", {}, `${fmtDec(r.fell, 0)} % gefallen`),
+        el("span", { class: "muted" }, `${statName} ${r.k} bis ${r.k + STAT_STEP - 1}, ${fmtInt(r.n)} Teilnahmen`),
+        el("div", { class: "tipline" }, `95 % sicher zwischen ${fmtDec(bands[i][0], 0)} und ${fmtDec(bands[i][1], 0)} %`),
+        el("div", { class: "tipline" }, `Ø ${doneName} ${fmtInt(r.done)}`));
+      placeTip(tip, mid(r) * svg.getBoundingClientRect().width / W, svg.getBoundingClientRect().width);
+    });
+    c.addEventListener("pointerleave", () => { tip.style.display = "none"; });
+    svg.append(c);
+  });
 }
 
 // ---- views ----
@@ -624,6 +1034,25 @@ function gearHero(p) {
     cls && sp ? el("p", { class: "note" }, `Strich: Median von ${clsName}${cls.band ? ", Band: die mittleren 80 %" : ""}.`) : null);
 }
 
+// What a player's gear line can be compared with: the top-100 border, place 1, the next place up, anyone.
+function gearCompare(s, p, login) {
+  const pts = (series) => series.map(([t, v]) => ({ t, v }));
+  const of = async (other, name) => ({ name, points: pts((await load(`p/${encodeURIComponent(other)}.json`)).series.gear) });
+  const out = [];
+  if (s.top100.series && s.top100.series.length) out.push({ key: "border", label: "Grenze Top 100", load: async () => ({ name: "Platz 100", points: pts(s.top100.series) }) });
+  const first = s.board[0];
+  if (first && first.login !== login) out.push({ key: "first", label: "Platz 1", load: () => of(first.login, first.name) });
+  out.push({ key: "next", label: "Nächster Platz", load: async () => {
+    const ps = await load("players.json"), i = ps.findIndex((q) => q[0] === login);
+    return i > 0 ? of(ps[i - 1][0], ps[i - 1][1]) : null;
+  } });
+  out.push({ key: "other", label: "Anderer Spieler", ask: true, load: async (name) => {
+    const ps = await load("players.json"), q = ps.find((r) => r[0] === name || r[1].toLowerCase() === name);
+    return q ? of(q[0], q[1]) : null;
+  } });
+  return out;
+}
+
 async function viewPlayer(s, login) {
   let p;
   try { p = await load(`p/${encodeURIComponent(login)}.json`); }
@@ -661,13 +1090,16 @@ async function viewPlayer(s, login) {
     el("div", { class: "head start" }, el("h1", {}, p.name), g ? el("a", { href: `#/gilden/${g.login}` }, g.name) : null,
       p.active === false ? el("span", { class: "tag" }, "laut Gilde inaktiv") : null,
       gameLink(`/spieler/${login}`, "Im Spiel"), shareButton(p, login)),
-    el("div", { class: "grid two" }, hero, chartCard("Ausrüstungswert", p.series.gear, { until: s.generated })),
+    el("div", { class: "grid two" }, hero, chartCard("Ausrüstungswert", p.series.gear, { until: s.generated, compare: gearCompare(s, p, login) })),
     el("div", { class: "grid two" }, card("Gilde", guild), card("Prognose", forecast)),
   ];
   const charts = [];
   if (p.series.rank.length) charts.push(chartCard("Rang (Top 100)", p.series.rank, { invert: true, until: s.generated }));
   if (p.series.silver.length) charts.push(chartCard("Silber", p.series.silver, { fmt: fmtSilver, until: s.generated }));
   if (charts.length) out.push(el("div", { class: "grid two" }, ...charts));
+  const split = p.split && p.split.atk != null ? p.split : null;
+  out.push(el("div", { class: "grid two" }, buildMapCard(split, p.gear),
+    distributionCard("Ausrüstungswert aller Spieler", [{ v: p.gear, label: p.name, cls: "me" }, { v: s.top100.gear, label: "Platz 100", cls: "ref" }])));
 
   if (p.watch) {
     const st = p.watch.stats || {};
@@ -799,6 +1231,8 @@ function viewStart(s) {
         { label: "Ø Ausrüstungswert", num: true, get: (g) => fmtDec(g.avg_gear, 1) },
       ], guilds), more("#/gilden/vergleich", "Gilden im Vergleich")] : el("p", { class: "note" }, "Noch keine Gilden mit mindestens 10 aktiven Mitgliedern.")),
     ),
+    distributionCard("Ausrüstungswert aller Spieler", [{ v: s.top100.gear, label: "Platz 100", cls: "ref" }],
+      "Jeder Balken zählt die Spieler mit diesem Ausrüstungswert; der Strich ist die Grenze zur Top 100."),
     card("Zuletzt", el("dl", { class: "facts" },
         el("dt", {}, "Regeländerung"), el("dd", {}, lastRule
           ? el("a", { href: "#/spiel/aenderungen" }, `${ruleName(lastRule[1])}: ${ruleText(lastRule[1], lastRule[2])} -> ${ruleText(lastRule[1], lastRule[3])} (${fmtTime(lastRule[0])})`)
@@ -886,17 +1320,10 @@ function statRows(rows) {
 }
 function roleCard(c, [role, stat, title, statName, doneName, color]) {
   const rows = statRows(((c.roles[role] || {})[stat]) || []);
-  const maxDone = Math.max(1, ...rows.map((r) => r.done));
-  const bar = (w, cls) => el("span", { class: `minibar ${cls}` }, el("i", { style: `width:${Math.max(2, w)}%` }));
+  const box = el("div", { class: "chart" });
+  requestAnimationFrame(() => fallChart(box, rows, { color, statName, doneName }));
   return el("section", { class: "card statrole" }, el("h2", {}, title),
-    el("p", { class: "note" }, `nach ${statName}, ${fmtInt(rows.reduce((a, r) => a + r.n, 0))} Teilnahmen`),
-    rows.length ? el("div", { class: "statgrid" },
-      el("span", { class: "h" }, stat.toUpperCase()), el("span", { class: "h" }, "Gefallen"), el("span", { class: "h" }, `Ø ${doneName}`),
-      ...rows.flatMap((r) => [
-        el("span", { class: "k", title: `${r.k} bis ${r.k + STAT_STEP - 1}, ${fmtInt(r.n)} Teilnahmen` }, `${r.k}+`),
-        el("span", { class: "v" }, bar(r.fell, "fell"), `${fmtDec(r.fell, 0)} %`),
-        el("span", { class: "v" }, bar(100 * r.done / maxDone, color), fmtInt(r.done))]))
-      : el("p", { class: "note" }, "Noch zu wenige Teilnahmen."));
+    el("p", { class: "note" }, `Gefallen nach ${statName}, ${fmtInt(rows.reduce((a, r) => a + r.n, 0))} Teilnahmen`), box);
 }
 function statCurvesCard(s) {
   const curves = s.stat_curves || [];
@@ -907,7 +1334,7 @@ function statCurvesCard(s) {
   const render = () => {
     const c = curves.find((x) => x.boss === statBoss);
     box.replaceChildren(el("div", { class: "grid three" }, ...STAT_ROLES.map((r) => roleCard(c, r))),
-      el("p", { class: "note" }, `${count(c.fights, "Sieg", "Siege")} gegen ${c.boss} in den letzten 30 Tagen. "Gefallen": wer am Ende nicht mehr stand; die Wutrunde am Schluss trifft fast alle, die Werte helfen vor allem davor. Die Werte stammen aus den Profilen (Top 100 und Beobachtungsliste mit allen Verbesserungen, sonst die letzte Lesung). Stufen mit weniger als ${STAT_MIN} Teilnahmen fehlen.`));
+      el("p", { class: "note" }, `${count(c.fights, "Sieg", "Siege")} gegen ${c.boss} in den letzten 30 Tagen. "Gefallen": wer am Ende nicht mehr stand; die Wutrunde am Schluss trifft fast alle, die Werte helfen vor allem davor. Die Werte stammen aus den Profilen (Top 100 und Beobachtungsliste mit allen Verbesserungen, sonst die letzte Lesung). Stufen mit weniger als ${STAT_MIN} Teilnahmen fehlen. Die Linie ist der Anteil Gefallener, das Band der Bereich, in dem er mit 95 % Sicherheit liegt (je weniger Teilnahmen, desto breiter); größere Punkte stehen für mehr Teilnahmen.`));
   };
   render();
   return el("section", { class: "grid" },
@@ -926,6 +1353,7 @@ function viewPower(s) {
       el("dt", {}, "Ø Ausrüstung"), el("dd", {}, fmtInt(p.avg_gear)),
       el("dt", {}, "Ø empfohlen"), el("dd", {}, p.rec ? fmtInt(p.rec) : "nicht gemessen")) : el("p", { class: "note" }, "Noch keine Kämpfe mit Kampfkraft erfasst."),
       el("p", { class: "note" }, `Die Durchschnitte nennt das Spiel nur, solange es den Kampf noch anzeigt; die Seite sieht sie deshalb nur bei einem Teil der Kämpfe (bisher ${fmtInt(p.n)} von ${fmtInt(st.fights)}). Die Empfehlung gibt es nicht bei jeder Kampfart.`)),
+    oddsCard(s.win_odds),
     card("Siegquote nach Abstand zur Empfehlung", p.margins.some((m) => m.n) ? el("div", { class: "scroll" }, table([
       { label: "Ø Kampfkraft / Empfehlung", get: bucket },
       { label: "Kämpfe", num: true, get: (m) => fmtInt(m.n) },

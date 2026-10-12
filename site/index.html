@@ -119,7 +119,11 @@
   .chart .bandlabel { fill: var(--text-muted); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; }
   .chart .hair { stroke: var(--text-muted); stroke-width: 1; }
   .chart .empty { fill: var(--text-muted); font-size: 13px; }
-  .chart.redchart svg { height: 150px; }
+  .chart.redchart svg { height: 140px; }
+  .redfacts { margin-top: 10px; } .redfacts + .chart { margin-top: 2px; }
+  details.fold > summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .08em; list-style: none; }
+  details.fold > summary::before { content: "+ "; color: var(--text-muted); } details.fold[open] > summary::before { content: "- "; }
+  details.fold[open] > summary { margin-bottom: 10px; }
   .rolebar { display: grid; grid-template-columns: 64px minmax(0, 1fr) 76px; gap: 10px; align-items: center; margin: 8px 0; font-size: 13px; }
   .rolebar .rtrack { display: flex; height: 26px; border-radius: 6px; overflow: hidden; gap: 2px; }
   .rolebar .rseg { display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; min-width: 4px; }
@@ -919,7 +923,7 @@ function roleMixCard(s) {
   });
   const legend = el("div", { class: "legend" }, ...ROLE_MIX.map(([, name, cls]) => el("span", {}, el("i", { class: `rkey ${cls}` }), name)));
   return card("Rollen in der Top 100", ...bars, legend, el("p", { class: "note" },
-    "Die Rolle ist der größte Wert der Ausrüstung: viel Verteidigung = Schildträger, viel Angriff = Kämpfer, viel Unterstützung = Unterstützer. Welche Rolle ein Spieler im Kampf wählt, nennt das Spiel nicht; wer mehrere gleich große Werte hat, zählt nach dem ersten (ATK, DEF, SUP). Gezählt sind die Spieler mit bekannter Verteilung."));
+    "Rolle = größter Wert der Ausrüstung (DEF Schildträger, ATK Kämpfer, SUP Unterstützer). Die gewählte Rolle nennt das Spiel nicht."));
 }
 function viewRanks(s, sub) {
   const scroll = (title, cols, rows) => [card(title, el("div", { class: "scroll" }, table(cols, rows)))];
@@ -932,7 +936,7 @@ function viewRanks(s, sub) {
       { label: "24 h", num: true, title: "Änderung der Kampfkraft", get: (r) => delta(r.power_day) },
       { label: "Ausrüstungswert", num: true, title: "Ohne Talente; danach ordnet das Spiel", get: (r) => fmtInt(r.gear) },
     ], s.power_board),
-    el("p", { class: "note" }, "Kampfkraft ist die Ausrüstung plus der Bonus aus den Talenten. Das Spiel ordnet seine Rangliste nach dem Ausrüstungswert; hier stehen alle erfassten Spieler (Gildenmitglieder und die Top 100) nach der Kampfkraft, die ihre Gildenseiten nennen.")];
+    el("p", { class: "note" }, "Kampfkraft = Ausrüstung plus Talente. Das Spiel selbst ordnet nach dem Ausrüstungswert.")];
   if (sub === "aufsteiger") {
     let span = "day";
     const riserBox = el("div");
@@ -948,7 +952,7 @@ function viewRanks(s, sub) {
     renderRisers();
     return [el("section", { class: "card" }, el("div", { class: "head" }, el("h2", {}, "Aufsteiger (Ausrüstungswert)"),
       seg([["day", "24 Stunden"], ["week", "7 Tage"]], span, (k) => { span = k; renderRisers(); })), riserBox,
-      el("p", { class: "note" }, "Gezählt wird nur, was über dem eigenen Höchstwert der Vorwoche liegt. Bei manchen Spielern bricht der gemessene Wert zwischendurch ein (am 08. und 09.10.2026 bei etwa zwei Dutzend auf 0 bis 60 % ihrer Ausrüstung) und kehrt zurück; der Wiederanstieg zählt nicht als Aufstieg."))];
+      el("p", { class: "note" }, "Gezählt wird nur, was über dem eigenen Höchstwert der Vorwoche liegt; ein Einbruch mit Wiederanstieg zählt nicht."))];
   }
   return [
     ...[roleMixCard(s)].filter(Boolean),
@@ -1112,7 +1116,7 @@ function gearHero(p) {
       gap ? el("span", { class: "muted" }, gap) : null,
       p.pace == null ? null : el("span", { class: "muted", title: "Durchschnitt der letzten 7 Tage" }, `${signed(p.pace, 1)} / Tag`)),
     el("div", { class: "srs" }, ...rows),
-    cls && sp ? el("p", { class: "note" }, `Strich: Median von ${clsName}${cls.band ? ", Band: die mittleren 80 %" : ""}.`) : null);
+    cls && sp ? el("p", { class: "note" }, `Strich: Median von ${cls.n} Spielern mit gleichem Hauptwert (${cls.main.toUpperCase()}) und ähnlichem Wert${cls.band ? ", Band: mittlere 80 %" : ""}.`) : null);
 }
 
 // What a player's gear line can be compared with: the top-100 border, place 1, the next place up, anyone.
@@ -1146,59 +1150,64 @@ async function viewPlayer(s, login) {
 
   let top100;
   if (f.top100_gap == null) top100 = p.board_rank ? `drin, Platz ${p.board_rank}` : "-";
-  else top100 = `${count(f.top100_gap, "Punkt", "Punkte")} bis zur Grenze` + (f.top100_days ? `, bei deinem Tempo ${inDays(f.top100_days)} (die Grenze steigt mit)`
-    : p.pace == null ? "" : ", bei diesem Tempo holst du sie nicht ein (sie steigt mindestens so schnell)");
+  else top100 = `${count(f.top100_gap, "Punkt", "Punkte")} bis zur Grenze` + (f.top100_days ? `, bei deinem Tempo ${inDays(f.top100_days)}`
+    : p.pace == null ? "" : ", die Grenze steigt schneller als du");
   const forecast = el("dl", { class: "facts" },
     el("dt", {}, "Vergleich"), el("dd", {}, p.standing.better >= 99.95
-      ? `Die meiste Ausrüstung der ${fmtInt(p.standing.of)} erfassten Spieler.`
-      : `Mehr Ausrüstung als ${fmtDec(p.standing.better, 1)} % der ${fmtInt(p.standing.of)} erfassten Spieler.`),
-    el("dt", {}, "Nächster Rang"), el("dd", {}, f.next_gap == null ? "keiner, du stehst vorn"
+      ? `Mehr als alle ${fmtInt(p.standing.of)} erfassten Spieler`
+      : `Mehr als ${fmtDec(p.standing.better, 1)} % der ${fmtInt(p.standing.of)} Spieler`),
+    el("dt", {}, "Nächster Rang"), el("dd", {}, f.next_gap == null ? "du stehst vorn"
       : `${count(f.next_gap, "Punkt", "Punkte")}` + (f.next_days ? `, bei deinem Tempo ${inDays(f.next_days)}` : "")),
     el("dt", {}, "Top 100"), el("dd", {}, top100),
     el("dt", {}, "Tempo"), el("dd", {}, p.peers && p.peers.pace != null && p.pace != null
-      ? `Spieler mit ähnlichem Wert legen im Mittel ${signed(p.peers.pace, 1)} pro Tag zu, du ${signed(p.pace, 1)}.`
-      : "Der Vergleich kommt nach 12 Stunden Verlauf."));
-
+      ? `${signed(p.pace, 1)} pro Tag (Ähnliche: ${signed(p.peers.pace, 1)})`
+      : "nach 12 Stunden Verlauf"));
   const guild = g ? el("dl", { class: "facts" },
     el("dt", {}, "Name"), el("dd", {}, el("a", { href: `#/gilden/${g.login}` }, g.name), ` (${count(g.members, "Mitglied", "Mitglieder")})`),
-    g.joined ? [el("dt", {}, "Mitglied seit"), el("dd", {}, new Date(g.joined).toLocaleDateString("de-DE", { timeZone: TZ }))] : null,
-    el("dt", {}, "Ausrüstungswert"), el("dd", {}, `#${fmtInt(g.gear_rank)} von ${fmtInt(g.members)}` + (g.gear_share == null ? "" : `, deine Kampfkraft macht ${fmtDec(g.gear_share, 2)} % der ganzen Gilde aus`)),
-    el("dt", {}, "Spendenrang"), el("dd", {}, `#${fmtInt(g.donation_rank)} mit ${fmtSilver(g.donated)}` + (g.donation_gap ? `, bis zum nächsten Platz fehlen ${fmtSilver(g.donation_gap)}` : "")),
-    g.donation_share != null ? [el("dt", {}, "Anteil an den Spenden"), el("dd", {}, `${fmtDec(g.donation_share, 2)} % aller Spenden der Gilde`)] : null)
+    el("dt", {}, "Ausrüstungswert"), el("dd", { title: g.gear_share == null ? "" : `${fmtDec(g.gear_share, 2)} % der Kampfkraft der Gilde` }, `#${fmtInt(g.gear_rank)} von ${fmtInt(g.members)}`),
+    el("dt", {}, "Spendenrang"), el("dd", { title: g.donation_share == null ? "" : `${fmtDec(g.donation_share, 2)} % aller Spenden der Gilde` },
+      `#${fmtInt(g.donation_rank)} mit ${fmtSilver(g.donated)}` + (g.donation_gap ? `, ${fmtSilver(g.donation_gap)} bis zum nächsten` : "")))
     : el("p", { class: "note" }, "In keiner Gilde.");
 
+  const split = p.split && p.split.atk != null ? p.split : null;
+  const hasGear = p.watch && p.watch.slots && Object.keys(p.watch.slots).length;
   const out = [
     el("div", { class: "head start" }, el("h1", {}, p.name), g ? el("a", { href: `#/gilden/${g.login}` }, g.name) : null,
       p.active === false ? el("span", { class: "tag" }, "laut Gilde inaktiv") : null,
       gameLink(`/spieler/${login}`, "Im Spiel"), shareButton(p, login)),
     el("div", { class: "grid two" }, hero, chartCard("Ausrüstungswert", p.series.gear, { until: s.generated, compare: gearCompare(s, p, login) })),
-    el("div", { class: "grid two" }, card("Gilde", guild), card("Prognose", forecast)),
+    hasGear ? gearCard(p.watch.slots, p.power) : null,
+    // Prognose and Gilde in one card, side by side
+    el("section", { class: "card" }, el("div", { class: "grid two" }, el("div", {}, el("h2", {}, "Prognose"), forecast), el("div", {}, el("h2", {}, "Gilde"), guild))),
   ];
   const charts = [];
   if (p.series.rank.length) charts.push(chartCard("Rang (Top 100)", p.series.rank, { invert: true, until: s.generated }));
   if (p.series.silver.length) charts.push(chartCard("Silber", p.series.silver, { fmt: fmtSilver, until: s.generated }));
   if (charts.length) out.push(el("div", { class: "grid two" }, ...charts));
-  const split = p.split && p.split.atk != null ? p.split : null;
-  out.push(el("div", { class: "grid two" }, buildMapCard(split, p.gear),
-    distributionCard("Ausrüstungswert aller Spieler", [{ v: p.gear, label: p.name, cls: "me" }, { v: s.top100.gear, label: "Platz 100", cls: "ref" }])));
-
   if (p.watch) {
     const st = p.watch.stats || {};
-    out.push(el("h2", { class: "divider" }, "Beobachtungsliste und Top 100"));
-    out.push(el("div", { class: "grid two" }, fightCard(st),
+    out.push(el("div", { class: "grid two", style: "align-items:start" }, fightCard(st),
       card("Statistik", el("dl", { class: "facts" },
         STAT_ROWS.flatMap(([name, fn]) => [el("dt", {}, name), el("dd", {}, fn(st))])),
         // the damage reduction directly above its curve
-        el("dl", { class: "facts", style: "margin-top:14px" },
+        el("dl", { class: "facts redfacts" },
           el("dt", {}, "Schadensminderung"), el("dd", {}, `${fmtInt(p.watch.survival)} %, Leben ${fmtInt(p.watch.life)}`)),
         split ? (() => { const b = el("div", { class: "chart redchart" }); requestAnimationFrame(() => reductionCurve(b, split.def, p.watch.survival)); return b; })() : null,
-        split ? el("p", { class: "note" }, `Schadensminderung nach Verteidigung. Jeder Punkt bringt weniger: +10 DEF mindern den Schaden bei dir nur noch um ${fmtDec(gainPer10(split.def), 1)} Punkte.`) : null)));
-    if (p.watch.slots && Object.keys(p.watch.slots).length) out.push(gearCard(p.watch.slots, p.power));
+        split ? el("p", { class: "note" }, `Mehr Verteidigung bringt immer weniger: +10 DEF = +${fmtDec(gainPer10(split.def), 1)} Punkte.`) : null)));
   } else {
-    out.push(card("Mehr Statistik", el("p", { class: "note" }, "Ausrüstung je Platz und Kampfquoten gibt es für die Top 100 (am Morgen und nach jeder Änderung der Ausrüstung aktualisiert) und für Spieler auf der ",
-      el("a", { href: WATCH_FORM }, "Beobachtungsliste"), " (bei jedem Lauf). Eintragen geht über ein kurzes Formular auf GitHub, nur für den eigenen Namen.")));
+    out.push(card("Mehr Statistik", el("p", { class: "note" }, "Ausrüstung und Kampfwerte gibt es für die Top 100 und die ",
+      el("a", { href: WATCH_FORM }, "Beobachtungsliste"), " (Eintragen: kurzes Formular auf GitHub).")));
   }
-  return out;
+  // The comparison with everyone else, folded away: the charts are built when it is opened (they need their width).
+  const fold = el("details", { class: "card fold" }, el("summary", {}, "Vergleich mit allen Spielern"));
+  fold.addEventListener("toggle", () => {
+    if (!fold.open || fold.dataset.built) return;
+    fold.dataset.built = "1";
+    fold.append(el("div", { class: "grid two" }, buildMapCard(split, p.gear),
+      distributionCard("Ausrüstungswert aller Spieler", [{ v: p.gear, label: p.name, cls: "me" }, { v: s.top100.gear, label: "Platz 100", cls: "ref" }])));
+  });
+  out.push(fold);
+  return out.filter(Boolean);
 }
 
 // Damage reduction as the game computes it: round(100 d / (d + 80)) for the defense d; each point adds less.
@@ -1206,7 +1215,7 @@ const reduction = (d) => 100 * d / (d + 80);
 const gainPer10 = (d) => reduction(d + 10) - reduction(d);
 function reductionCurve(box, def, survival) {
   box.replaceChildren();
-  const W = Math.max(240, box.clientWidth), H = 150, m = { l: 36, r: 12, t: 12, b: 26 }, top = Math.max(500, Math.ceil((def + 60) / 100) * 100);
+  const W = Math.max(240, box.clientWidth), H = 140, m = { l: 36, r: 12, t: 8, b: 24 }, top = Math.max(500, Math.ceil((def + 60) / 100) * 100);
   const x = (d) => m.l + d / top * (W - m.l - m.r), y = (r) => m.t + (1 - r / 100) * (H - m.t - m.b);
   const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Schadensminderung nach Verteidigung" });
   box.append(svg);
@@ -1439,7 +1448,7 @@ function statCurvesCard(s) {
   const render = () => {
     const c = curves.find((x) => x.boss === statBoss);
     box.replaceChildren(el("div", { class: "grid three" }, ...STAT_ROLES.map((r) => roleCard(c, r))),
-      el("p", { class: "note" }, `${count(c.fights, "Sieg", "Siege")} gegen ${c.boss} in den letzten 30 Tagen. "Gefallen": wer am Ende nicht mehr stand; die Wutrunde am Schluss trifft fast alle, die Werte helfen vor allem davor. Die Werte stammen aus den Profilen (Top 100 und Beobachtungsliste mit allen Verbesserungen, sonst die letzte Lesung). Stufen mit weniger als ${STAT_MIN} Teilnahmen fehlen. Die Linie ist der Anteil Gefallener, das Band der Bereich, in dem er mit 95 % Sicherheit liegt (je weniger Teilnahmen, desto breiter); größere Punkte stehen für mehr Teilnahmen.`));
+      el("p", { class: "note" }, `${count(c.fights, "Sieg", "Siege")} gegen ${c.boss} in 30 Tagen. Gefallen = am Ende nicht mehr gestanden. Band: 95 % Sicherheit, Punktgröße: Teilnahmen. Stufen unter ${STAT_MIN} Teilnahmen fehlen.`));
   };
   render();
   return el("section", { class: "grid" },
@@ -1457,7 +1466,7 @@ function viewPower(s) {
       el("dt", {}, "Ø Kampfkraft"), el("dd", {}, fmtInt(p.avg)),
       el("dt", {}, "Ø Ausrüstung"), el("dd", {}, fmtInt(p.avg_gear)),
       el("dt", {}, "Ø empfohlen"), el("dd", {}, p.rec ? fmtInt(p.rec) : "nicht gemessen")) : el("p", { class: "note" }, "Noch keine Kämpfe mit Kampfkraft erfasst."),
-      el("p", { class: "note" }, `Die Durchschnitte nennt das Spiel nur, solange es den Kampf noch anzeigt; die Seite sieht sie deshalb nur bei einem Teil der Kämpfe (bisher ${fmtInt(p.n)} von ${fmtInt(st.fights)}). Die Empfehlung gibt es nicht bei jeder Kampfart.`)),
+      el("p", { class: "note" }, `Gemessen bei ${fmtInt(p.n)} von ${fmtInt(st.fights)} Kämpfen (das Spiel nennt die Durchschnitte nur solange es den Kampf zeigt).`)),
     oddsCard(s.win_odds),
     card("Siegquote nach Abstand zur Empfehlung", p.margins.some((m) => m.n) ? el("div", { class: "scroll" }, table([
       { label: "Ø Kampfkraft / Empfehlung", get: bucket },
@@ -1488,7 +1497,7 @@ function guildFightsCard(s) {
       { label: "Bosse beschworen", num: true, get: (r) => fmtInt(r.bosses) },
       { label: "Davon besiegt", num: true, get: (r) => r.bosses ? `${fmtInt(r.boss_wins)} (${pct(r.boss_wins, r.bosses)})` : "-" },
     ], rows)) : el("p", { class: "note" }, "Noch keine Kämpfe mit Gildenangaben gesammelt."),
-    el("p", { class: "note" }, `Aus den Kampfberichten des Spiels, nur Kämpfe, deren Bericht eine Gilde nennt (seit 0.12.0 gesammelt). Die Kasse gilt bei ${fmtInt(known)} von ${fmtInt(raids)} Überfällen; wo der Bericht keine Kassenänderung nennt, fehlt sie.`));
+    el("p", { class: "note" }, `Kassenänderung bekannt bei ${fmtInt(known)} von ${fmtInt(raids)} Überfällen.`));
 }
 
 function viewFights(s, sub) {
@@ -1653,17 +1662,17 @@ function formsCard(title, groups, note) {
 function viewForms() {
   return [el("section", { class: "grid" },
     el("div", { class: "head" }, el("h1", {}, "Ausrüstungsformen")),
-    el("p", { class: "note" }, "Seit dem 28.09.2026 gibt es jedes Stück je Platz, Stufe und Ausrichtung in fünf Formen. Die Form steht im Namen (\"... des Schlächters\") und legt fest, wie sich die Punkte auf Angriff, Verteidigung und Unterstützung verteilen. Die Summe hängt nur von der Stufe ab: 5 je Stufe plus 3 (Stufe 9: 48), Zweihänder und Stäbe das Doppelte, Ringe 3 je Stufe (Stufe 9: 27)."),
+    el("p", { class: "note" }, "Der Name legt fest, wie sich die Punkte verteilen (\"... des Schlächters\"). Summe: 5 je Stufe + 3, Zweihänder doppelt, Ringe 3 je Stufe."),
     el("div", { class: "grid two" },
       el("div", { class: "grid forms-col", style: "grid-template-rows: auto 1fr" },
-        formsCard("Rüstung", FORMS.armor, "Helm, Brustpanzer, Handschuhe, Beinschutz und Stiefel teilen sich die Formen."),
+        formsCard("Rüstung", FORMS.armor, "Helm, Brust, Handschuhe, Beine und Stiefel teilen sich die Formen."),
         formsCard("Ringe", FORMS.ring)),
       el("div", { class: "grid forms-col", style: "grid-template-rows: auto auto 1fr" },
         formsCard("Einhandwaffen", FORMS.w1),
         formsCard("Zweihandwaffen und Stäbe", FORMS.w2),
-        formsCard("Schilde", FORMS.shield, "Bei Schilden steht der Typ vorne im Namen (\"kobaltener Turmschild\")."))),
-    card("So ist die Tabelle entstanden", el("p", { class: "note" },
-      "Nach einer Übersicht von fireworker2000 (Discord). Nachgeprüft am 09.10.2026 an der Ausrüstung der beobachteten Spieler und an rund 840 Angeboten auf dem Markt, ergänzt am 11.10.2026 an rund 300 Stücken aus den Profilen der Top 100 und der Beobachtungsliste (Stufen bis 12) und am 12.10.2026 an den verbesserten Stücken: Deren Punkte werden herausgerechnet (Schriftrollen +1 = 1, +2 = 3, +3 = 4, +4 = 6 Punkte, bei Ringen je Stufe 1, alle auf den Wert, auf den sie verbessert wurden; ein Stein auf den Wert, der in seinem Namen steht), danach stimmt die Summe wieder genau mit der Stufe überein. Geprüft an knapp 300 verbesserten Stücken, bei denen auch ein unverbessertes bekannt war: kein einziger Unterschied. Gezählt werden nur Stücke, deren Summe so zur Stufe passt, also keine Bossbeute. Die Anteile stammen jeweils von der höchsten gesehenen Stufe, meist 9 bis 12; auf niedrigen Stufen verschiebt die Rundung sie um mehrere Punkte (ein Ring des Zorns hat auf Stufe 2 4/1/1, auf Stufe 9 16/5/6). Bossbeute und Stücke mit eigenem Namen haben eigene Werte und fehlen hier. Waffen mit Verteidigung als Hauptwert gibt es nicht. \"des Prinzen\" war in den Daten nicht zu finden, seine Anteile stammen aus der Vorlage. Die Anteile sind auf ganze Prozent gerundet; was dabei übrig bleibt, steckt im Hauptwert (fett), damit jede Zeile 100 % ergibt. Alle Angaben ohne Gewähr.")))];
+        formsCard("Schilde", FORMS.shield, "Bei Schilden steht der Typ im Namen (\"... Turmschild\")."))),
+    el("details", { class: "card fold" }, el("summary", {}, "So ist die Tabelle entstanden"),
+      el("p", { class: "note" }, "Nach einer Übersicht von fireworker2000 (Discord), geprüft an Profilen und dem Markt (ab Stufe 9, Verbesserungen und Steine herausgerechnet). Anteile von der höchsten gesehenen Stufe, auf ganze Prozent gerundet (der Rest steckt im fetten Hauptwert). Bossbeute hat eigene Werte, \"des Prinzen\" ist nicht in den Daten. Ohne Gewähr.")))];
 }
 
 async function viewGame(s, sub) {

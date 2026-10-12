@@ -3,6 +3,12 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.33.0 (12.10.2026)
+
+**Oberfläche**
+- Spielerseite neu geordnet und gestrafft: Verlauf, Ausrüstung, Prognose und Gilde in einer Karte, Rang und Silber, Kämpfe und Statistik; Dreieck und Säulen der Ausrüstungswerte sind eingeklappt ("Vergleich mit allen Spielern"). Weniger Text in Prognose und Gilde, "Mitglied seit" und der Anteil an den Spenden fallen weg (die Anteile stehen noch als Hinweis beim Überfahren).
+- Kürzere Texte auf der ganzen Seite, vor allem bei den Formen: ein Satz oben, die Methode in einem Aufklappfeld.
+
 ## 0.32.0 (12.10.2026)
 
 **Neu**

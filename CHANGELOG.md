@@ -3,6 +3,13 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.34.0 (12.10.2026)
+
+**Oberfläche**
+- Kämpfe > Kampfkraft aufgeräumt: Die Siegchance steht oben (mit den Durchschnitten in einer Zeile statt einer eigenen Karte), dann die Tabelle nach Abstand zur Empfehlung; die Tabelle "Kampfkraft je Kampf" ist eingeklappt.
+- Formen: Waffen und Schilde stehen links, Rüstung und Ringe rechts.
+- Kürzere Texte auf Regeln (jede Regel eine kurze Zeile), Regeländerungen, Kämpfe, Gilden und Ranglisten.
+
 ## 0.33.0 (12.10.2026)
 
 **Oberfläche**

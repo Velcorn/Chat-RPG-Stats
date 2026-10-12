@@ -846,7 +846,7 @@ function oddsChart(box, odds) {
   }
   return bosses;
 }
-function oddsCard(odds) {
+function oddsCard(odds, summary = "") {
   if (!odds || !odds.n) return card("Siegchance nach Kampfkraft", el("p", { class: "note" }, "Noch keine Bosskämpfe mit Kampfkraft erfasst."));
   const box = el("div", { class: "chart" }), legend = el("div", { class: "legend" });
   requestAnimationFrame(() => {
@@ -854,7 +854,7 @@ function oddsCard(odds) {
     legend.replaceChildren(...bosses.map((b, i) => el("span", {}, el("i", { class: `odot-key b${i % 6}` }), b.replace(/^(Die|Das|Der) /, ""))));
   });
   return card("Siegchance nach Kampfkraft", box, legend, el("p", { class: "note" },
-    `${count(odds.n, "Bosskampf", "Bosskämpfe")} der letzten 30 Tage, deren Durchschnitte das Spiel noch zeigte: oben die gewonnenen, unten die verlorenen. Die Kurve ist die geschätzte Siegchance (logistische Regression über alle Bosse)${odds.fit.length ? "" : "; für eine Kurve fehlen noch Kämpfe oder Niederlagen"}.`));
+    `${count(odds.n, "Bosskampf", "Bosskämpfe")} in 30 Tagen: oben gewonnen, unten verloren, die Kurve schätzt die Siegchance. ${summary}`));
 }
 
 // Fall rate per step of a role's own stat, with its 95 % range (Wilson): the fewer fighters, the wider.
@@ -1259,7 +1259,7 @@ function viewGuildRace(s) {
       tile("Schnellster Aufstieg", climber ? climber.login : "-", climber ? `${signed(per(climber, climber.day), 1)} je Mitglied in 24 Stunden` : "nach einem Tag Verlauf"),
       tile("Größte Kasse", richest ? richest.login : "-", richest ? fmtSilver(richest.treasury) : "")),
     card("Alle Gilden nach Ø Ausrüstungswert", el("div", { class: "scroll" }, table(cols, ranked)),
-      el("p", { class: "note" }, "Der Durchschnitt zählt nur aktive Mitglieder. Gilden mit weniger als 10 aktiven Mitgliedern stehen unten und gewinnen oben keine Kachel.")),
+      el("p", { class: "note" }, "Durchschnitt: nur aktive Mitglieder. Gilden unter 10 Aktiven gewinnen keine Kachel.")),
     chartCard("Silber in den Gildenkassen", s.economy.series.map((p) => [p.t, p.treasury]), { fmt: fmtSilver, until: s.generated }),
     guildFightsCard(s),
     firstKillsCard(s))];
@@ -1277,7 +1277,7 @@ function firstKillsCard(s, login) {
   if (!login) cols.push({ label: "Gilde", get: (r) => el("a", { href: `#/gilden/${r[2]}` }, r[3] || r[2]) });
   cols.push({ label: "Wann", get: (r) => r[4] ? fmtSince(iso(r[4])) : "-" });
   return card("Erste Siege über die Bosse", el("div", { class: "scroll" }, table(cols, rows)),
-    el("p", { class: "note" }, "Welche Gilde einen Boss zuerst besiegt hat, so wie das Spiel es führt."));
+    el("p", { class: "note" }, "Wer einen Boss zuerst besiegt hat, laut Spiel."));
 }
 
 function viewGuild(s, login) {
@@ -1381,15 +1381,15 @@ function eraBar(s) {
   if (!hasEras(s)) return null;
   return el("div", { class: "era" },
     seg(ERAS, s.eras[ERA] ? ERA : "all", (k) => { ERA = k; try { localStorage.setItem("era2", k); } catch { /* ignore */ } route(); }),
-    el("p", { class: "note" }, "Am 04.10.2026 hat das Spiel Abenteuer und Kämpfe umgebaut. Zahlen davor und danach lassen sich schlecht vergleichen, hier trennst du sie."));
+    el("p", { class: "note" }, "Am 04.10.2026 wurden die Kämpfe umgebaut: davor und danach lassen sich nicht vergleichen."));
 }
 
 const pctv = (v) => v == null ? "-" : `${fmtDec(v, 1)} %`;
 const ROLE_LABELS = { TANK: "Schildträger", FIGHTER: "Kämpfer", SUPPORT: "Unterstützer" };
 function detailNote(st) {
   return el("p", { class: "note" }, st.detail
-    ? `Gerechnet aus den letzten ${st.days} Tagen: ${fmtInt(st.detail)} von ${fmtInt(st.fights)} Kämpfen mit Einzelheiten (die werden erst seit ${fmtSince(st.since_detail)} gesammelt).`
-    : "Einzelheiten zu den Kämpfen (Gefallene, Rollen, Schaden) werden gerade erst gesammelt, hier erscheinen bald Zahlen.");
+    ? `${fmtInt(st.detail)} von ${fmtInt(st.fights)} Kämpfen der letzten ${st.days} Tage mit Einzelheiten (erfasst seit ${fmtSince(st.since_detail)}).`
+    : "Einzelheiten zu den Kämpfen werden gerade erst gesammelt.");
 }
 
 // Who falls, by role and overall: the facts of the fights with details (rolled into the overview since 0.25.0).
@@ -1404,7 +1404,7 @@ function survivalCards(st) {
     { label: "Ø erlitten", num: true, get: (r) => fmtInt(r.taken) },
     { label: "Ø Heilung", num: true, get: (r) => fmtInt(r.heal) },
     { label: "Ø Verstärkung", num: true, title: "Schaden, den Unterstützer anderen durch ihre Verstärkung dazugegeben haben", get: (r) => fmtInt(r.boost) },
-  ], st.roles)), el("p", { class: "note" }, "Je Teilnehmer und Kampf, ohne Geschichten, in denen es nicht zum Kampf kam (seit dem 07.10.2026 gesammelt)."));
+  ], st.roles)), el("p", { class: "note" }, "Je Teilnehmer und Kampf, seit dem 07.10.2026."));
   const facts = card("Überleben", el("dl", { class: "facts" },
     el("dt", {}, "Gefallen in Siegen"), el("dd", {}, pctv(t.death_win)),
     el("dt", {}, "in Niederlagen"), el("dd", {}, t.death_loss === 100 ? "alle (100 %)" : pctv(t.death_loss)),
@@ -1441,7 +1441,7 @@ function roleCard(c, [role, stat, title, statName, doneName, color]) {
 }
 function statCurvesCard(s) {
   const curves = s.stat_curves || [];
-  const intro = "Je Bosssieg die Teilnehmer nach Rolle und ihrem Hauptwert, ohne Namen, gesammelt seit dem 11.10.2026.";
+  const intro = "Teilnehmer in Bosssiegen nach Rolle und Hauptwert (ohne Namen, seit 11.10.2026).";
   if (!curves.length) return card("Werte und Überleben in Bosssiegen", el("p", { class: "note" }, intro + " Die ersten Zahlen erscheinen nach den nächsten Bosskämpfen."));
   if (!curves.some((c) => c.boss === statBoss)) statBoss = curves[0].boss;
   const box = el("div");
@@ -1461,28 +1461,24 @@ function viewPower(s) {
   const st = stFor(s), p = st.power;
   const bucket = (m) => m.to == null ? `über ${fmtDec(100 * m.from, 0)} %` : m.from === 0 ? `unter ${fmtDec(100 * m.to, 0)} %` : `${fmtDec(100 * m.from, 0)} bis ${fmtDec(100 * m.to, 0)} %`;
   const powered = st.types.filter((r) => r.power);
+  // The headline: the win chance by group strength, with the averages in one line; the table by bucket below it.
+  const summary = p.n ? `Ø Gruppe ${fmtInt(p.avg)} Kampfkraft${p.rec ? `, empfohlen ${fmtInt(p.rec)}` : ""} (gemessen bei ${fmtInt(p.n)} von ${fmtInt(st.fights)} Kämpfen).` : "";
   return [
-    card("Kampfkraft gegen Empfehlung", p.n ? el("dl", { class: "facts" },
-      el("dt", {}, "Ø Kampfkraft"), el("dd", {}, fmtInt(p.avg)),
-      el("dt", {}, "Ø Ausrüstung"), el("dd", {}, fmtInt(p.avg_gear)),
-      el("dt", {}, "Ø empfohlen"), el("dd", {}, p.rec ? fmtInt(p.rec) : "nicht gemessen")) : el("p", { class: "note" }, "Noch keine Kämpfe mit Kampfkraft erfasst."),
-      el("p", { class: "note" }, `Gemessen bei ${fmtInt(p.n)} von ${fmtInt(st.fights)} Kämpfen (das Spiel nennt die Durchschnitte nur solange es den Kampf zeigt).`)),
-    oddsCard(s.win_odds),
+    oddsCard(s.win_odds, summary),
     card("Siegquote nach Abstand zur Empfehlung", p.margins.some((m) => m.n) ? el("div", { class: "scroll" }, table([
-      { label: "Ø Kampfkraft / Empfehlung", get: bucket },
+      { label: "Kampfkraft / Empfehlung", get: bucket },
       { label: "Kämpfe", num: true, get: (m) => fmtInt(m.n) },
       { label: "Siege", num: true, get: (m) => m.n ? pct(m.wins, m.n) : "-" },
       { label: "Gefallen", num: true, title: "in gewonnenen Kämpfen", get: (m) => pctv(m.death_win) },
-    ], p.margins)) : el("p", { class: "note" }, "Noch keine Kämpfe, bei denen das Spiel eine Empfehlung nannte.")),
-    card("Nach Kampf", powered.length ? el("div", { class: "scroll" }, table([
+    ], p.margins)) : el("p", { class: "note" }, "Noch keine Kämpfe mit Empfehlung.")),
+    powered.length ? el("details", { class: "card fold" }, el("summary", {}, "Kampfkraft je Kampf"), el("div", { class: "scroll" }, table([
       { label: "Kampf", get: fightLabel },
       { label: "Ø Kampfkraft", num: true, get: (r) => fmtInt(r.power) },
       { label: "bei Siegen", num: true, get: (r) => fmtInt(r.power_win) },
       { label: "bei Niederlagen", num: true, get: (r) => fmtInt(r.power_loss) },
       { label: "Empfohlen", num: true, get: (r) => r.rec ? fmtInt(r.rec) : "-" },
-    ], powered)) : el("p", { class: "note" }, "Noch keine Daten."),
-      el("p", { class: "note" }, "So siehst du, ab welcher Gruppenstärke ein Kampf meist klappt: die Kampfkraft der Siege gegen die der Niederlagen.")),
-    statCurvesCard(s)];
+    ], powered))) : null,
+    statCurvesCard(s)].filter(Boolean);
 }
 
 function guildFightsCard(s) {
@@ -1501,11 +1497,11 @@ function guildFightsCard(s) {
 }
 
 function viewFights(s, sub) {
-  const since = s.since ? el("p", { class: "note" }, `Erfasst wird seit ${fmtSince(s.since)}, frühere Kämpfe fehlen.`) : null;
+  const since = s.since ? el("p", { class: "note" }, `Erfasst seit ${fmtSince(s.since)}.`) : null;
   if (sub === "kraft") return [eraBar(s), ...viewPower(s)];
   if (sub === "letzte") return [
     card("Letzte Kämpfe", el("div", { class: "scroll" }, table(RECENT_COLS(s), s.fights.recent)),
-      el("p", { class: "note" }, "Der Kampfname führt zum Bericht im Spiel; alle Kämpfe: ", gameLink("/kampf", "Kämpfe im Spiel"), "."), since)];
+      el("p", { class: "note" }, "Der Kampfname führt zum Bericht im Spiel; ", gameLink("/kampf", "alle Kämpfe"), "."), since)];
   // Sorted by the number of fights; kinds with less than FEW fights say little and go into one line below.
   const FEW = 5, all = [...stFor(s).types].sort((a, b) => b.n - a.n || b.wins / b.n - a.wins / a.n);
   const types = all.filter((g) => g.n >= FEW), few = all.filter((g) => g.n < FEW);
@@ -1520,8 +1516,7 @@ function viewFights(s, sub) {
       { label: "Boss-Leben bei Niederlage", num: true, title: "Wie viel Leben der Boss in verlorenen Kämpfen noch hatte", get: (g) => g.kind === "BOSS" ? pctv(g.boss_left) : "" },
     ], types)) : el("p", { class: "note" }, "Noch keine Kämpfe erfasst."),
     few.length ? el("p", { class: "note" }, `Weniger als ${FEW} Kämpfe: ${few.map((g) => `${fightLabel(g)} (${g.wins} von ${g.n} gewonnen)`).join(", ")}.`) : null,
-    el("p", { class: "note" }, "Aus dem Kampfarchiv des Spiels (alle Kanäle). Wenige Kämpfe einer Art sagen noch wenig. ",
-      gameLink("/kampf", "Kämpfe im Spiel")), since),
+    el("p", { class: "note" }, since ? `Erfasst seit ${fmtSince(s.since)}. ` : "", gameLink("/kampf", "Kämpfe im Spiel"))),
     ...survivalCards(stFor(s))];
 }
 
@@ -1557,51 +1552,51 @@ document.addEventListener("click", (ev) => { if (!ev.target.closest(".search")) 
 // 10.10.2026); where the game behaves differently from its rule the text says so.
 const RULE_GROUPS = [
   ["Quests", [
-    ["questCooldownMinutes", "Wartezeit zwischen Quests", "Minuten", "Die Wartezeit gilt für dich, nicht für den Kanal: Wer in mehreren Streams zuschaut, questet trotzdem nur einmal je Wartezeit."],
-    ["questRewardMin", "Belohnung ab", "Silber", "Eine gelungene Quest bringt mindestens so viel. Die erste gelungene Quest des Tages zahlt das Doppelte."],
-    ["questRewardMax", "Belohnung bis", "Silber", "und höchstens so viel."],
-    ["questFailureCooldownMinutes", "Wartezeit nach Fehlschlag", "Minuten", "Nach einem Fehlschlag wartest du nur so lange statt der vollen Zeit."],
-    ["questFailureGraceSilver", "Fehlschlag kostet erst ab", "Silber", "Wer weniger Silber besitzt, verliert bei einem Fehlschlag nichts; wer mehr hat, verliert einen Teil davon."],
-    ["liveOnly", "Nur im Live-Chat", "bool", "Gequestet wird nur im Chat eines Streams, der gerade läuft. Nachts schlafen die Questgeber."],
-    ["silentQuestEvery", "Langsamer Kanal: jedes n-te !quest", "", "Stellt ein Streamer seinen Kanal auf langsam, wird im Chat nur jedes n-te !quest beantwortet."],
-    ["activityWindowMinutes", "Truhen: Chat-Aktivität", "Minuten", "Eine Truhe findet nur, wer in den letzten so vielen Minuten im Chat etwas geschrieben hat; den Rest erledigt der Zufall."],
+    ["questCooldownMinutes", "Wartezeit zwischen Quests", "Minuten", "Gilt für dich, nicht je Kanal."],
+    ["questRewardMin", "Belohnung ab", "Silber", "Die erste Quest des Tages zahlt das Doppelte."],
+    ["questRewardMax", "Belohnung bis", "Silber", ""],
+    ["questFailureCooldownMinutes", "Wartezeit nach Fehlschlag", "Minuten", ""],
+    ["questFailureGraceSilver", "Fehlschlag kostet erst ab", "Silber", "Darunter verlierst du bei einem Fehlschlag nichts, darüber einen Teil."],
+    ["liveOnly", "Nur im Live-Chat", "bool", "Gequestet wird nur im Chat eines laufenden Streams."],
+    ["silentQuestEvery", "Langsamer Kanal: jedes n-te !quest", "", "Bei langsamen Kanälen wird nur jedes n-te !quest beantwortet."],
+    ["activityWindowMinutes", "Truhen: Chat-Aktivität", "Minuten", "Eine Truhe findet nur, wer in dieser Zeit geschrieben hat."],
   ]],
   ["Kämpfe", [
-    ["combatMinQuests", "Quests bis zu Beute und Risiko", "", "Wer weniger Quests erledigt hat, zieht als Begleiter mit: schaut zu, teilt nicht aus, wird nicht getroffen und bekommt trotzdem Erfahrung."],
-    ["combatLife", "Leben im Kampf", "", "Jeder geht mit vollem Leben hinein. Treffer kosten Leben, die Verteidigung mindert den Schaden, bei 0 geht man zu Boden."],
-    ["adventureLootTierOffset", "Abenteuer-Beute: Versatz", "", "Nach dem Handbuch des Spiels gibt ein Stern (Schwierigkeit) Beute ab Stufe 1 plus diesem Versatz, jeder weitere Stern eine Stufe mehr."],
-    ["adventureLootTierSpread", "Abenteuer-Beute: Streuung", "Stufen", "So viele Stufen reicht die Beute eines Sterns nach dem Handbuch (bei 2: ein Stern Stufe 1 oder 2, fünf Sterne Stufe 5 oder 6). Das Handbuch ist älter als der Umbau der Abenteuer zu Geschichten am 04.10.2026."],
+    ["combatMinQuests", "Quests bis zu Beute und Risiko", "", "Davor ziehst du nur als Begleiter mit (Erfahrung, aber keine Beute und kein Risiko)."],
+    ["combatLife", "Leben im Kampf", "", "Bei 0 geht man zu Boden; Verteidigung mindert den Schaden."],
+    ["adventureLootTierOffset", "Abenteuer-Beute: Versatz", "", "Laut Handbuch, das älter ist als der Umbau am 04.10.2026."],
+    ["adventureLootTierSpread", "Abenteuer-Beute: Streuung", "Stufen", "Laut Handbuch, das älter ist als der Umbau am 04.10.2026."],
   ]],
   ["Schmiede", [
-    ["smeltFeePerTier", "Einschmelzen", "Silber je Stufe", "Gebühr je Stufe des Ergebnisses: Drei Stücke einer Stufe werden zu einem der nächsten, ein Zweihänder zählt doppelt. Ist eines der Stücke gebunden, ist es auch das Ergebnis."],
-    ["smeltMaxTier", "Höchste Stufe beim Einschmelzen", "", "Der Schmelzofen liefert nichts darüber. Höhere Stufen gibt es von Bossen und aus der Schmiede der Gilde."],
-    ["reforgeFeePerTier", "Neu schmieden", "Silber je Stufe", "Gebühr je Stufe des Stücks: Es bekommt eine andere Form derselben Ausrichtung mit neu verteilten Werten. Stufe, Material und Platz bleiben."],
-    ["repairFeePerTier", "Reparieren", "Silber je Stufe", "Gebühr je Stufe bei völlig abgenutztem Stück, es zählt anteilig der Schaden (abzüglich eines Rabatts). Unter 50 % Haltbarkeit teilt ein Stück weniger aus."],
-    ["upgradeScrollsPerThreeTiers", "Schriftrollen je Versuch", "", "Ein Versuch am Amboss (+1, bis +4) kostet so viele Rollen je angefangene drei Stufen des Stücks, Stufe 8 also das Dreifache. Je höher das Plus, desto seltener gelingt es; misslingt es, sind nur die Rollen weg."],
-    ["sellValuePerTier", "Verkauf an den Schmied", "Silber je Stufe", "Das zahlt der Schmied je Materialstufe für ein Stück: Stufe 8 also das Achtfache."],
+    ["smeltFeePerTier", "Einschmelzen", "Silber je Stufe", "Drei Stücke einer Stufe ergeben eins der nächsten; die Gebühr zählt je Stufe des Ergebnisses."],
+    ["smeltMaxTier", "Höchste Stufe beim Einschmelzen", "", "Höhere Stufen gibt es nur von Bossen und aus der Gildenschmiede."],
+    ["reforgeFeePerTier", "Neu schmieden", "Silber je Stufe", "Gleiche Stufe und gleicher Platz, andere Form."],
+    ["repairFeePerTier", "Reparieren", "Silber je Stufe", "Bei völlig abgenutztem Stück, sonst anteilig (abzüglich Rabatt). Unter 50 % Haltbarkeit wirkt das Stück schwächer."],
+    ["upgradeScrollsPerThreeTiers", "Schriftrollen je Versuch", "", "Je angefangene drei Stufen des Stücks; je höher das Plus, desto seltener gelingt es."],
+    ["sellValuePerTier", "Verkauf an den Schmied", "Silber je Stufe", "Je Materialstufe des Stücks."],
   ]],
   ["Markt", [
-    ["marketUnlockQuests", "Quests bis zum Markt", "", "So viele Quests brauchst du, bevor du handeln darfst."],
-    ["marketFeePercent", "Marktgebühr", "%", "Davon behält der Markt vom Preis, der Verkäufer bekommt den Rest."],
-    ["marketMaxListings", "Angebote gleichzeitig", "", "So viele Stücke darfst du gleichzeitig anbieten."],
-    ["marketListingDays", "Angebote laufen", "Tage", "Nach so vielen Tagen kommt ein unverkauftes Stück von selbst zurück ins Inventar."],
-    ["marketBuyLockMinutes", "Sperre neuer Angebote", "Minuten", "Ein frisch eingestelltes Stück kann in dieser Zeit niemand kaufen. Wer es will, stellt sich an (der Preis wird abgebucht), am Ende entscheidet das Los. Steht niemand an, ist es danach sofort zu kaufen."],
-    ["marketWithdrawSeconds", "Frist zum Zurückziehen", "Sekunden", "So lange lässt sich ein eigenes Angebot zurückziehen, etwa nach einem Tippfehler im Preis. Danach erst wieder, wenn die Verlosung vorbei ist und niemand ansteht."],
+    ["marketUnlockQuests", "Quests bis zum Markt", "", ""],
+    ["marketFeePercent", "Marktgebühr", "%", "Vom Preis, der Verkäufer bekommt den Rest."],
+    ["marketMaxListings", "Angebote gleichzeitig", "", ""],
+    ["marketListingDays", "Angebote laufen", "Tage", "Danach kommt das Stück zurück ins Inventar."],
+    ["marketBuyLockMinutes", "Sperre neuer Angebote", "Minuten", "Wer das Stück will, stellt sich an (der Preis wird abgebucht), das Los entscheidet. Steht niemand an, ist es danach sofort zu kaufen."],
+    ["marketWithdrawSeconds", "Frist zum Zurückziehen", "Sekunden", "Danach erst wieder, wenn die Verlosung vorbei ist und niemand ansteht."],
   ]],
   ["Fahrender Händler", [
-    ["traderEnabled", "Händler unterwegs", "bool", "Ob der Händler überhaupt kommt."],
-    ["traderStayMinutes", "Aufenthalt", "Minuten", "So lange steht sein Karren in einem laufenden Stream. Im Chat sagt er vorher, was er dabeihat."],
-    ["traderWareCount", "Waren", "", "So viele Stücke legt er aus. Angreifer, Verteidiger und Unterstützer bekommen alle etwas."],
-    ["traderTierMin", "Waren ab Stufe", "", "Seine Stücke liegen zwischen dieser und der höchsten Stufe."],
+    ["traderEnabled", "Händler unterwegs", "bool", ""],
+    ["traderStayMinutes", "Aufenthalt", "Minuten", "In einem laufenden Stream."],
+    ["traderWareCount", "Waren", "", "Für Angreifer, Verteidiger und Unterstützer."],
+    ["traderTierMin", "Waren ab Stufe", "", ""],
     ["traderTierMax", "Waren bis Stufe", "", "Die höchste Stufe ist selten."],
-    ["traderPurchasesPerVisit", "Käufe je Besuch", "", "So viele Stücke darf jeder pro Besuch kaufen. Der Vorrat ist unbegrenzt, nichts ist weg, weil jemand schneller war."],
-    ["traderPricePerTier", "Preis", "Silber je Stufe", "Richtpreis je Stufe, im Einzelfall ein wenig darüber oder darunter; ein Zweihänder kostet das Doppelte. Gekaufte Stücke sind gebunden und lassen sich nicht auf dem Markt anbieten."],
+    ["traderPurchasesPerVisit", "Käufe je Besuch", "", "Der Vorrat ist unbegrenzt."],
+    ["traderPricePerTier", "Preis", "Silber je Stufe", "Richtpreis, ein Zweihänder kostet das Doppelte. Gekaufte Stücke sind gebunden (kein Markt)."],
   ]],
   ["Allgemein", [
-    ["playWindowFrom", "Spielzeit ab", "Uhr", "Außerhalb der Spielzeit (Berliner Zeit) laufen Quests, neue Abenteuer, Überfälle, der fahrende Händler und das Anbieten auf dem Markt nicht."],
-    ["playWindowTo", "Spielzeit bis", "Uhr", "24 Uhr heißt: bis Mitternacht."],
-    ["silverPerGold", "Silber pro Gold", "", "Das Spiel rechnet in Silber, Gold ist nur die Anzeige. Diese Seite nennt alles in Silber."],
-    ["channelApplicationsOpen", "Bewerbung für Kanäle", "bool", "Ob sich neue Streamer als Kanal bewerben können."],
+    ["playWindowFrom", "Spielzeit ab", "Uhr", "Berliner Zeit. Außerhalb laufen keine Quests, neue Kämpfe, Händler und Marktangebote."],
+    ["playWindowTo", "Spielzeit bis", "Uhr", "24 Uhr = Mitternacht."],
+    ["silverPerGold", "Silber pro Gold", "", "Diese Seite nennt alles in Silber."],
+    ["channelApplicationsOpen", "Bewerbung für Kanäle", "bool", ""],
   ]],
 ];
 const RULE_INFO = Object.fromEntries(RULE_GROUPS.flatMap(([, rows]) => rows.map(([key, label, unit, help]) => [key, { label, unit, help }])));
@@ -1617,8 +1612,8 @@ const ruleName = (key) => (RULE_INFO[key] || { label: key }).label;
 const berlinDay = (t) => new Date(t * 1000).toLocaleDateString("sv-SE", { timeZone: TZ });
 function viewChanges(s) {
   const log = s.rules.log;
-  const intro = el("p", { class: "note" }, "Regeln des Spiels, die sich beim Abfragen geändert haben (oft ohne Eintrag im Änderungsprotokoll des Spiels, das du ",
-    gameLink("/changelog", "im Spiel"), " findest). ", s.rules.since ? `Sie werden seit ${fmtSince(s.rules.since)} bei jedem Lauf geprüft.` : "Die Regeln werden gerade erst gesammelt.");
+  const intro = el("p", { class: "note" }, "Geänderte Regeln, oft ohne Eintrag im ", gameLink("/changelog", "Änderungsprotokoll des Spiels"),
+    s.rules.since ? `, geprüft seit ${fmtSince(s.rules.since)}.` : ". Die Regeln werden gerade erst gesammelt.");
   if (!log.length) return [card("Regeländerungen", intro, el("p", { class: "note" }, s.rules.since ? "Seit Beginn der Aufzeichnung hat sich keine Regel geändert." : ""))];
   const days = new Map();
   for (const r of log) { const k = berlinDay(r[0]); (days.get(k) || days.set(k, []).get(k)).push(r); }
@@ -1664,13 +1659,13 @@ function viewForms() {
     el("div", { class: "head" }, el("h1", {}, "Ausrüstungsformen")),
     el("p", { class: "note" }, "Der Name legt fest, wie sich die Punkte verteilen (\"... des Schlächters\"). Summe: 5 je Stufe + 3, Zweihänder doppelt, Ringe 3 je Stufe."),
     el("div", { class: "grid two" },
-      el("div", { class: "grid forms-col", style: "grid-template-rows: auto 1fr" },
-        formsCard("Rüstung", FORMS.armor, "Helm, Brust, Handschuhe, Beine und Stiefel teilen sich die Formen."),
-        formsCard("Ringe", FORMS.ring)),
       el("div", { class: "grid forms-col", style: "grid-template-rows: auto auto 1fr" },
         formsCard("Einhandwaffen", FORMS.w1),
         formsCard("Zweihandwaffen und Stäbe", FORMS.w2),
-        formsCard("Schilde", FORMS.shield, "Bei Schilden steht der Typ im Namen (\"... Turmschild\")."))),
+        formsCard("Schilde", FORMS.shield, "Bei Schilden steht der Typ im Namen (\"... Turmschild\").")),
+      el("div", { class: "grid forms-col", style: "grid-template-rows: auto 1fr" },
+        formsCard("Rüstung", FORMS.armor, "Helm, Brust, Handschuhe, Beine und Stiefel teilen sich die Formen."),
+        formsCard("Ringe", FORMS.ring))),
     el("details", { class: "card fold" }, el("summary", {}, "So ist die Tabelle entstanden"),
       el("p", { class: "note" }, "Nach einer Übersicht von fireworker2000 (Discord), geprüft an Profilen und dem Markt (ab Stufe 9, Verbesserungen und Steine herausgerechnet). Anteile von der höchsten gesehenen Stufe, auf ganze Prozent gerundet (der Rest steckt im fetten Hauptwert). Bossbeute hat eigene Werte, \"des Prinzen\" ist nicht in den Daten. Ohne Gewähr.")))];
 }
@@ -1690,9 +1685,9 @@ async function viewGame(s, sub) {
       ? `Zuletzt geändert: ${fmtTime(s.rules.log[0][0])} Uhr (${ruleName(s.rules.log[0][1])}).`
       : `Seit Beginn der Aufzeichnung (${fmtSince(s.rules.since)}) hat sich keine Regel geändert.`;
     return [card("Die Regeln des Spiels", el("p", { class: "note" },
-        "Das sind die Zahlen, mit denen das Spiel gerade rechnet, so wie es sie selbst veröffentlicht. Sie ändern sich ab und zu, oft ohne Ankündigung; ",
-        el("a", { href: "#/spiel/aenderungen" }, "unter Regeländerungen"), " steht, was sich wann geändert hat. Die Erklärungen stammen aus dem Handbuch und den Seiten des Spiels."),
-      el("p", {}, el("b", {}, changed), " ", el("span", { class: "muted" }, `Geprüft wird bei jedem Lauf, zuletzt ${fmtTime(s.generated)} Uhr.`))),
+        "Die Zahlen, mit denen das Spiel gerade rechnet. Was sich wann geändert hat, steht unter ",
+        el("a", { href: "#/spiel/aenderungen" }, "Regeländerungen"), "."),
+      el("p", {}, el("b", {}, changed))),
       el("div", { class: "grid two" }, groups.map(([title, keys]) => card(title, el("dl", { class: "rules" },
         keys.filter((k) => k in now).flatMap((k) => [
           el("dt", {}, ruleName(k)),

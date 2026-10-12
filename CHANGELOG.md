@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.30.2 (12.10.2026)
+
+**Oberfläche**
+- Ausrüstung auf dem Handy: Das "+x" sitzt über der oberen rechten Ecke des Werts, die Spalten sind schmaler, weniger Namen brechen um.
+
 ## 0.30.1 (12.10.2026)
 
 **Oberfläche**

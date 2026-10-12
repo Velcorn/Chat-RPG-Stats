@@ -222,8 +222,9 @@
   .grow .s.sum { font-size: 15px; color: var(--c); }
   @media (max-width: 600px) {
     /* phone: durability under the tier, the stats in three narrow columns */
-    .grow { grid-template-columns: 30px minmax(0, 1fr) repeat(3, 42px); gap: 0 6px; padding: 6px 0; font-size: 14px; }
-    .grow .s { padding-right: 16px; } .grow .s .add { font-size: 9px; top: -2px; left: calc(100% - 15px); }
+    .grow { grid-template-columns: 30px minmax(0, 1fr) repeat(3, 32px); gap: 0 5px; padding: 6px 0; font-size: 14px; }
+    /* the +x floats above the number's top right corner, in the row's padding, so the columns stay narrow */
+    .grow .s { padding-right: 0; } .grow .s .add { font-size: 9px; top: -6px; left: auto; right: -3px; }
     .grow.head { padding-bottom: 6px; font-size: 10px; }
     .grow.head > :first-child { display: none; }
     .grow .chip { grid-column: 1; grid-row: 1; }

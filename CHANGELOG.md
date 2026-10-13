@@ -3,10 +3,16 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.39.2 (13.10.2026)
+
+**Verbessert**
+- Verteilung der Ausrüstungswerte: Die Reiter teilen nur noch die Achse der Ausrüstungswerte (Bereich und Balkenbreite). Die Höhe passt sich wieder jedem Reiter an, damit auch kleine Gilden lesbar bleiben.
+- Unter der Verteilung stehen jetzt Median und Durchschnitt der gezeigten Spieler.
+
 ## 0.39.1 (13.10.2026)
 
 **Verbessert**
-- Verteilung der Ausrüstungswerte: Alle Reiter ("Alle" und die Gilden) haben dieselbe Skala (gleicher Bereich, gleiche Balkenbreite, gleiche Höhe), damit sich die Gilden direkt vergleichen lassen.
+- Verteilung der Ausrüstungswerte: Alle Reiter ("Alle" und die Gilden) haben dieselbe Skala der Ausrüstungswerte (gleicher Bereich und gleiche Balkenbreite der Ausrüstungswerte; die Höhe passt sich jedem Reiter an), damit sich die Gilden direkt vergleichen lassen.
 
 ## 0.39.0 (13.10.2026)
 

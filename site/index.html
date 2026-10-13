@@ -742,17 +742,14 @@ function distributionCard(title, marks, note, guilds = []) {
   };
   const draw = () => {
     if (!ps) return;
-    // One scale for every tab (same range, step and height), so the guilds can be compared at a glance.
+    // One x scale for every tab (same range and step), so the guilds can be compared at a glance; the height fits each.
     const all = rowsOf(""), lo = Math.min(...all), hi = Math.max(...all);
     const step = Math.max(5, niceTicks(0, hi - lo, 30)[1] || 10), start = Math.floor(lo / step) * step;
-    const tallest = Math.max(...["", ...tabs.map((g) => g.login)].map((key) => {
-      const bins = {};
-      for (const v of rowsOf(key)) { const b = Math.floor((v - start) / step); bins[b] = (bins[b] || 0) + 1; }
-      return Math.max(0, ...Object.values(bins));
-    }));
     const rows = rowsOf(pick);
-    count.textContent = `${count_(rows.length)} (${pick ? "Gilde " + pick : "alle Gilden"})`;
-    histogram(box, rows, { marks, step, range: { lo, hi, top: tallest } });
+    const sorted = [...rows].sort((u, w) => u - w), mid = sorted.length >> 1;
+    const median = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+    count.textContent = `${count_(rows.length)} (${pick ? "Gilde " + pick : "alle Gilden"}) | Median ${fmtInt(median)} | Durchschnitt ${fmtInt(rows.reduce((a, v) => a + v, 0) / rows.length)}`;
+    histogram(box, rows, { marks, step, range: { lo, hi } });
   };
   load("players.json").then((list) => { ps = list; requestAnimationFrame(draw); }).catch(() => {});
   const picker = tabs.length ? seg([["", "Alle"], ...tabs.map((g) => [g.login, g.login])], "", (k) => { pick = k; draw(); }) : null;
@@ -1388,7 +1385,7 @@ function viewStart(s) {
     ),
     ...[roleMixCard(s)].filter(Boolean),
     distributionCard("Ausrüstungswert der aktiven Spieler", [{ v: s.top100.gear, label: `Platz 100: ${fmtInt(s.top100.gear)}`, cls: "ref" }],
-      "Jeder Balken zählt die aktiven Spieler mit diesem Ausrüstungswert; der Strich ist die Grenze zur Top 100 (aller Spieler). Alle Reiter haben dieselbe Skala.", s.guilds),
+      "Jeder Balken zählt die aktiven Spieler mit diesem Ausrüstungswert; der Strich ist die Grenze zur Top 100 (aller Spieler). Alle Reiter haben dieselbe Achse der Ausrüstungswerte.", s.guilds),
     card("Zuletzt", el("dl", { class: "facts" },
         el("dt", {}, "Regeländerung"), el("dd", {}, lastRule
           ? el("a", { href: "#/spiel/aenderungen" }, `${ruleName(lastRule[1])}: ${ruleText(lastRule[1], lastRule[2])} -> ${ruleText(lastRule[1], lastRule[3])} (${fmtTime(lastRule[0])})`)

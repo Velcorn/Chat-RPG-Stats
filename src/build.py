@@ -299,14 +299,16 @@ def economy(h: History, now: float, days: int = 30) -> dict:
     return {"series": points}
 
 
+BLIP = 6 * 3600  # an absence from the board this short is no gap in the rank line
 DIP_RANKS = 5  # ranks lost at once that count as a dip when they come back at the next run
 
 
-def rank_series(series: list, since: float | None = None, blip: float = 3600) -> list:
+def rank_series(series: list, since: float | None = None, blip: float = BLIP, dip_within: float = 3600) -> list:
     """The rank line of a player page: from the day the board shows plain gear (`GEAR_SINCE`; before, it ranked
     Kampfkraft, another order), without the runs off the board at its start and without short absences (at most
-    `blip` seconds between two ranks: a page read in the middle of an update). Longer ones stay gaps. A rank that
-    falls by DIP_RANKS or more and is back at the next run (within `blip`) is dropped: gear taken off for a moment."""
+    `blip` seconds between two ranks: gear taken off for a while or a page read in the middle of an update). Longer
+    ones stay gaps. A rank that falls by DIP_RANKS or more and is back at the next run (within `dip_within`) is
+    dropped too."""
     since = GEAR_SINCE if since is None else since
     pts = [p for p in series if p[0] >= since]
     while pts and pts[0][1] is None:
@@ -319,7 +321,7 @@ def rank_series(series: list, since: float | None = None, blip: float = 3600) ->
             if back and ahead and ahead[0] - back[0] <= blip:
                 continue
         out.append([t, v])
-    return [q for i, q in enumerate(out) if not is_dip(out, i, blip)]
+    return [q for i, q in enumerate(out) if not is_dip(out, i, dip_within)]
 
 
 def is_dip(pts: list, i: int, blip: float) -> bool:

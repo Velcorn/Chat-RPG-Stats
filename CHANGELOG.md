@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.36.3 (13.10.2026)
+
+**Behoben**
+- Die Platzierungskurve zeigt keine Lücke mehr, wenn ein Spieler weniger als 6 Stunden aus der Rangliste fehlt (meist abgelegte und wieder angelegte Ausrüstung). Längere Abwesenheiten bleiben als Lücke.
+
 ## 0.36.2 (13.10.2026)
 
 **Verbessert**

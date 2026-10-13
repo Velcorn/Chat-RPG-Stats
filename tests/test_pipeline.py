@@ -218,11 +218,13 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(rank_series(series, since=150, blip=600),
                          [[200, 5], [400, 4], [5000, None], [9000, 3]])  # 300 was a blip, 5000 a real absence
         self.assertEqual(rank_series([[200, None], [300, 7]], since=0), [[300, 7]])  # no gap at the start
+        hours = [[0, 9], [3600, None], [3 * 3600, 9], [30 * 3600, None], [40 * 3600, 8]]
+        self.assertEqual(rank_series(hours, since=0), [[0, 9], [3 * 3600, 9], [30 * 3600, None], [40 * 3600, 8]])
 
     def test_a_rank_that_drops_and_returns_at_the_next_run_is_smoothed(self):
         from build import rank_series
         series = [[0, 10], [300, 25], [600, 11], [900, 40], [5000, 12], [5300, 20], [5600, 21]]
-        self.assertEqual(rank_series(series, since=0, blip=600),
+        self.assertEqual(rank_series(series, since=0, dip_within=600),
                          [[0, 10], [600, 11], [900, 40], [5000, 12], [5300, 20], [5600, 21]])  # 25 was a dip, 40 lasted
 
     def test_a_value_that_dips_and_returns_is_no_rise(self):

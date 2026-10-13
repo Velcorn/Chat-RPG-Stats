@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.38.4 (13.10.2026)
+
+**Verbessert**
+- Ausrüstungsformen: Die Auswahl der Stufe nutzt jetzt alle Funde aus den Profilen (Stufe 2 bis 12, rund 3.500 Stücke, Steine und Verbesserungen herausgerechnet). Wo es Funde gibt, steht "gemessen" statt der Näherung. Stufe 9 ist komplett gemessen.
+
 ## 0.38.3 (13.10.2026)
 
 **Verbessert**

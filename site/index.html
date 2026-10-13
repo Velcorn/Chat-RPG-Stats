@@ -731,29 +731,93 @@ function histogram(box, values, { marks = [], step, label = "Ausrüstungswert", 
       sv("text", { x: mx + (mx > W * 0.75 ? -4 : 4), y: m.t - 8 + i * 12, "text-anchor": mx > W * 0.75 ? "end" : "start", class: `marklabel ${mk.cls}` }, mk.label));
   });
 }
+// The gear score at each percentile, one line per series ("Alle" and the guilds): the share of players below on the
+// x axis, so groups of any size sit on the same scale. Horizontal marks like the histogram's.
+const PCT_COLORS = ["var(--text-primary)", "#3987e5", "#d99a1c", "#2fae6d", "#a77de0", "#e5534b"];
+function percentileChart(box, series, marks = []) {
+  box.replaceChildren();
+  const W = Math.max(260, box.clientWidth), H = 240, m = { l: 44, r: 12, t: 14, b: 40 };
+  const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Ausrüstungswert je Perzentil" });
+  box.append(svg);
+  const all = series.flatMap((q) => q.values);
+  if (!all.length) return;
+  const low = [...all].sort((u, w) => u - w)[Math.floor(all.length * 0.03)];  // the lowest few are noise: the axis starts above them
+  const ys = niceTicks(low, Math.max(...all, ...marks.map((k) => k.v || 0)), 5), lo = ys[0], hi = ys[ys.length - 1];
+  const x = (p) => m.l + p / 100 * (W - m.l - m.r), y = (v) => m.t + (hi - v) / (hi - lo || 1) * (H - m.t - m.b);
+  const at = (q, p) => q.values[Math.min(q.values.length - 1, Math.floor(p / 100 * q.values.length))];
+  const axis = sv("g", { class: "axis" });
+  for (const v of ys) axis.append(sv("line", { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), class: "gridline" }),
+    sv("text", { x: m.l - 6, y: y(v) + 4, "text-anchor": "end" }, fmtInt(v)));
+  for (const p of [0, 25, 50, 75, 100]) axis.append(sv("text", { x: x(p), y: H - 22, "text-anchor": p === 0 ? "start" : p === 100 ? "end" : "middle" }, `${p} %`));
+  axis.append(sv("text", { x: (m.l + W - m.r) / 2, y: H - 6, "text-anchor": "middle" }, "Anteil der Spieler darunter"));
+  svg.append(axis);
+  marks.forEach((mk, i) => {
+    if (mk.v == null) return;
+    svg.append(sv("line", { x1: m.l, x2: W - m.r, y1: y(mk.v), y2: y(mk.v), class: `mark ${mk.cls}` }),
+      sv("text", { x: m.l + 4, y: y(mk.v) - 5 - i * 0, class: `marklabel ${mk.cls}` }, mk.label));
+  });
+  const clip = sv("clipPath", { id: "pctclip" }, null);
+  clip.append(sv("rect", { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b }));
+  svg.append(clip);
+  series.forEach((q, i) => {
+    const d = Array.from({ length: 101 }, (_, p) => `${p ? "L" : "M"}${x(p).toFixed(1)},${y(at(q, p)).toFixed(1)}`).join("");
+    svg.append(sv("path", { d, fill: "none", stroke: PCT_COLORS[i % PCT_COLORS.length], "stroke-width": i ? 2.2 : 2.8,
+      "stroke-dasharray": i ? "" : "6 4", "stroke-linejoin": "round", "clip-path": "url(#pctclip)" }));
+  });
+  const tip = el("div", { class: "tip" }), rule = sv("line", { y1: m.t, y2: H - m.b, class: "mark ref", style: "display:none" });
+  svg.append(rule);
+  box.append(tip);
+  const catcher = sv("rect", { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: "transparent" });
+  const move = (ev) => {
+    const r = svg.getBoundingClientRect(), p = Math.max(0, Math.min(100, Math.round(((ev.clientX - r.left) * W / r.width - m.l) / (W - m.l - m.r) * 100)));
+    rule.setAttribute("x1", x(p)); rule.setAttribute("x2", x(p)); rule.style.display = "";
+    tip.replaceChildren(el("strong", {}, `${p} % der Spieler darunter`),
+      ...series.map((q, i) => el("div", { class: "tipline" }, el("span", { class: "sw", style: `background:${PCT_COLORS[i % PCT_COLORS.length]}` }), `${q.name}: ${fmtInt(at(q, p))}`)));
+    placeTip(tip, x(p) * r.width / W, r.width);
+  };
+  catcher.addEventListener("pointermove", move);
+  catcher.addEventListener("pointerleave", () => { tip.style.display = "none"; rule.style.display = "none"; });
+  svg.append(catcher);
+  box.append(el("div", { class: "legend" }, ...series.map((q, i) => el("span", {},
+    el("i", { style: `background:${PCT_COLORS[i % PCT_COLORS.length]}` }), `${q.name} (${fmtInt(q.values.length)})`))));
+}
 function distributionCard(title, marks, note, guilds = []) {
-  // The gear scores of the active players: all of them, or those of one guild (a tab each).
-  const box = el("div", { class: "chart" }), count = el("p", { class: "note" });
-  let ps = null, pick = "";
+  // The gear scores of the active players: as bars per score (all of them, or one guild per tab) or as a curve per
+  // percentile with every group in one chart.
+  const box = el("div", { class: "chart" }), count = el("p", { class: "note" }), noteEl = el("p", { class: "note" });
+  const pctNote = "Die Kurven zeigen, welchen Ausrüstungswert ein Spieler am jeweiligen Anteil hat (50 % = Median, rechts die Besten). Die Grenze zur Top 100 gilt für alle Spieler.";
+  let ps = null, pick = "", mode = "bars";
   const tabs = guilds.filter((g) => (g.active || 0) >= 10).sort((u, w) => (w.active || 0) - (u.active || 0));
   const rowsOf = (key) => {
     const known = ps.some((p) => p.length > 4);
     return ps.filter((p) => (!known || p[4]) && (!key || p[3] === key)).map((p) => p[2]);
   };
-  const draw = () => {
-    if (!ps) return;
-    // One x scale for every tab (same range and step), so the guilds can be compared at a glance; the height fits each.
-    const all = rowsOf(""), lo = Math.min(...all), hi = Math.max(...all);
-    const step = Math.max(5, niceTicks(0, hi - lo, 30)[1] || 10), start = Math.floor(lo / step) * step;
-    const rows = rowsOf(pick);
+  const stats = (rows) => {
     const sorted = [...rows].sort((u, w) => u - w), mid = sorted.length >> 1;
     const median = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
-    count.textContent = `${count_(rows.length)} (${pick ? "Gilde " + pick : "alle Gilden"}) | Median ${fmtInt(median)} | Durchschnitt ${fmtInt(rows.reduce((a, v) => a + v, 0) / rows.length)}`;
+    return `Median ${fmtInt(median)} | Durchschnitt ${fmtInt(rows.reduce((a, v) => a + v, 0) / rows.length)}`;
+  };
+  const draw = () => {
+    if (!ps) return;
+    picker && (picker.style.display = mode === "bars" ? "" : "none");
+    noteEl.textContent = mode === "bars" ? note || "" : pctNote;
+    if (mode === "pct") {
+      const series = [["", "Alle"], ...tabs.map((g) => [g.login, g.login])].map(([key, name]) => ({ name, values: rowsOf(key).sort((u, w) => u - w) }));
+      percentileChart(box, series, marks.filter((mk) => mk.v != null));
+      count.replaceChildren(...series.map((q) => el("div", {}, `${q.name}: ${count_(q.values.length)} | ${stats(q.values)}`)));
+      return;
+    }
+    // One x scale for every tab (same range and step), so the guilds can be compared at a glance; the height fits each.
+    const all = rowsOf(""), lo = Math.min(...all), hi = Math.max(...all);
+    const step = Math.max(5, niceTicks(0, hi - lo, 30)[1] || 10);
+    const rows = rowsOf(pick);
+    count.replaceChildren(`${count_(rows.length)} (${pick ? "Gilde " + pick : "alle Gilden"}) | ${stats(rows)}`);
     histogram(box, rows, { marks, step, range: { lo, hi } });
   };
   load("players.json").then((list) => { ps = list; requestAnimationFrame(draw); }).catch(() => {});
   const picker = tabs.length ? seg([["", "Alle"], ...tabs.map((g) => [g.login, g.login])], "", (k) => { pick = k; draw(); }) : null;
-  return card(title, picker, box, count, note ? el("p", { class: "note" }, note) : null);
+  const modes = tabs.length ? seg([["bars", "Spieler je Wert"], ["pct", "Wert je Perzentil"]], "bars", (k) => { mode = k; draw(); }) : null;
+  return card(title, el("div", { class: "head start" }, modes, picker), box, count, noteEl);
 }
 const count_ = (n) => count(n, "aktiver Spieler", "aktive Spieler");
 

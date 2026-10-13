@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.40.0 (13.10.2026)
+
+**Neu**
+- Verteilung der Ausrüstungswerte: Ein Umschalter wechselt von "Spieler je Wert" auf "Wert je Perzentil". Dort liegen "Alle" und alle Gilden als Linien in einem Diagramm (X: Anteil der Spieler darunter, Y: Ausrüstungswert), so lassen sich Gilden unabhängig von ihrer Größe vergleichen. Beim Darüberfahren stehen die Werte aller Linien da, darunter je Gruppe Anzahl, Median und Durchschnitt.
+
 ## 0.39.2 (13.10.2026)
 
 **Verbessert**

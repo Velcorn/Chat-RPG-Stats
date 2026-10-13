@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.38.5 (13.10.2026)
+
+**Verbessert**
+- Ausrüstungsformen: Die Werte der Stufenauswahl stammen jetzt auch von den Marktangeboten (alle 2.100 offenen Angebote, einmalig gelesen) und reichen von Stufe 1 bis 12. Damit sind 342 von 480 Kombinationen aus Form und Stufe gemessen statt geschätzt. Das Turmschild hat auf Stufe 1 und 2 zwei Varianten (zum Beispiel 0/8/0 und 1/7/0), die Seite zeigt die häufigere.
+
 ## 0.38.4 (13.10.2026)
 
 **Verbessert**

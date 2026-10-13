@@ -253,9 +253,9 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
         shutil.rmtree(target)
     (target / "p").mkdir(parents=True)
     write(target / "summary.json", summary)
-    write(target / "players.json", sorted(([login, p.get("name") or login, p["gs"], p.get("guild")]
-                                           for login, p in players.items() if p.get("gs") is not None),
-                                          key=lambda r: -r[2]))
+    write(target / "players.json", sorted(
+        ([login, p.get("name") or login, p["gs"], p.get("guild"), bool(p.get("active"))]
+         for login, p in players.items() if p.get("gs") is not None), key=lambda r: -r[2]))
     with_split = [x for x in gear if all(details.get(x, {}).get(k) is not None for k in ("atk", "def", "sup"))]
     # Every known split without names, for the build map: [attack, defense, support, gear score].
     write(target / "builds.json", [[details[x]["atk"], details[x]["def"], details[x]["sup"], gear[x]]

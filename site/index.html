@@ -731,11 +731,22 @@ function histogram(box, values, { marks = [], step, label = "Ausrüstungswert" }
       sv("text", { x: mx + (mx > W * 0.75 ? -4 : 4), y: m.t - 8 + i * 12, "text-anchor": mx > W * 0.75 ? "end" : "start", class: `marklabel ${mk.cls}` }, mk.label));
   });
 }
-function distributionCard(title, marks, note) {
-  const box = el("div", { class: "chart" });
-  load("players.json").then((ps) => requestAnimationFrame(() => histogram(box, ps.map((p) => p[2]), { marks }))).catch(() => {});
-  return card(title, box, note ? el("p", { class: "note" }, note) : null);
+function distributionCard(title, marks, note, guilds = []) {
+  // The gear scores of the active players: all of them, or those of one guild (a tab each).
+  const box = el("div", { class: "chart" }), count = el("p", { class: "note" });
+  let ps = null, pick = "";
+  const draw = () => {
+    if (!ps) return;
+    const known = ps.some((p) => p.length > 4), rows = ps.filter((p) => (!known || p[4]) && (!pick || p[3] === pick));
+    count.textContent = `${count_(rows.length)} (${pick ? "Gilde " + (guilds.find((g) => g.login === pick) || {}).login : "alle Gilden"})`;
+    histogram(box, rows.map((p) => p[2]), { marks });
+  };
+  load("players.json").then((list) => { ps = list; requestAnimationFrame(draw); }).catch(() => {});
+  const tabs = guilds.filter((g) => (g.active || 0) >= 10).sort((u, w) => (w.active || 0) - (u.active || 0));
+  const picker = tabs.length ? seg([["", "Alle"], ...tabs.map((g) => [g.login, g.login])], "", (k) => { pick = k; draw(); }) : null;
+  return card(title, picker, box, count, note ? el("p", { class: "note" }, note) : null);
 }
+const count_ = (n) => count(n, "aktiver Spieler", "aktive Spieler");
 
 // Every known split as a dot in a triangle (attack bottom left, defense on top, support bottom right), colored by
 // the main stat; the viewed player is the ring.
@@ -1222,7 +1233,7 @@ async function viewPlayer(s, login) {
     if (!fold.open || fold.dataset.built) return;
     fold.dataset.built = "1";
     fold.append(el("div", { class: "grid two" }, buildMapCard(split, p.gear),
-      distributionCard("Ausrüstungswert aller Spieler", [{ v: p.gear, label: `${p.name}: ${fmtInt(p.gear)}`, cls: "me" }, { v: s.top100.gear, label: `Platz 100: ${fmtInt(s.top100.gear)}`, cls: "ref" }])));
+      distributionCard("Ausrüstungswert der aktiven Spieler", [{ v: p.gear, label: `${p.name}: ${fmtInt(p.gear)}`, cls: "me" }, { v: s.top100.gear, label: `Platz 100: ${fmtInt(s.top100.gear)}`, cls: "ref" }], null, s.guilds)));
   });
   out.push(fold);
   return out.filter(Boolean);
@@ -1364,8 +1375,8 @@ function viewStart(s) {
       ], guilds), more("#/gilden/vergleich", "Gilden im Vergleich")] : el("p", { class: "note" }, "Noch keine Gilden mit mindestens 10 aktiven Mitgliedern.")),
     ),
     ...[roleMixCard(s)].filter(Boolean),
-    distributionCard("Ausrüstungswert aller Spieler", [{ v: s.top100.gear, label: `Platz 100: ${fmtInt(s.top100.gear)}`, cls: "ref" }],
-      "Jeder Balken zählt die Spieler mit diesem Ausrüstungswert; der Strich ist die Grenze zur Top 100."),
+    distributionCard("Ausrüstungswert der aktiven Spieler", [{ v: s.top100.gear, label: `Platz 100: ${fmtInt(s.top100.gear)}`, cls: "ref" }],
+      "Jeder Balken zählt die aktiven Spieler mit diesem Ausrüstungswert; der Strich ist die Grenze zur Top 100 (aller Spieler).", s.guilds),
     card("Zuletzt", el("dl", { class: "facts" },
         el("dt", {}, "Regeländerung"), el("dd", {}, lastRule
           ? el("a", { href: "#/spiel/aenderungen" }, `${ruleName(lastRule[1])}: ${ruleText(lastRule[1], lastRule[2])} -> ${ruleText(lastRule[1], lastRule[3])} (${fmtTime(lastRule[0])})`)

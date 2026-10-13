@@ -3,6 +3,14 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.39.0 (13.10.2026)
+
+**Neu**
+- Die Verteilung der Ausrüstungswerte hat Reiter: "Alle" und je eine Gilde (ab 10 aktiven Mitgliedern). Darunter steht, wie viele aktive Spieler gezählt sind.
+
+**Geändert**
+- Die Verteilung zählt jetzt nur aktive Spieler (bisher alle Spieler mit Wert, auch lange Inaktive). Die Grenze zu Platz 100 bleibt die der Rangliste aller Spieler.
+
 ## 0.38.6 (13.10.2026)
 
 **Verbessert**

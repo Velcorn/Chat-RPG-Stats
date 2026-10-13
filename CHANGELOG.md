@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.41.0 (13.10.2026)
+
+**Neu**
+- Wert je Perzentil lässt sich vergrößern: mit der Maus über einen Bereich ziehen (Doppelklick zeigt wieder alles) oder mit den Knöpfen "Alles", "Obere 50 %", "Obere 20 %" und "Obere 5 %" (auch auf dem Handy). Die Y-Achse passt sich dem Bereich an.
+
 ## 0.40.1 (13.10.2026)
 
 **Verbessert**

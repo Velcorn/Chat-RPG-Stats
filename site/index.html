@@ -735,49 +735,69 @@ function histogram(box, values, { marks = [], step, label = "Ausrüstungswert", 
 // x axis, so groups of any size sit on the same scale. Horizontal marks like the histogram's.
 const GUILD_COLORS = { tolkin: "#e5534b", karni: "#a77de0", sola: "#3987e5" }, SPARE_COLORS = ["#d99a1c", "#2fae6d", "#3fb8c4", "#c96f9a"];
 const pctColor = (q, i) => i === 0 ? "var(--text-primary)" : GUILD_COLORS[q.name] || SPARE_COLORS[(i - 1) % SPARE_COLORS.length];
-function percentileChart(box, series, marks = []) {
+function percentileChart(box, series, marks = [], view = [0, 100], onZoom = () => {}) {
   box.replaceChildren();
   const W = Math.max(260, box.clientWidth), H = 240, m = { l: 44, r: 12, t: 14, b: 40 };
-  const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Ausrüstungswert je Perzentil" });
+  const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Ausrüstungswert je Perzentil", style: "touch-action: pan-y" });
   box.append(svg);
-  const all = series.flatMap((q) => q.values);
-  if (!all.length) return;
-  const low = [...all].sort((u, w) => u - w)[Math.floor(all.length * 0.03)];  // the lowest few are noise: the axis starts above them
-  const ys = niceTicks(low, Math.max(...all, ...marks.map((k) => k.v || 0)), 5), lo = ys[0], hi = ys[ys.length - 1];
-  const x = (p) => m.l + p / 100 * (W - m.l - m.r), y = (v) => m.t + (hi - v) / (hi - lo || 1) * (H - m.t - m.b);
-  const at = (q, p) => q.values[Math.min(q.values.length - 1, Math.floor(p / 100 * q.values.length))];
+  if (!series.some((q) => q.values.length)) return;
+  const [p0, p1] = view, span = p1 - p0;
+  const at = (q, p) => q.values[Math.max(0, Math.min(q.values.length - 1, Math.floor(p / 100 * q.values.length)))];
+  const grid = Array.from({ length: 201 }, (_, i) => p0 + span * i / 200);  // sampling fine enough for any zoom
+  const seen = series.flatMap((q) => grid.map((p) => at(q, p)));
+  const low = view[0] === 0 ? [...seen].sort((u, w) => u - w)[Math.floor(seen.length * 0.03)] : Math.min(...seen);
+  const inView = marks.filter((k) => k.v != null && k.v >= low * 0.9 && k.v <= Math.max(...seen) * 1.1);
+  const ys = niceTicks(low, Math.max(...seen, ...inView.map((k) => k.v)), 5), lo = ys[0], hi = ys[ys.length - 1];
+  const x = (p) => m.l + (p - p0) / span * (W - m.l - m.r), y = (v) => m.t + (hi - v) / (hi - lo || 1) * (H - m.t - m.b);
   const axis = sv("g", { class: "axis" });
   for (const v of ys) axis.append(sv("line", { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), class: "gridline" }),
     sv("text", { x: m.l - 6, y: y(v) + 4, "text-anchor": "end" }, fmtInt(v)));
-  for (const p of [0, 25, 50, 75, 100]) axis.append(sv("text", { x: x(p), y: H - 22, "text-anchor": p === 0 ? "start" : p === 100 ? "end" : "middle" }, `${p} %`));
+  const xt = niceTicks(p0, p1, Math.max(2, Math.floor((W - m.l - m.r) / 80))).filter((v) => v >= p0 && v <= p1);
+  xt.forEach((p, i) => axis.append(sv("text", { x: x(p), y: H - 22, "text-anchor": i === 0 && p === p0 ? "start" : "middle" }, `${fmtInt(p)} %`)));
   axis.append(sv("text", { x: (m.l + W - m.r) / 2, y: H - 6, "text-anchor": "middle" }, "Anteil der Spieler darunter"));
   svg.append(axis);
-  marks.forEach((mk, i) => {
-    if (mk.v == null) return;
-    svg.append(sv("line", { x1: m.l, x2: W - m.r, y1: y(mk.v), y2: y(mk.v), class: `mark ${mk.cls}` }),
-      sv("text", { x: m.l + 4, y: y(mk.v) - 5 - i * 0, class: `marklabel ${mk.cls}` }, mk.label));
-  });
-  const clip = sv("clipPath", { id: "pctclip" }, null);
+  const clip = sv("clipPath", { id: "pctclip" });
   clip.append(sv("rect", { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b }));
   svg.append(clip);
+  inView.forEach((mk) => svg.append(sv("line", { x1: m.l, x2: W - m.r, y1: y(mk.v), y2: y(mk.v), class: `mark ${mk.cls}` }),
+    sv("text", { x: m.l + 4, y: y(mk.v) - 5, class: `marklabel ${mk.cls}` }, mk.label)));
   series.forEach((q, i) => {
-    const d = Array.from({ length: 101 }, (_, p) => `${p ? "L" : "M"}${x(p).toFixed(1)},${y(at(q, p)).toFixed(1)}`).join("");
+    const d = grid.map((p, j) => `${j ? "L" : "M"}${x(p).toFixed(1)},${y(at(q, p)).toFixed(1)}`).join("");
     svg.append(sv("path", { d, fill: "none", stroke: pctColor(q, i), "stroke-width": i ? 2.2 : 2.8,
       "stroke-dasharray": i ? "" : "6 4", "stroke-linejoin": "round", "clip-path": "url(#pctclip)" }));
   });
   const tip = el("div", { class: "tip" }), rule = sv("line", { y1: m.t, y2: H - m.b, class: "mark ref", style: "display:none" });
-  svg.append(rule);
+  const sel = sv("rect", { y: m.t, height: H - m.t - m.b, class: "sel", style: "display:none" });
+  svg.append(rule, sel);
   box.append(tip);
   const catcher = sv("rect", { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: "transparent" });
+  const pAt = (ev) => {
+    const r = svg.getBoundingClientRect();
+    return Math.max(p0, Math.min(p1, p0 + ((ev.clientX - r.left) * W / r.width - m.l) / (W - m.l - m.r) * span));
+  };
+  let from = null;
   const move = (ev) => {
-    const r = svg.getBoundingClientRect(), p = Math.max(0, Math.min(100, Math.round(((ev.clientX - r.left) * W / r.width - m.l) / (W - m.l - m.r) * 100)));
+    const r = svg.getBoundingClientRect(), p = pAt(ev);
+    if (from != null) {  // dragging: the span to zoom into
+      const [u, w] = [Math.min(from, p), Math.max(from, p)];
+      sel.setAttribute("x", x(u)); sel.setAttribute("width", x(w) - x(u)); sel.style.display = "";
+      tip.style.display = "none"; rule.style.display = "none";
+      return;
+    }
     rule.setAttribute("x1", x(p)); rule.setAttribute("x2", x(p)); rule.style.display = "";
-    tip.replaceChildren(el("strong", {}, `${p} % der Spieler darunter`),
+    tip.replaceChildren(el("strong", {}, `${fmtDec(p, span < 20 ? 1 : 0)} % der Spieler darunter`),
       ...series.map((q, i) => el("div", { class: "tipline" }, el("span", { class: "sw", style: `background:${pctColor(q, i)}` }), `${q.name}: ${fmtInt(at(q, p))}`)));
     placeTip(tip, x(p) * r.width / W, r.width);
   };
+  catcher.addEventListener("pointerdown", (ev) => { from = pAt(ev); catcher.setPointerCapture(ev.pointerId); });
   catcher.addEventListener("pointermove", move);
-  catcher.addEventListener("pointerleave", () => { tip.style.display = "none"; rule.style.display = "none"; });
+  catcher.addEventListener("pointerup", (ev) => {
+    const to = pAt(ev), a = from;
+    from = null; sel.style.display = "none";
+    if (a != null && Math.abs(to - a) >= Math.max(1, span * 0.03)) onZoom(Math.min(a, to), Math.max(a, to));
+  });
+  catcher.addEventListener("pointerleave", () => { if (from == null) { tip.style.display = "none"; rule.style.display = "none"; } });
+  catcher.addEventListener("dblclick", () => onZoom(0, 100));
   svg.append(catcher);
   box.append(el("div", { class: "legend" }, ...series.map((q, i) => el("span", {},
     el("i", { style: `background:${pctColor(q, i)}` }), `${q.name} (${fmtInt(q.values.length)})`))));
@@ -786,8 +806,8 @@ function distributionCard(title, marks, note, guilds = []) {
   // The gear scores of the active players: as bars per score (all of them, or one guild per tab) or as a curve per
   // percentile with every group in one chart.
   const box = el("div", { class: "chart" }), count = el("p", { class: "note" }), noteEl = el("p", { class: "note" });
-  const pctNote = "Die Kurven zeigen, welchen Ausrüstungswert ein Spieler am jeweiligen Anteil hat (50 % = Median, rechts die Besten). Die Grenze zur Top 100 gilt für alle Spieler.";
-  let ps = null, pick = "", mode = "bars";
+  const pctNote = "Die Kurven zeigen, welchen Ausrüstungswert ein Spieler am jeweiligen Anteil hat (50 % = Median, rechts die Besten). Die Grenze zur Top 100 gilt für alle Spieler. Zum Vergrößern über einen Bereich ziehen oder oben wählen, Doppelklick für alles.";
+  let ps = null, pick = "", mode = "bars", view = [0, 100];
   const tabs = guilds.filter((g) => (g.active || 0) >= 10).sort((u, w) => (w.active || 0) - (u.active || 0));
   const rowsOf = (key) => {
     const known = ps.some((p) => p.length > 4);
@@ -801,10 +821,12 @@ function distributionCard(title, marks, note, guilds = []) {
   const draw = () => {
     if (!ps) return;
     picker && (picker.style.display = mode === "bars" ? "" : "none");
+    zoomBar.style.display = mode === "bars" ? "none" : "";
     noteEl.textContent = mode === "bars" ? note || "" : pctNote;
     if (mode === "pct") {
       const series = [["", "Alle"], ...tabs.map((g) => [g.login, g.login])].map(([key, name]) => ({ name, values: rowsOf(key).sort((u, w) => u - w) }));
-      percentileChart(box, series, marks.filter((mk) => mk.v != null));
+      percentileChart(box, series, marks.filter((mk) => mk.v != null), view, (a, b) => { view = [a, b]; draw(); });
+      zoomBar.style.display = "";
       count.replaceChildren(...series.map((q) => el("div", {}, `${q.name}: ${count_(q.values.length)} | ${stats(q.values)}`)));
       return;
     }
@@ -817,8 +839,14 @@ function distributionCard(title, marks, note, guilds = []) {
   };
   load("players.json").then((list) => { ps = list; requestAnimationFrame(draw); }).catch(() => {});
   const picker = tabs.length ? seg([["", "Alle"], ...tabs.map((g) => [g.login, g.login])], "", (k) => { pick = k; draw(); }) : null;
+  const zoomBar = el("div", { class: "seg", style: "display:none" },
+    ...[["Alles", 0], ["Obere 50 %", 50], ["Obere 20 %", 80], ["Obere 5 %", 95]].map(([label, from]) => {
+      const b = el("button", {}, label);
+      b.addEventListener("click", () => { view = [from, 100]; draw(); });
+      return b;
+    }));
   const modes = tabs.length ? seg([["bars", "Spieler je Wert"], ["pct", "Wert je Perzentil"]], "bars", (k) => { mode = k; draw(); }) : null;
-  return card(title, el("div", { class: "head start" }, modes, picker), box, count, noteEl);
+  return card(title, el("div", { class: "head start" }, modes, picker, zoomBar), box, count, noteEl);
 }
 const count_ = (n) => count(n, "aktiver Spieler", "aktive Spieler");
 

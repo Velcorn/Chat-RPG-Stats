@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.34.1 (13.10.2026)
+
+**Oberfläche**
+- Die Karte "Rollen in der Top 100" (Anteil Schildträger, Kämpfer und Unterstützer in der Top 10, 25, 50 und 100) steht jetzt auf der Startseite statt über der Rangliste; die Rangliste beginnt direkt mit der Tabelle.
+
 ## 0.34.0 (12.10.2026)
 
 **Oberfläche**

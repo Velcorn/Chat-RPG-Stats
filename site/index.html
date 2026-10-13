@@ -955,7 +955,6 @@ function viewRanks(s, sub) {
       el("p", { class: "note" }, "Gezählt wird nur, was über dem eigenen Höchstwert der Vorwoche liegt; ein Einbruch mit Wiederanstieg zählt nicht."))];
   }
   return [
-    ...[roleMixCard(s)].filter(Boolean),
     ...scroll("Rangliste Ausrüstungswert (Top 100)", [
       { label: "#", num: true, get: (r) => r.rank },
       { label: "", title: "Plätze seit gestern", get: (r) => r.rank_change ? delta(r.rank_change) : "" },
@@ -1345,6 +1344,7 @@ function viewStart(s) {
         { label: "Ø Ausrüstungswert", num: true, get: (g) => fmtDec(g.avg_gear, 1) },
       ], guilds), more("#/gilden/vergleich", "Gilden im Vergleich")] : el("p", { class: "note" }, "Noch keine Gilden mit mindestens 10 aktiven Mitgliedern.")),
     ),
+    ...[roleMixCard(s)].filter(Boolean),
     distributionCard("Ausrüstungswert aller Spieler", [{ v: s.top100.gear, label: "Platz 100", cls: "ref" }],
       "Jeder Balken zählt die Spieler mit diesem Ausrüstungswert; der Strich ist die Grenze zur Top 100."),
     card("Zuletzt", el("dl", { class: "facts" },

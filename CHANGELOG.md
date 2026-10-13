@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.35.1 (13.10.2026)
+
+**Oberfläche**
+- Werte und Überleben in Bosssiegen: Alle drei Rollenkarten zeigen den Anteil Gefallener nach Verteidigung (bei Kämpfern und Unterstützern stand er vorher nach Angriff und Unterstützung, was mit dem Fallen wenig zu tun hat) und darunter, was der Hauptwert der Rolle bringt: eingesteckter Schaden, Schaden oder Verstärkung je Stufe.
+
 ## 0.35.0 (13.10.2026)
 
 **Neu**

@@ -892,7 +892,39 @@ function fallChart(box, rows, { color, statName, doneName }) {
       tip.replaceChildren(el("strong", {}, `${fmtDec(r.fell, 0)} % gefallen`),
         el("span", { class: "muted" }, `${statName} ${r.k} bis ${r.k + STAT_STEP - 1}, ${fmtInt(r.n)} Teilnahmen`),
         el("div", { class: "tipline" }, `95 % sicher zwischen ${fmtDec(bands[i][0], 0)} und ${fmtDec(bands[i][1], 0)} %`),
-        el("div", { class: "tipline" }, `Ø ${doneName} ${fmtInt(r.done)}`));
+        r.done ? el("div", { class: "tipline" }, `Ø ${doneName} ${fmtInt(r.done)}`) : null);
+      placeTip(tip, mid(r) * svg.getBoundingClientRect().width / W, svg.getBoundingClientRect().width);
+    });
+    c.addEventListener("pointerleave", () => { tip.style.display = "none"; });
+    svg.append(c);
+  });
+}
+// What the role's own stat brings per step of it (damage taken, dealt or boosted): a line with a dot per step.
+function effectChart(box, rows, { color, statName, label }) {
+  box.replaceChildren();
+  if (rows.length < 2) { box.append(el("p", { class: "note" }, "Noch zu wenige Teilnahmen.")); return; }
+  const W = Math.max(220, box.clientWidth), H = 150, m = { l: 48, r: 12, t: 10, b: 34 };
+  const lo = rows[0].k, hi = rows[rows.length - 1].k + STAT_STEP;
+  const ticks = niceTicks(0, Math.max(...rows.map((r) => r.done)) * 1.05, 3).filter((v) => Number.isInteger(v));
+  const top = ticks[ticks.length - 1] || 1;
+  const x = (v) => m.l + (v - lo) / (hi - lo) * (W - m.l - m.r), y = (v) => m.t + (1 - v / top) * (H - m.t - m.b);
+  const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": `${label} nach ${statName}` });
+  box.append(svg);
+  const axis = sv("g", { class: "axis" });
+  for (const v of ticks) axis.append(sv("line", { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), class: "gridline" }),
+    sv("text", { x: m.l - 6, y: y(v) + 4, "text-anchor": "end" }, fmtInt(v)));
+  for (const v of niceTicks(lo, hi, Math.max(2, Math.floor((W - m.l - m.r) / 60)))) if (v >= lo && v <= hi) axis.append(sv("text", { x: x(v), y: H - 18, "text-anchor": "middle" }, fmtInt(v)));
+  axis.append(sv("text", { x: (m.l + W - m.r) / 2, y: H - 2, "text-anchor": "middle" }, statName));
+  svg.append(axis);
+  const mid = (r) => x(r.k + STAT_STEP / 2);
+  svg.append(sv("path", { d: rows.map((r, i) => `${i ? "L" : "M"}${mid(r).toFixed(1)},${y(r.done).toFixed(1)}`).join(""), class: `fall ${color}` }));
+  const nmax = Math.max(...rows.map((r) => r.n));
+  const tip = el("div", { class: "tip" });
+  box.append(tip);
+  rows.forEach((r) => {
+    const c = sv("circle", { cx: mid(r), cy: y(r.done), r: 2.5 + 4 * Math.sqrt(r.n / nmax), class: `fdot ${color}` });
+    c.addEventListener("pointerenter", () => {
+      tip.replaceChildren(el("strong", {}, fmtInt(r.done)), el("span", { class: "muted" }, `${label}, ${statName} ${r.k} bis ${r.k + STAT_STEP - 1}, ${fmtInt(r.n)} Teilnahmen`));
       placeTip(tip, mid(r) * svg.getBoundingClientRect().width / W, svg.getBoundingClientRect().width);
     });
     c.addEventListener("pointerleave", () => { tip.style.display = "none"; });
@@ -1416,10 +1448,12 @@ function survivalCards(st) {
 // Won boss fights by role and stat (since 0.27.0): per role a card with the role's own stat in steps of 20, the share
 // that fell and what they did, each with a small bar. Steps with few fighters say little and stay out.
 const STAT_MIN = 15, STAT_STEP = 20;
+// Who falls depends on the defense, whatever the role: so every card shows the fall rate by defense, and under it what
+// the role's own stat brings (what a tank takes, what a fighter deals, what a supporter boosts).
 const STAT_ROLES = [
-  ["TANK", "def", "Schildträger", "Verteidigung", "eingesteckt", "def"],
-  ["FIGHTER", "atk", "Kämpfer", "Angriff", "Schaden", "atk"],
-  ["SUPPORT", "sup", "Unterstützer", "Unterstützung", "Verstärkung", "sup"],
+  { role: "TANK", title: "Schildträger", effect: ["def", "Verteidigung", "Ø eingesteckt", "def"] },
+  { role: "FIGHTER", title: "Kämpfer", effect: ["atk", "Angriff", "Ø Schaden", "atk"] },
+  { role: "SUPPORT", title: "Unterstützer", effect: ["sup", "Unterstützung", "Ø Verstärkung", "sup"] },
 ];
 let statBoss = null;
 function statRows(rows) {
@@ -1432,16 +1466,22 @@ function statRows(rows) {
   return [...out].sort((a, b) => a[0] - b[0]).filter(([, a]) => a[0] >= STAT_MIN)
     .map(([k, [n, fell, done]]) => ({ k, n, fell: 100 * fell / n, done: done / n }));
 }
-function roleCard(c, [role, stat, title, statName, doneName, color]) {
-  const rows = statRows(((c.roles[role] || {})[stat]) || []);
-  const box = el("div", { class: "chart" });
-  requestAnimationFrame(() => fallChart(box, rows, { color, statName, doneName }));
-  return el("section", { class: "card statrole" }, el("h2", {}, title),
-    el("p", { class: "note" }, `Gefallen nach ${statName}, ${fmtInt(rows.reduce((a, r) => a + r.n, 0))} Teilnahmen`), box);
+function roleCard(c, { role, title, effect }) {
+  const by = (stat) => statRows(((c.roles[role] || {})[stat]) || []);
+  const fall = by("def"), box = el("div", { class: "chart" });
+  requestAnimationFrame(() => fallChart(box, fall, { color: "def", statName: "Verteidigung", doneName: "" }));
+  const kids = [el("h2", {}, title),
+    el("p", { class: "note" }, `Gefallen nach Verteidigung, ${fmtInt(fall.reduce((a, r) => a + r.n, 0))} Teilnahmen`), box];
+  if (effect) {
+    const [stat, statName, label, color] = effect, eff = by(stat), ebox = el("div", { class: "chart" });
+    requestAnimationFrame(() => effectChart(ebox, eff, { color, statName, label }));
+    kids.push(el("p", { class: "note" }, `${label} nach ${statName}`), ebox);
+  }
+  return el("section", { class: "card statrole" }, ...kids);
 }
 function statCurvesCard(s) {
   const curves = s.stat_curves || [];
-  const intro = "Teilnehmer in Bosssiegen nach Rolle und Hauptwert (ohne Namen, seit 11.10.2026).";
+  const intro = "Teilnehmer in Bosssiegen nach Rolle (ohne Namen, seit 11.10.2026).";
   if (!curves.length) return card("Werte und Überleben in Bosssiegen", el("p", { class: "note" }, intro + " Die ersten Zahlen erscheinen nach den nächsten Bosskämpfen."));
   if (!curves.some((c) => c.boss === statBoss)) statBoss = curves[0].boss;
   const box = el("div");

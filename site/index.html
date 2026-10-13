@@ -1716,15 +1716,23 @@ function viewForms() {
 
 // Special pieces (sheet by fireworker2000, donmerkuzio and AirFighterKI): [source, name, tier, slot, class, atk, def, sup].
 const SPECIAL = [["Schmelzofen","Notwehr des Prinzen",6,"1H-Waffe","Kämpfer",29,7,0],["unbekannt","Kutchers linker Haken",7,"1H-Waffe","Kämpfer",30,10,0],["Siegel","Gumayushis Bogen",9,"2H-Waffe","Kämpfer",90,8,0],["Lek'Mhir","Lek'Mhirs linker Hoden",9,"Helm","Schildträger",15,35,0],["Lek'Mhir","Lek'Mhirs rechter Hoden",9,"Hose","Schildträger",10,28,10],["Finanzamt","Der Zwangsvollstrecker",9,"1H-Waffe","Kämpfer",45,0,0],["Finanzamt","Steuerklasse 1",9,"Brustpanzer","Kämpfer",36,12,2],["Finanzamt","Siegelring des Finanzamts",9,"Ring","Unterstützer",0,8,22],["Loserqueue","Ägis der Tapferkeit",10,"Schild","Schildträger",0,50,10],["Mel'Khmal","Mel'Khmals Streitaxt",8,"2H-Waffe","Kämpfer",99,4,0],["Mel'Khmal","Mel'Khmals Nasenring",8,"Ring","Schildträger",7,21,1],["Ostmauer","Lek'Mhirs Oberschenkelknochen",10,"2H-Waffe","Kämpfer",78,18,6],["Ostmauer","Robe des Nekromanten",9,"Brustpanzer","Unterstützer",0,11,41],["Ostmauer","Höllenfeuerhandschuhe",10,"Handschuhe","Kämpfer",35,14,9]];
+// The lowest loot tier of each boss (the game's compendium), the reference for its special pieces besides their own tier.
+const LOOT_TIER = { "Lek'Mhir": 6, "Finanzamt": 7, "Loserqueue": 9, "Mel'Khmal": 11, "Ostmauer": 13 };
 const SOON = new Set(["Mel'Khmal", "Ostmauer"]);  // bosses whose items will probably change again soon
 function viewSpecial() {
   const row = (r, sub) => {
     const top = Math.max(r[5], r[6], r[7]), main = [0, 1, 2].find((i) => r[5 + i] === top);
-    const sum = r[5] + r[6] + r[7], normal = r[3] === "Ring" ? 3 * r[2] : (5 * r[2] + 3) * (r[3] === "2H-Waffe" ? 2 : 1), diff = sum - normal;
-    return el("tr", {}, el("td", {}, r[1], el("div", { class: "special-sub" }, sub)),
+    const sum = r[5] + r[6] + r[7], normalAt = (t) => r[3] === "Ring" ? 3 * t : (5 * t + 3) * (r[3] === "2H-Waffe" ? 2 : 1);
+    const vs = (t, extra = "") => {
+      const diff = sum - normalAt(t);
+      return el("span", { class: "vs" }, el("span", { class: diff > 0 ? "up" : diff < 0 ? "down" : "muted" }, signed(diff)), ` zu ${normalAt(t)}${extra}`);
+    };
+    const loot = LOOT_TIER[r[0]];
+    const both = loot && loot !== r[2];
+    return el("tr", {}, el("td", {}, r[1], el("div", { class: "special-sub" }, sub),
+        el("div", { class: "special-sub" }, vs(r[2], both ? ` (T${r[2]})` : ""), both ? " | " : null, both ? vs(loot, ` (Loot T${loot})`) : null)),
       ...[0, 1, 2].map((i) => el("td", { class: i === main ? "num special-main" : "num" }, String(r[5 + i]))),
-      el("td", { class: "num" }, String(sum), el("div", { class: "special-sub" },
-        el("span", { class: diff > 0 ? "up" : diff < 0 ? "down" : "muted" }, signed(diff)), ` zu ${normal}`)));
+      el("td", { class: "num" }, String(sum)));
   };
   const table = (rows) => el("div", { class: "wide-table" }, el("table", { class: "special" },
     el("thead", {}, el("tr", {}, el("th", {}, "Gegenstand"), el("th", { class: "num" }, "ATK"),
@@ -1739,9 +1747,9 @@ function viewSpecial() {
     el("div", { class: "head" }, el("h1", {}, "Spezialitems")),
     el("p", { class: "note" }, "Besondere Waffen und Bossbeute haben feste Werte, die nicht zu den Formen passen. Die Werte können sich mit Spielupdates ändern."),
     card("Besondere Waffen", table(SPECIAL.filter(isWeapon).map((r) => row(r, `Stufe ${r[2]} | ${r[3]} | ${r[0] === "unbekannt" ? "Herkunft unbekannt" : r[0]}`))),
-      el("p", { class: "note" }, "Ohne Verbesserungen und Steine. Unter der Summe steht der Unterschied zu einem normalen Stück derselben Stufe und Art (z. B. +2 zu 96).")),
+      el("p", { class: "note" }, "Ohne Verbesserungen und Steine. Unter dem Namen steht der Unterschied zu einem normalen Stück derselben Stufe und Art (z. B. +2 zu 96).")),
     card("Bossbeute", table(bossRows),
-      el("p", { class: "note" }, "Rattenkönigin: kein Spezialitem. Dämonenkönig: noch unbekannt. Mel'Khmal und Ostmauer werden vermutlich bald nochmal angepasst. Ohne Verbesserungen und Steine. Alle Werte nach der Tabelle von fireworker2000, donmerkuzio und AirFighterKI, ohne Gewähr.")))];
+      el("p", { class: "note" }, "Rattenkönigin: kein Spezialitem. Dämonenkönig: noch unbekannt. Mel'Khmal und Ostmauer werden vermutlich bald nochmal angepasst. Ohne Verbesserungen und Steine. Unter dem Namen steht der Unterschied zu einem normalen Stück derselben Stufe und zu einem im Loot-Tier des Bosses (bei einer Spanne die niedrigste Stufe). Alle Werte nach der Tabelle von fireworker2000, donmerkuzio und AirFighterKI, ohne Gewähr.")))];
 }
 
 async function viewGame(s, sub) {

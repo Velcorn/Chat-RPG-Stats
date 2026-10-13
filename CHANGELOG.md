@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.38.3 (13.10.2026)
+
+**Verbessert**
+- Spezialitems: Die Bossbeute wird mit einem normalen Stück derselben Stufe und mit einem im Loot-Tier des Bosses verglichen (zum Beispiel Mel'Khmals Streitaxt "+17 zu 86 (T8) | -13 zu 116 (Loot T11)"). Der Vergleich steht jetzt unter dem Namen, damit er auf dem Handy Platz hat.
+
 ## 0.38.2 (13.10.2026)
 
 **Verbessert**

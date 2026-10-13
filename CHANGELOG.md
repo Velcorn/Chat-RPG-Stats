@@ -3,6 +3,12 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.42.0 (14.10.2026)
+
+**Neu**
+- Spielerseite (bei Spielern mit bekannter Ausrüstung): Die Karte "Wo ein neues Stück am meisten bringt" rechnet für eine wählbare Stufe, was ein einfaches neues Stück je Platz bringt: "Jetzt" gegen alle Punkte des getragenen Teils (mit Schriftrollen und Stein, die beim Ersetzen verloren gehen) und "Voll ausgebaut" mit vier Schriftrollen-Stufen und Stein. Sortiert nach "Jetzt", Ringe zählen 3 Punkte weniger (eine Ringstufe bringt nur 3 Punkte).
+- Der Knopf "CSV" neben "Teilen" lädt den Verlauf (Ausrüstungswert, Platz, Silber) als Tabelle herunter, für Excel mit Semikolon.
+
 ## 0.41.4 (14.10.2026)
 
 **Behoben**

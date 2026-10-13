@@ -1167,6 +1167,40 @@ function extras(slot, v) {
   }
   return out;
 }
+// Where a new piece of a tier brings the most, from the worn pieces. Per slot: `now` = a plain piece of the tier minus
+// all points of the worn one (scrolls and stone included), `ceiling` = both fully upgraded (scrolls and a stone).
+// A ring gains 3 points per tier (others 5), so its `now` counts 3 less when ranking.
+const RING_PENALTY = 3, ROOM = 6 + 4, RING_ROOM = 4 + 4;
+function upgradePlanCard(slots) {
+  const base = (slot, tier, two) => /^RING/.test(slot) ? 3 * tier : (5 * tier + 3) * (two ? 2 : 1);
+  const pts = (v) => v[3] + v[4] + v[5];
+  const worn = Object.entries(slots).filter(([, v]) => v[1]);
+  const rings = worn.filter(([k]) => /^RING/.test(k)).sort((u, w) => pts(u[1]) - pts(w[1]));
+  const cand = [...worn.filter(([k]) => !/^RING/.test(k)), ...(rings.length ? [rings[0]] : [])];
+  const top = Math.max(...worn.map(([, v]) => v[2]));
+  const picker = el("select", { class: "cmp", "aria-label": "Stufe" },
+    ...Array.from({ length: 14 - 1 }, (_, i) => i + 2).map((t) => el("option", { value: String(t), ...(t === top ? { selected: "" } : {}) }, `Stufe ${t}`)));
+  const body = el("div", { class: "wide-table" });
+  const fill = () => {
+    const tier = Number(picker.value);
+    const rows = cand.filter(([, v]) => v[2] < tier).map(([k, v]) => {
+      const two = !!v[9] && k === "WEAPON", ring = /^RING/.test(k), have = pts(v);
+      const fresh = base(k, tier, two), room = (ring ? RING_ROOM : ROOM) * (two ? 2 : 1);
+      const sunk = Math.max(0, have - base(k, v[2], two));
+      const now = fresh - have, ceiling = fresh + room - (have + Math.max(0, room - sunk));
+      return { k, v, ring, now, ceiling, sunk };
+    }).sort((u, w) => (w.now - (w.ring ? RING_PENALTY : 0)) - (u.now - (u.ring ? RING_PENALTY : 0)));
+    body.replaceChildren(rows.length ? el("table", {},
+      el("thead", {}, el("tr", {}, el("th", {}, "Platz"), el("th", {}, "Getragen"), el("th", { class: "num" }, "Jetzt"), el("th", { class: "num" }, "Voll ausgebaut"))),
+      el("tbody", {}, rows.map((r) => el("tr", {}, el("td", {}, r.v[0]), el("td", {}, `Stufe ${r.v[2]}, ${fmtInt(pts(r.v))} Punkte`),
+        el("td", { class: "num" }, delta(r.now)), el("td", { class: "num" }, delta(r.ceiling)))))) : el("p", { class: "note" }, "Alle getragenen Teile haben diese Stufe oder eine höhere."));
+  };
+  picker.addEventListener("change", fill);
+  fill();
+  return el("details", { class: "card fold" }, el("summary", {}, "Wo ein neues Stück am meisten bringt"),
+    el("div", { class: "head" }, el("span", { class: "note" }, "Ein einfaches Stück der Stufe:"), picker), body,
+    el("p", { class: "note" }, "\"Jetzt\": das einfache neue Stück gegen alle Punkte des getragenen (mit Schriftrollen und Stein, die beim Ersetzen verloren gehen). \"Voll ausgebaut\": beide mit vier Schriftrollen-Stufen und Stein. Sortiert nach \"Jetzt\"; Ringe zählen 3 Punkte weniger, weil eine Ringstufe nur 3 Punkte bringt (sonst 5). Bei zwei Ringen zählt der schwächere. Die Form eines neuen Stücks ist Zufall, die Verteilung auf ATK, DEF und SUP kann abweichen."));
+}
 function gearCard(slots, power) {
   // An empty shield slot beside a two-hander (index 9; older readings lack it: a staff or two-hander by name) is no gap.
   const twoHanded = slots.WEAPON && (slots.WEAPON[9] ?? /stab|zweihänder|speer|hellebarde|bogen/i.test(slots.WEAPON[1] || ""));
@@ -1218,6 +1252,23 @@ function shareText(p, login) {
   return [`${p.name}: Ausrüstungswert ${fmtInt(p.gear)}` + (p.day == null ? "" : ` (${signed(p.day)} in 24 Stunden)`),
     `${f.exact ? "Rang" : "etwa Rang"} ${fmtInt(f.rank)}, mehr Ausrüstung als ${fmtDec(p.standing.better, 1)} % der Spieler` + (g ? `, Gilde ${g.name}` : ""),
     `${location.origin}${location.pathname}#/spieler/${encodeURIComponent(login)}`].join("\n");
+}
+// The player's lines as a CSV (long format: time; series; value), for a spreadsheet; semicolons and a BOM for German Excel.
+function exportButton(p, login) {
+  const b = el("button", { class: "pill", type: "button", style: "cursor:pointer;background:none", title: "Verlauf als Tabelle herunterladen" }, "CSV");
+  b.addEventListener("click", () => {
+    const names = { gear: "Ausrüstungswert", rank: "Platz", silver: "Silber" }, rows = [["Zeit", "Reihe", "Wert"]];
+    for (const [key, name] of Object.entries(names)) {
+      for (const [t, v] of (p.series[key] || [])) {
+        if (v != null) rows.push([new Date(t * 1000).toLocaleString("sv-SE", { timeZone: TZ }), name, v]);
+      }
+    }
+    const blob = new Blob(["\ufeff" + rows.map((r) => r.join(";")).join("\n")], { type: "text/csv;charset=utf-8" });
+    const a = el("a", { href: URL.createObjectURL(blob), download: `${login}-verlauf.csv` });
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+  return b;
 }
 function shareButton(p, login) {
   const b = el("button", { class: "pill", type: "button", style: "cursor:pointer;background:none" }, "Teilen");
@@ -1319,9 +1370,10 @@ async function viewPlayer(s, login) {
   const out = [
     el("div", { class: "head start" }, el("h1", {}, p.name), g ? el("a", { href: `#/gilden/${g.login}` }, g.name) : null,
       p.active === false ? el("span", { class: "tag" }, "laut Gilde inaktiv") : null,
-      gameLink(`/spieler/${login}`, "Im Spiel"), shareButton(p, login)),
+      gameLink(`/spieler/${login}`, "Im Spiel"), shareButton(p, login), exportButton(p, login)),
     el("div", { class: "grid two" }, hero, chartCard("Ausrüstungswert", p.series.gear, { until: s.generated, compare: gearCompare(s, p, login) })),
     hasGear ? gearCard(p.watch.slots, p.power) : null,
+    hasGear ? upgradePlanCard(p.watch.slots) : null,
     // Prognose and Gilde in one card, side by side
     el("section", { class: "card" }, el("div", { class: "grid two" }, el("div", {}, el("h2", {}, "Prognose"), forecast), el("div", {}, el("h2", {}, "Gilde"), guild))),
   ];

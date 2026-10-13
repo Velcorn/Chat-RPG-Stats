@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.34.2 (13.10.2026)
+
+**Oberfläche**
+- Formen aktualisiert: Mit den vielen neuen Stücken der Stufe 11 und 12 stammen jetzt zwanzig weitere Formen von diesen Stufen statt von Stufe 9 (z. B. Festung 9/49/0, Bollwerks 6/44/8, Zerstörer 110/6/0, Turmschild 3/55/0). Waffen in der Schildhand zählen jetzt als Einhandwaffen mit.
+
 ## 0.34.1 (13.10.2026)
 
 **Oberfläche**

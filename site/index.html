@@ -1720,9 +1720,11 @@ const SOON = new Set(["Mel'Khmal", "Ostmauer"]);  // bosses whose items will pro
 function viewSpecial() {
   const row = (r, sub) => {
     const top = Math.max(r[5], r[6], r[7]), main = [0, 1, 2].find((i) => r[5 + i] === top);
+    const sum = r[5] + r[6] + r[7], normal = r[3] === "Ring" ? 3 * r[2] : (5 * r[2] + 3) * (r[3] === "2H-Waffe" ? 2 : 1), diff = sum - normal;
     return el("tr", {}, el("td", {}, r[1], el("div", { class: "special-sub" }, sub)),
       ...[0, 1, 2].map((i) => el("td", { class: i === main ? "num special-main" : "num" }, String(r[5 + i]))),
-      el("td", { class: "num" }, String(r[5] + r[6] + r[7])));
+      el("td", { class: "num" }, String(sum), el("div", { class: "special-sub" },
+        el("span", { class: diff > 0 ? "up" : diff < 0 ? "down" : "muted" }, signed(diff)), ` zu ${normal}`)));
   };
   const table = (rows) => el("div", { class: "wide-table" }, el("table", { class: "special" },
     el("thead", {}, el("tr", {}, el("th", {}, "Gegenstand"), el("th", { class: "num" }, "ATK"),
@@ -1737,7 +1739,7 @@ function viewSpecial() {
     el("div", { class: "head" }, el("h1", {}, "Spezialitems")),
     el("p", { class: "note" }, "Besondere Waffen und Bossbeute haben feste Werte, die nicht zu den Formen passen. Die Werte können sich mit Spielupdates ändern."),
     card("Besondere Waffen", table(SPECIAL.filter(isWeapon).map((r) => row(r, `Stufe ${r[2]} | ${r[3]} | ${r[0] === "unbekannt" ? "Herkunft unbekannt" : r[0]}`))),
-      el("p", { class: "note" }, "Ohne Verbesserungen und Steine.")),
+      el("p", { class: "note" }, "Ohne Verbesserungen und Steine. Unter der Summe steht der Unterschied zu einem normalen Stück derselben Stufe und Art (z. B. +2 zu 96).")),
     card("Bossbeute", table(bossRows),
       el("p", { class: "note" }, "Rattenkönigin: kein Spezialitem. Dämonenkönig: noch unbekannt. Mel'Khmal und Ostmauer werden vermutlich bald nochmal angepasst. Ohne Verbesserungen und Steine. Alle Werte nach der Tabelle von fireworker2000, donmerkuzio und AirFighterKI, ohne Gewähr.")))];
 }

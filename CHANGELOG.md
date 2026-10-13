@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.38.2 (13.10.2026)
+
+**Verbessert**
+- Spezialitems: Unter der Summe steht, wie viel sie über oder unter einem normalen Stück derselben Stufe und Art liegt (zum Beispiel Gumayushis Bogen "+2 zu 96").
+
 ## 0.38.1 (13.10.2026)
 
 **Verbessert**

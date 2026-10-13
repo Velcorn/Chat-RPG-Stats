@@ -299,10 +299,14 @@ def economy(h: History, now: float, days: int = 30) -> dict:
     return {"series": points}
 
 
+DIP_RANKS = 5  # ranks lost at once that count as a dip when they come back at the next run
+
+
 def rank_series(series: list, since: float | None = None, blip: float = 3600) -> list:
     """The rank line of a player page: from the day the board shows plain gear (`GEAR_SINCE`; before, it ranked
     Kampfkraft, another order), without the runs off the board at its start and without short absences (at most
-    `blip` seconds between two ranks: a page read in the middle of an update). Longer ones stay gaps."""
+    `blip` seconds between two ranks: a page read in the middle of an update). Longer ones stay gaps. A rank that
+    falls by DIP_RANKS or more and is back at the next run (within `blip`) is dropped: gear taken off for a moment."""
     since = GEAR_SINCE if since is None else since
     pts = [p for p in series if p[0] >= since]
     while pts and pts[0][1] is None:
@@ -315,7 +319,18 @@ def rank_series(series: list, since: float | None = None, blip: float = 3600) ->
             if back and ahead and ahead[0] - back[0] <= blip:
                 continue
         out.append([t, v])
-    return out
+    return [q for i, q in enumerate(out) if not is_dip(out, i, blip)]
+
+
+def is_dip(pts: list, i: int, blip: float) -> bool:
+    """Whether `pts[i]` is a rank that fell by DIP_RANKS or more and mostly recovered at the next point."""
+    if not 0 < i < len(pts) - 1:
+        return False
+    (_, before), (t, v), (after_t, after) = pts[i - 1], pts[i], pts[i + 1]
+    if None in (before, v, after) or after_t - t > blip:
+        return False
+    drop = v - before
+    return drop >= DIP_RANKS and v - after >= drop / 2
 
 
 def main_stat(d: dict) -> str:

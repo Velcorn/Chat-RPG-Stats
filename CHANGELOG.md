@@ -3,6 +3,12 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.36.1 (13.10.2026)
+
+**Verbessert**
+- Die Diagramme zeigen keine Punkte mit +/- mehr an den größten Sprüngen.
+- Die Platzierungskurve glättet kurze Einbrüche: Fällt jemand um mindestens 5 Plätze und ist im nächsten Lauf wieder da (meist abgelegte und wieder angelegte Ausrüstung), fehlt der Ausreißer.
+
 ## 0.36.0 (13.10.2026)
 
 **Neu**

@@ -137,9 +137,6 @@
   .chart .end2 { fill: var(--series-2); stroke: var(--surface-1); stroke-width: 2; }
   .chart .sel { fill: var(--series-1); opacity: .16; stroke: var(--series-1); stroke-opacity: .6; }
   .chart .hit { cursor: crosshair; }
-  .chart .jump { fill: var(--surface-1); stroke-width: 2.5; } .chart .jump.good { stroke: var(--good); } .chart .jump.bad { stroke: var(--critical); }
-  .chart .jumplabel { font-size: 12.5px; font-weight: 800; paint-order: stroke; stroke: var(--surface-1); stroke-width: 4px; stroke-linejoin: round; }
-  .chart .jumplabel.good { fill: #4ed08c; } .chart .jumplabel.bad { fill: #ff7a72; }
   .chart .draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 1.2s ease-out forwards; }
   .chart .fadein { animation: fade 1s ease-out both; }
   @keyframes draw { to { stroke-dashoffset: 0; } }
@@ -528,20 +525,6 @@ function lineChart(box, points, { label, fmt = fmtInt, invert = false, until, em
     visOthers.forEach((o, i) => svg.append(sv("path", { d: stepPath(o.vis), class: `line2 c${i}` })));
     svg.append(sv("path", { d, class: "glow", filter: `url(#${fid})` }));
     svg.append(sv("path", { d, class: fresh ? "line draw" : "line", ...(fresh ? { pathLength: 1 } : {}) }));
-    // The biggest moves in view get a dot and their size (at most three, each a real share of the scale).
-    const jumps = [];
-    for (let i = 1; i < pts.length; i++) {
-      const dv = change(pts[i - 1].v, pts[i].v);
-      if (Math.abs(dv) >= 0.12 * (hi - lo) && x(last.t) - x(pts[i].t) > 46) jumps.push([Math.abs(dv), dv, pts[i]]);
-    }
-    const picked = [];  // the biggest first, none closer than 36 px to another
-    for (const j of jumps.sort((u, w) => w[0] - u[0])) if (picked.length < 3 && picked.every((q) => Math.abs(x(q[2].t) - x(j[2].t)) > 36)) picked.push(j);
-    for (const [, dv, p] of picked) {
-      const up = dv > 0, ly = y(p.v) + ((up !== invert) ? -11 : 19);
-      svg.append(sv("circle", { cx: x(p.t), cy: y(p.v), r: 4.5, class: `jump ${up ? "good" : "bad"}` }),
-        sv("text", { x: x(p.t), y: Math.min(H - m.b - 2, Math.max(m.t + 8, ly)), "text-anchor": "middle", class: `jumplabel ${up ? "good" : "bad"}` },
-          (dv > 0 ? "+" : "-") + fmtInt(Math.abs(dv))));
-    }
     svg.append(sv("circle", { cx: x(last.t), cy: y(last.v), r: 9, class: "halo" }),
       sv("circle", { cx: x(last.t), cy: y(last.v), r: 4.5, class: "end" }));
     const pillW = endText.length * 7.6 + 12;

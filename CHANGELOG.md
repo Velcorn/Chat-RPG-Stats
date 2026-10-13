@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.39.1 (13.10.2026)
+
+**Verbessert**
+- Verteilung der Ausrüstungswerte: Alle Reiter ("Alle" und die Gilden) haben dieselbe Skala (gleicher Bereich, gleiche Balkenbreite, gleiche Höhe), damit sich die Gilden direkt vergleichen lassen.
+
 ## 0.39.0 (13.10.2026)
 
 **Neu**

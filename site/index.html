@@ -1460,7 +1460,8 @@ function statCurvesCard(s) {
 function viewPower(s) {
   const st = stFor(s), p = st.power;
   const bucket = (m) => m.to == null ? `über ${fmtDec(100 * m.from, 0)} %` : m.from === 0 ? `unter ${fmtDec(100 * m.to, 0)} %` : `${fmtDec(100 * m.from, 0)} bis ${fmtDec(100 * m.to, 0)} %`;
-  const powered = st.types.filter((r) => r.power);
+  // Sorted by the recommended gear, then the average Kampfkraft: the bosses by strength, the adventures (no recommendation) last.
+  const powered = st.types.filter((r) => r.power).sort((a, b) => (b.rec || 0) - (a.rec || 0) || (b.power || 0) - (a.power || 0));
   // The headline: the win chance by group strength, with the averages in one line; the table by bucket below it.
   const summary = p.n ? `Ø Gruppe ${fmtInt(p.avg)} Kampfkraft${p.rec ? `, empfohlen ${fmtInt(p.rec)}` : ""} (gemessen bei ${fmtInt(p.n)} von ${fmtInt(st.fights)} Kämpfen).` : "";
   return [

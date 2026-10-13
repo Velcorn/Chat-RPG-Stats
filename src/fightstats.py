@@ -83,10 +83,18 @@ def summarize(fs: list[dict], extra: dict[int, dict]) -> dict:
     return row
 
 
+def current(f: dict, d: dict, boss_rec: dict | None) -> bool:
+    """A boss fight counts for the power numbers only if its recommendation is the boss's recommendation now: a
+    boss that was made stronger (its recommendation changed) is not the boss of the older fights. Everything else
+    (adventures, raids, bosses the compendium doesn't know) counts."""
+    now = (boss_rec or {}).get(f.get("name"))
+    return not (f.get("kind") == "BOSS" and now and d.get("rec") != now)
+
+
 def fight_stats(fights: list[dict], extra: dict[int, dict], now: float, days: int = 30,
-                lo: float | None = None, hi: float | None = None) -> dict:
+                lo: float | None = None, hi: float | None = None, boss_rec: dict | None = None) -> dict:
     """The numbers for the last `days` days; `lo`/`hi` cut a game version out of that (fights without a time
-    belong to no version)."""
+    belong to no version); `boss_rec` (name -> recommendation now) keeps the power numbers to bosses as they are."""
     window = [f for f in fights if not (t := iso_ts(f.get("endedAt"))) or t >= now - days * DAY]
     if lo is not None or hi is not None:
         window = [f for f in window if (t := iso_ts(f.get("endedAt"))) and t >= (lo or 0) and t < (hi or 1e18)]
@@ -113,7 +121,8 @@ def fight_stats(fights: list[dict], extra: dict[int, dict], now: float, days: in
         row["boss_left"] = mean([100 * d["hp"] / d["maxhp"] for d in defeats if d.get("hp") is not None], 1) \
             if defeats else None
         row["maxhp"] = mean([extra[f["id"]].get("maxhp") for f in fs if extra.get(f["id"], {}).get("maxhp")])
-        power = [(extra[f["id"]], f) for f in fs if extra.get(f["id"], {}).get("power")]
+        power = [(extra[f["id"]], f) for f in fs
+                 if extra.get(f["id"], {}).get("power") and current(f, extra[f["id"]], boss_rec)]
         row["power"] = mean([d["power"] for d, _ in power])
         row["power_win"] = mean([d["power"] for d, f in power if f.get("outcome") == "VICTORY"])
         row["power_loss"] = mean([d["power"] for d, f in power if f.get("outcome") != "VICTORY"])
@@ -135,7 +144,8 @@ def fight_stats(fights: list[dict], extra: dict[int, dict], now: float, days: in
         row.update({key: round(sum(d["rsum"][i][j] for d in fought) / heads) if heads else None
                     for j, key in enumerate(("dmg", "taken", "heal", "boost"))})
 
-    with_power = [(extra[f["id"]], f) for f in window if extra.get(f["id"], {}).get("power")]
+    with_power = [(extra[f["id"]], f) for f in window
+                  if extra.get(f["id"], {}).get("power") and current(f, extra[f["id"]], boss_rec)]
     margins = []
     for lo, hi in MARGINS:
         sel = [f for d, f in with_power if d.get("rec") and lo <= d["power"] / d["rec"] < hi]
@@ -240,14 +250,16 @@ def logistic_fit(xs: list[float], ys: list[int], ridge: float = 0.001, steps: in
     return a, b
 
 
-def win_odds(fights: list[dict], extra: dict[int, dict], now: float, days: int = 30) -> dict:
+def win_odds(fights: list[dict], extra: dict[int, dict], now: float, days: int = 30,
+             boss_rec: dict | None = None) -> dict:
     """Boss fights of the last `days` whose live view gave the group's average Kampfkraft and the recommendation:
     each as [Kampfkraft / recommendation, won, boss], and a logistic curve through them ([[ratio, win %], ...]) with
     the ratio at which it crosses 50 % (`mid`). Few fights or one outcome only: no curve."""
     points = []
     for f in fights:
         d, t = extra.get(f["id"], {}), iso_ts(f.get("endedAt"))
-        if f.get("kind") == "BOSS" and d.get("power") and d.get("rec") and t and t >= now - days * DAY:
+        if f.get("kind") == "BOSS" and d.get("power") and d.get("rec") and t and t >= now - days * DAY \
+                and current(f, d, boss_rec):
             points.append([round(d["power"] / d["rec"], 3), int(f.get("outcome") == "VICTORY"), f.get("name")])
     out: dict = {"n": len(points), "points": points, "fit": [], "mid": None}
     if len(points) < 8 or len({p[1] for p in points}) < 2:

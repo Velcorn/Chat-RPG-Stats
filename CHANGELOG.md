@@ -3,6 +3,14 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.35.0 (13.10.2026)
+
+**Neu**
+- Kämpfe > Kampfkraft: Ein Boss, der stärker gemacht wurde (seine empfohlene Ausrüstung hat sich geändert, zuletzt die Ostmauer), taucht mit seinen älteren Kämpfen nicht mehr in der Siegchance und den Tabellen auf. Die Seite liest dafür einmal am Tag das Kompendium des Spiels (eine zusätzliche Anfrage am Tag).
+
+**Oberfläche**
+- "Kampfkraft je Kampf" ist nach der empfohlenen Ausrüstung sortiert und dann nach der durchschnittlichen Kampfkraft: Die Bosse stehen oben, die Abenteuer (ohne Empfehlung) unten.
+
 ## 0.34.2 (13.10.2026)
 
 **Oberfläche**

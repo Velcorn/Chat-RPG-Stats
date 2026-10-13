@@ -192,6 +192,25 @@ class WinOddsTests(unittest.TestCase):
         self.assertTrue(all(a[1] <= b[1] for a, b in itertools.pairwise(fit)))
         self.assertTrue(0.8 < odds["mid"] < 0.95)
 
+    def test_a_boss_made_stronger_leaves_its_old_fights_out_of_the_power_numbers(self):
+        now = fightstats.iso_ts("2026-10-11T12:00:00Z")
+        fights, extra = [], {}
+        for i, (name, rec) in enumerate([("Alt", 365), ("Alt", 365), ("Neu", 470), ("Neu", 470), ("Neu", 400)]):
+            fights.append({"id": i, "kind": "BOSS", "name": name, "outcome": "VICTORY", "fighters": 10,
+                           "endedAt": "2026-10-11T10:00:00Z"})
+            extra[i] = {"power": 400, "gear": 300, "rec": rec}
+        fights.append({"id": 9, "kind": "ADVENTURE", "name": "Moor", "outcome": "VICTORY", "fighters": 10,
+                       "endedAt": "2026-10-11T10:00:00Z"})
+        extra[9] = {"power": 300, "gear": 250, "rec": None}
+        boss_rec = {"Neu": 470, "Alt": 600, "Ohne": 0}
+        odds = fightstats.win_odds(fights, extra, now, boss_rec=boss_rec)
+        self.assertEqual(odds["n"], 2)  # the two 470 ones; "Alt" is 600 now, the 400 one is an old "Neu"
+        stats = fightstats.fight_stats(fights, extra, now, boss_rec=boss_rec)
+        self.assertEqual(stats["power"]["n"], 3)  # the two 470 ones and the adventure
+        rows = {r["name"]: r for r in stats["types"]}
+        self.assertEqual((rows["Neu"]["rec"], rows["Alt"]["power"], rows["Moor"]["power"]), (470, None, 300))
+        self.assertEqual(fightstats.win_odds(fights, extra, now)["n"], 5)  # without the compendium: all of them
+
     def test_few_fights_or_one_outcome_give_no_curve(self):
         now = fightstats.iso_ts("2026-10-11T12:00:00Z")
         fights = [{"id": i, "kind": "BOSS", "name": "D", "outcome": "VICTORY", "endedAt": "2026-10-11T10:00:00Z"}

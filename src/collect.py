@@ -60,7 +60,8 @@ def read_watchlist(path: Path) -> list[str]:
 
 
 # Reference data read once a day (on the first run of a day that has not got it): name -> how to read it.
-DAILY = {"first_kills": lambda site: site.get("/api/guilds/first-kills")}
+DAILY = {"first_kills": lambda site: site.get("/api/guilds/first-kills"),
+         "compendium": lambda site: site.get("/api/compendium")}
 
 
 def sweep_batch(logins: list[str], after: str, runs: int = SWEEP_RUNS) -> list[str]:
@@ -223,6 +224,14 @@ def live_digest(e: dict) -> dict:
             "tanks": [b.get("tanksStanding"), b.get("tanksTotal")]}
 
 
+def boss_rec_state(page) -> dict[str, int]:
+    """The recommended gear of every boss now, by name (the compendium; a boss without one is left out). The fights
+    of a boss before its recommendation changed (it was made stronger) are not comparable to today's."""
+    bosses = page.get("bosses") if isinstance(page, dict) else None
+    return {b["name"]: int(b["recommendedGear"]) for b in bosses or []
+            if isinstance(b, dict) and b.get("name") and b.get("recommendedGear")}
+
+
 def first_kills_state(rows) -> list[list]:
     """The guilds' first kills as [boss, level, guild login, guild name, time, boss order], in the game's order."""
     return [[r.get("bossName"), r.get("level"), r.get("guildLogin"), r.get("guildName"), r.get("at"),
@@ -299,6 +308,7 @@ def state_from(snap: dict, prev: dict) -> dict:
             "rules": {k: v for k, v in (snap.get("rules") or {}).items() if k != "playWindowOpenNow"},
             "first_kills": (first_kills_state(snap["first_kills"]) if "first_kills" in snap
                             else prev.get("first_kills", [])),
+            "boss_rec": (boss_rec_state(snap["compendium"]) if "compendium" in snap else prev.get("boss_rec", {})),
             "days": {**prev.get("days", {}), **snap.get("days", {})},
             "fight_last": max([prev.get("fight_last", 0), *(f.get("id", 0) for f in snap["fights"])]),
             "sweep_after": snap.get("sweep_after", prev.get("sweep_after", "")),

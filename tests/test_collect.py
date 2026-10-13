@@ -243,6 +243,15 @@ class StateTests(unittest.TestCase):
         g = collect.state_from(s, {})["guilds"]["karni"]
         self.assertEqual(g["boss_gear"], 248)
 
+    def test_the_boss_recommendations_come_from_the_compendium_and_survive_junk(self):
+        page = {"bosses": [{"name": "Mel", "recommendedGear": 470}, {"name": "Neu", "recommendedGear": 0}, "x",
+                           {"recommendedGear": 5}]}
+        self.assertEqual(collect.boss_rec_state(page), {"Mel": 470})
+        self.assertEqual((collect.boss_rec_state([]), collect.boss_rec_state(None)), ({}, {}))
+        kept = {"boss_rec": {"Mel": 470}}
+        s = collect.snapshot(FakeSite(answers()), [], prev=KEPT)
+        self.assertEqual(collect.state_from(s, kept)["boss_rec"], {"Mel": 470})  # not read today: kept
+
     def test_first_kills_keep_what_the_page_says_and_survive_junk(self):
         rows = [{"bossName": "B", "level": 1, "guildLogin": "karni", "guildName": "Karni", "at": "t",
                  "bossOrder": 2}, 5]
@@ -300,7 +309,7 @@ class MainTests(unittest.TestCase):
         _, data, _, _ = self.run_main(now=self.NOON, snapshot=fake)
         self.run_main(now=self.NOON, snapshot=fake, data=data)
         day = "2026-09-30"
-        self.assertEqual(asked, [{"first_kills": day}, {}])
+        self.assertEqual(asked, [{"first_kills": day, "compendium": day}, {}])
 
     def test_a_profiles_part_without_a_state_does_nothing(self):
         code, data, _, printed = self.run_main(now=self.NOON, args=("--part", "profiles"))

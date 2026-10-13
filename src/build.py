@@ -218,7 +218,8 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
                                       for m in sorted(members, key=lambda m: -(players[m].get("donated") or 0))[:10]],
                            "series": h.guilds.get(g, [])})
 
-    summary_stats = fightstats.fight_stats(h.fights, h.fightx, now)
+    boss_rec = state.get("boss_rec", {})
+    summary_stats = fightstats.fight_stats(h.fights, h.fightx, now, boss_rec=boss_rec)
     summary = {"generated": int(now), "since": h.first, "runs": h.runs,
                "load": {"per_run": h.requests, "runs_per_day": (collect.PLAY_TO - collect.PLAY_FROM) * 4},
                "players": len(players),
@@ -232,11 +233,13 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
                "fights": {"recent": recent_fights(h),
                           "total": len(h.fights)},
                "stats": summary_stats,
-               "eras": {"after": fightstats.fight_stats(h.fights, h.fightx, now, lo=fightstats.UPDATE),
-                        "before": fightstats.fight_stats(h.fights, h.fightx, now, hi=fightstats.UPDATE)},
+               "eras": {"after": fightstats.fight_stats(h.fights, h.fightx, now, lo=fightstats.UPDATE,
+                                                        boss_rec=boss_rec),
+                        "before": fightstats.fight_stats(h.fights, h.fightx, now, hi=fightstats.UPDATE,
+                                                         boss_rec=boss_rec)},
                "guild_fights": fightstats.guild_fights(h.fights, h.fightx, now),
                "stat_curves": fightstats.stat_curves(h.fights, h.fightx, now),
-               "win_odds": fightstats.win_odds(h.fights, h.fightx, now),
+               "win_odds": fightstats.win_odds(h.fights, h.fightx, now, boss_rec=boss_rec),
                "first_kills": state.get("first_kills", []),
                "channels": state.get("channels", {}),
                "channel_stats": channel_stats(h, state, summary_stats["channels"]),

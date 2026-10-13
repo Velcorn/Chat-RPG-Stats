@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.40.1 (13.10.2026)
+
+**Verbessert**
+- Wert je Perzentil: tolkin ist rot, karni lila und sola blau.
+
 ## 0.40.0 (13.10.2026)
 
 **Neu**

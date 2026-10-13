@@ -733,7 +733,8 @@ function histogram(box, values, { marks = [], step, label = "Ausrüstungswert", 
 }
 // The gear score at each percentile, one line per series ("Alle" and the guilds): the share of players below on the
 // x axis, so groups of any size sit on the same scale. Horizontal marks like the histogram's.
-const PCT_COLORS = ["var(--text-primary)", "#3987e5", "#d99a1c", "#2fae6d", "#a77de0", "#e5534b"];
+const GUILD_COLORS = { tolkin: "#e5534b", karni: "#a77de0", sola: "#3987e5" }, SPARE_COLORS = ["#d99a1c", "#2fae6d", "#3fb8c4", "#c96f9a"];
+const pctColor = (q, i) => i === 0 ? "var(--text-primary)" : GUILD_COLORS[q.name] || SPARE_COLORS[(i - 1) % SPARE_COLORS.length];
 function percentileChart(box, series, marks = []) {
   box.replaceChildren();
   const W = Math.max(260, box.clientWidth), H = 240, m = { l: 44, r: 12, t: 14, b: 40 };
@@ -761,7 +762,7 @@ function percentileChart(box, series, marks = []) {
   svg.append(clip);
   series.forEach((q, i) => {
     const d = Array.from({ length: 101 }, (_, p) => `${p ? "L" : "M"}${x(p).toFixed(1)},${y(at(q, p)).toFixed(1)}`).join("");
-    svg.append(sv("path", { d, fill: "none", stroke: PCT_COLORS[i % PCT_COLORS.length], "stroke-width": i ? 2.2 : 2.8,
+    svg.append(sv("path", { d, fill: "none", stroke: pctColor(q, i), "stroke-width": i ? 2.2 : 2.8,
       "stroke-dasharray": i ? "" : "6 4", "stroke-linejoin": "round", "clip-path": "url(#pctclip)" }));
   });
   const tip = el("div", { class: "tip" }), rule = sv("line", { y1: m.t, y2: H - m.b, class: "mark ref", style: "display:none" });
@@ -772,14 +773,14 @@ function percentileChart(box, series, marks = []) {
     const r = svg.getBoundingClientRect(), p = Math.max(0, Math.min(100, Math.round(((ev.clientX - r.left) * W / r.width - m.l) / (W - m.l - m.r) * 100)));
     rule.setAttribute("x1", x(p)); rule.setAttribute("x2", x(p)); rule.style.display = "";
     tip.replaceChildren(el("strong", {}, `${p} % der Spieler darunter`),
-      ...series.map((q, i) => el("div", { class: "tipline" }, el("span", { class: "sw", style: `background:${PCT_COLORS[i % PCT_COLORS.length]}` }), `${q.name}: ${fmtInt(at(q, p))}`)));
+      ...series.map((q, i) => el("div", { class: "tipline" }, el("span", { class: "sw", style: `background:${pctColor(q, i)}` }), `${q.name}: ${fmtInt(at(q, p))}`)));
     placeTip(tip, x(p) * r.width / W, r.width);
   };
   catcher.addEventListener("pointermove", move);
   catcher.addEventListener("pointerleave", () => { tip.style.display = "none"; rule.style.display = "none"; });
   svg.append(catcher);
   box.append(el("div", { class: "legend" }, ...series.map((q, i) => el("span", {},
-    el("i", { style: `background:${PCT_COLORS[i % PCT_COLORS.length]}` }), `${q.name} (${fmtInt(q.values.length)})`))));
+    el("i", { style: `background:${pctColor(q, i)}` }), `${q.name} (${fmtInt(q.values.length)})`))));
 }
 function distributionCard(title, marks, note, guilds = []) {
   // The gear scores of the active players: as bars per score (all of them, or one guild per tab) or as a curve per

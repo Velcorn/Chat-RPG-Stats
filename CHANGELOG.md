@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.38.6 (13.10.2026)
+
+**Verbessert**
+- Der Verlauf des Ausrüstungswerts glättet kurze Einbrüche: Fällt der Wert um mindestens 5 % und ist innerhalb einer Stunde wieder mindestens zur Hälfte oben (meist abgelegte und wieder angelegte Ausrüstung), fehlt der Ausreißer.
+
 ## 0.38.5 (13.10.2026)
 
 **Verbessert**

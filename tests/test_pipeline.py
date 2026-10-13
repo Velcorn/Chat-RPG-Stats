@@ -227,6 +227,14 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(rank_series(series, since=0, dip_within=600),
                          [[0, 10], [600, 11], [900, 40], [5000, 12], [5300, 20], [5600, 21]])  # 25 was a dip, 40 lasted
 
+    def test_a_gear_dip_that_comes_back_within_the_hour_is_smoothed(self):
+        from build import gear_series
+        series = [[0, 468], [600, 417], [900, 475], [5000, 480], [5300, 400], [20000, 478], [30000, 520]]
+        self.assertEqual(gear_series(series),
+                         [[0, 468], [900, 475], [5000, 480], [5300, 400], [20000, 478], [30000, 520]])  # 400 stays
+        low = [[0, 468], [600, 417], [700, 420], [900, 470]]  # two runs low
+        self.assertEqual(gear_series(low), [[0, 468], [900, 470]])
+
     def test_a_value_that_dips_and_returns_is_no_rise(self):
         from build import gain
         now = 10 * DAY

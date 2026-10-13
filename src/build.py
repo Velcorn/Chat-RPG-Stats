@@ -300,6 +300,7 @@ def economy(h: History, now: float, days: int = 30) -> dict:
 
 
 BLIP = 6 * 3600  # an absence from the board this short is no gap in the rank line
+DIP_SHARE = 0.05  # the share of the gear score lost at once that counts as a dip when it comes back within the hour
 DIP_RANKS = 5  # ranks lost at once that count as a dip when they come back at the next run
 
 
@@ -333,6 +334,25 @@ def is_dip(pts: list, i: int, blip: float) -> bool:
         return False
     drop = v - before
     return drop >= DIP_RANKS and v - after >= drop / 2
+
+
+def gear_series(series: list, share: float = DIP_SHARE, within: float = 3600) -> list:
+    """The gear line of a player page without dips: a value that falls by `share` or more below the one before and is
+    back to at least half way up within `within` seconds (a few runs) is gear taken off for a moment."""
+    out, i = [], 0
+    while i < len(series):
+        t, v = series[i]
+        before = out[-1][1] if out else None
+        if before and v is not None and v <= before * (1 - share):
+            back = next((j for j in range(i + 1, min(i + 4, len(series)))
+                         if series[j][0] - t <= within and series[j][1] is not None
+                         and series[j][1] >= before - (before - v) / 2), None)
+            if back is not None:
+                i = back
+                continue
+        out.append([t, v])
+        i += 1
+    return out
 
 
 def main_stat(d: dict) -> str:
@@ -421,7 +441,7 @@ def player_page(login, h, state, now, rank, paces, with_split, top100_gear, top1
             "board_rank": on_board,
             "split": {k: details.get(login, {}).get(k) for k in ("atk", "def", "sup", "silver", "quests")},
             "peers": split,
-            "series": {"gear": h.gs[login], "rank": rank_series(h.rank.get(login, [])),
+            "series": {"gear": gear_series(h.gs[login]), "rank": rank_series(h.rank.get(login, [])),
                        "silver": [[t, d.get("silver")] for t, d in h.details.get(login, [])
                                   if d.get("silver") is not None]},
             "watch": watch or None}

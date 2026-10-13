@@ -3,6 +3,14 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.38.1 (13.10.2026)
+
+**Verbessert**
+- Spezialitems: besondere Waffen und Bossbeute stehen in zwei getrennten Karten, die Beute nach Boss gruppiert. Bei Mel'Khmal und Ostmauer steht, dass sich die Werte vermutlich bald ändern.
+
+**Behoben**
+- Formen: Viele Zweihänder (Armbrüste, Dreizacke, Kriegshämmer und andere) wurden nicht erkannt, deshalb standen bei einigen Zweihandformen noch Stufe 3, 6 oder 8. Sie zeigen jetzt Funde der Stufen 11 und 12.
+
 ## 0.38.0 (13.10.2026)
 
 **Neu**

@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.41.2 (14.10.2026)
+
+**Oberfläche**
+- Verteilung der Ausrüstungswerte (Spieler je Wert und Wert je Perzentil): Der Name des Spielers und "Platz 100" stehen nicht mehr als Beschriftung im Diagramm, sondern in einer kleinen Legende darunter (mit Linienart und Wert).
+
 ## 0.41.1 (13.10.2026)
 
 **Verbessert**

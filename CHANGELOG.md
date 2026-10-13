@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.41.4 (14.10.2026)
+
+**Behoben**
+- Zwei-Finger-Zoom in den Verlaufsdiagrammen auf dem Handy: Er zoomte nur einen winzigen Schritt und brach dann ab, weil das Diagramm bei jedem Schritt neu gezeichnet wurde und dabei die Finger verlor (dann galt wieder das Ziehen mit einem Finger). Der Zustand der Geste liegt jetzt außerhalb der Zeichnung, der Zoom läuft durch.
+
 ## 0.41.3 (14.10.2026)
 
 **Behoben**

@@ -445,6 +445,65 @@ function lineChart(box, points, { label, fmt = fmtInt, invert = false, until, em
   const change = (a, b) => invert ? a - b : b - a;  // up is better: for ranks that is a smaller number
   const changeText = (d) => d === 0 ? "+-0" : (d > 0 ? "+" : "-") + (invert ? fmtInt(Math.abs(d)) + (Math.abs(d) === 1 ? " Platz" : " Plätze") : fmt(Math.abs(d)));
 
+  // Drag to zoom into a span; two fingers pinch; double-click resets. The gestures live out here and on `box`: a pinch
+  // redraws the chart on every move, which replaces the svg under the fingers (state and capture would be lost).
+  const touches = new Map();
+  let drag = null, pinch = null, cur = null;
+  const onHit = (ev) => cur && ev.target === cur.hit;
+  box.addEventListener("pointerdown", (ev) => {
+    if (!onHit(ev)) return;
+    box.setPointerCapture(ev.pointerId);
+    touches.set(ev.pointerId, cur.pxOf(ev));
+    if (touches.size === 2) {
+      const [p, q] = [...touches.values()];
+      pinch = { d: Math.abs(p - q) || 1, mid: cur.tAt((p + q) / 2), span: cur.t1 - cur.t0 };
+      drag = null; cur.sel.setAttribute("visibility", "hidden");
+    } else { drag = { x0: cur.pxOf(ev), moved: false }; cur.hover(drag.x0); }
+  });
+  box.addEventListener("pointermove", (ev) => {
+    if (!cur) return;
+    if (!touches.has(ev.pointerId)) { if (onHit(ev)) cur.hover(cur.pxOf(ev)); return; }
+    touches.set(ev.pointerId, cur.pxOf(ev));
+    if (pinch && touches.size === 2) {
+      const [p, q] = [...touches.values()];
+      const s = Math.max(MIN_SPAN, pinch.span * pinch.d / (Math.abs(p - q) || 1));
+      setView([pinch.mid - s / 2, pinch.mid + s / 2]);
+      return;
+    }
+    if (!drag) return;
+    const px = cur.pxOf(ev);
+    if (Math.abs(px - drag.x0) > 6) {
+      drag.moved = true;
+      const l = Math.max(cur.m.l, Math.min(px, drag.x0)), r = Math.min(cur.W - cur.m.r, Math.max(px, drag.x0));
+      cur.sel.setAttribute("x", l); cur.sel.setAttribute("width", r - l); cur.sel.setAttribute("visibility", "visible");
+      cur.hide();
+    } else cur.hover(px);
+  });
+  const release = (ev) => {
+    if (!touches.delete(ev.pointerId) || !cur) return;
+    if (pinch) { if (!touches.size) pinch = null; return; }
+    if (drag && drag.moved) {
+      const px = cur.pxOf(ev), ta = cur.tAt(Math.min(px, drag.x0)), tb = cur.tAt(Math.max(px, drag.x0));
+      drag = null; cur.sel.setAttribute("visibility", "hidden");
+      if (tb - ta >= MIN_SPAN / 2) setView([ta, Math.max(tb, ta + MIN_SPAN)]);
+      return;
+    }
+    drag = null;  // a tap keeps its tooltip until the next touch
+  };
+  box.addEventListener("pointerup", release);
+  box.addEventListener("pointercancel", (ev) => {
+    touches.delete(ev.pointerId);
+    if (!touches.size) pinch = null;
+    drag = null;
+    if (cur) { cur.sel.setAttribute("visibility", "hidden"); cur.hide(); }
+  });
+  box.addEventListener("pointerleave", (ev) => { if (ev.pointerType === "mouse" && !drag && cur) cur.hide(); });
+  box.addEventListener("dblclick", () => setView(null));  // the capture makes box the target
+  // With touch-action: pan-y the browser takes two fingers for a page scroll and cancels the pointers: hold it off.
+  for (const type of ["touchstart", "touchmove"]) {
+    box.addEventListener(type, (ev) => { if (onHit(ev) && ev.touches.length >= 2 && ev.cancelable) ev.preventDefault(); }, { passive: false });
+  }
+
   function draw() {
     box.replaceChildren();
     const [a, b] = view || full;
@@ -571,56 +630,7 @@ function lineChart(box, points, { label, fmt = fmtInt, invert = false, until, em
       tip.replaceChildren(...lines);
       placeTip(tip, cx * svg.getBoundingClientRect().width / W, svg.getBoundingClientRect().width);
     }
-    // Drag to zoom into a span; two fingers pinch; double-click resets.
-    const touches = new Map();
-    let drag = null, pinch = null;
-    hit.addEventListener("pointerdown", (ev) => {
-      hit.setPointerCapture(ev.pointerId);
-      touches.set(ev.pointerId, pxOf(ev));
-      if (touches.size === 2) {
-        const [p, q] = [...touches.values()];
-        pinch = { d: Math.abs(p - q) || 1, mid: tAt((p + q) / 2), span: t1 - t0 };
-        drag = null; sel.setAttribute("visibility", "hidden");
-      } else { drag = { x0: pxOf(ev), moved: false }; hover(drag.x0); }
-    });
-    hit.addEventListener("pointermove", (ev) => {
-      if (!touches.has(ev.pointerId)) { hover(pxOf(ev)); return; }
-      touches.set(ev.pointerId, pxOf(ev));
-      if (pinch && touches.size === 2) {
-        const [p, q] = [...touches.values()];
-        const s = Math.max(MIN_SPAN, pinch.span * pinch.d / (Math.abs(p - q) || 1));
-        setView([pinch.mid - s / 2, pinch.mid + s / 2]);
-        return;
-      }
-      if (!drag) return;
-      const px = pxOf(ev);
-      if (Math.abs(px - drag.x0) > 6) {
-        drag.moved = true;
-        const l = Math.max(m.l, Math.min(px, drag.x0)), r = Math.min(W - m.r, Math.max(px, drag.x0));
-        sel.setAttribute("x", l); sel.setAttribute("width", r - l); sel.setAttribute("visibility", "visible");
-        hide();
-      } else hover(px);
-    });
-    const release = (ev) => {
-      touches.delete(ev.pointerId);
-      if (pinch) { if (!touches.size) pinch = null; return; }
-      if (drag && drag.moved) {
-        const px = pxOf(ev), ta = tAt(Math.min(px, drag.x0)), tb = tAt(Math.max(px, drag.x0));
-        drag = null; sel.setAttribute("visibility", "hidden");
-        if (tb - ta >= MIN_SPAN / 2) setView([ta, Math.max(tb, ta + MIN_SPAN)]);
-        return;
-      }
-      drag = null;
-      if (ev.pointerType === "mouse") return;  // a tap keeps its tooltip until the next touch
-    };
-    hit.addEventListener("pointerup", release);
-    hit.addEventListener("pointercancel", (ev) => { touches.delete(ev.pointerId); drag = pinch = null; sel.setAttribute("visibility", "hidden"); hide(); });
-    hit.addEventListener("pointerleave", (ev) => { if (ev.pointerType === "mouse" && !drag) hide(); });
-    // With touch-action: pan-y the browser takes two fingers for a page scroll and cancels the pointers: hold it off.
-    for (const type of ["touchstart", "touchmove"]) {
-      hit.addEventListener(type, (ev) => { if (ev.touches.length >= 2 && ev.cancelable) ev.preventDefault(); }, { passive: false });
-    }
-    hit.addEventListener("dblclick", () => setView(null));
+    cur = { hit, svg, pxOf, tAt, hover, hide, sel, m, W, t0, t1 };
     fresh = false;
   }
   function setView(v) {

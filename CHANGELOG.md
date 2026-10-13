@@ -3,6 +3,14 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.37.0 (13.10.2026)
+
+**Neu**
+- Ausrüstungsformen: Oben lässt sich eine Stufe wählen (1 bis 14), dann zeigen die Tabellen statt der Prozente die konkreten Werte dieser Stufe. Sie stammen aus der Kompendium-Tabelle von fireworker2000, donmerkuzio und AirFighterKI; eine Spalte nennt, ob ein Wert gemessen oder geschätzt ist.
+
+**Behoben**
+- "des Prinzen" stand als Form bei den Einhandwaffen, ist aber keine: Es gehört zur Waffe "Notwehr des Prinzen". Sie, Kutchers linker Haken und Gumayushis Bogen haben eigene Werte und stehen nicht in der Tabelle (steht jetzt im Hinweis).
+
 ## 0.36.3 (13.10.2026)
 
 **Behoben**

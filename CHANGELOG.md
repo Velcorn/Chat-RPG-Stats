@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.41.1 (13.10.2026)
+
+**Verbessert**
+- Wert je Perzentil: Die Knöpfe "Alles", "Obere 50 %", "Obere 20 %" und "Obere 5 %" sind wieder weg. Das Vergrößern geht wie bei den anderen Diagrammen durch Ziehen über einen Bereich, Doppelklick zeigt wieder alles.
+
 ## 0.41.0 (13.10.2026)
 
 **Neu**

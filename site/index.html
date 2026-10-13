@@ -806,7 +806,7 @@ function distributionCard(title, marks, note, guilds = []) {
   // The gear scores of the active players: as bars per score (all of them, or one guild per tab) or as a curve per
   // percentile with every group in one chart.
   const box = el("div", { class: "chart" }), count = el("p", { class: "note" }), noteEl = el("p", { class: "note" });
-  const pctNote = "Die Kurven zeigen, welchen Ausrüstungswert ein Spieler am jeweiligen Anteil hat (50 % = Median, rechts die Besten). Die Grenze zur Top 100 gilt für alle Spieler. Zum Vergrößern über einen Bereich ziehen oder oben wählen, Doppelklick für alles.";
+  const pctNote = "Die Kurven zeigen, welchen Ausrüstungswert ein Spieler am jeweiligen Anteil hat (50 % = Median, rechts die Besten). Die Grenze zur Top 100 gilt für alle Spieler. Zum Vergrößern über einen Bereich ziehen, Doppelklick für alles.";
   let ps = null, pick = "", mode = "bars", view = [0, 100];
   const tabs = guilds.filter((g) => (g.active || 0) >= 10).sort((u, w) => (w.active || 0) - (u.active || 0));
   const rowsOf = (key) => {
@@ -821,12 +821,10 @@ function distributionCard(title, marks, note, guilds = []) {
   const draw = () => {
     if (!ps) return;
     picker && (picker.style.display = mode === "bars" ? "" : "none");
-    zoomBar.style.display = mode === "bars" ? "none" : "";
     noteEl.textContent = mode === "bars" ? note || "" : pctNote;
     if (mode === "pct") {
       const series = [["", "Alle"], ...tabs.map((g) => [g.login, g.login])].map(([key, name]) => ({ name, values: rowsOf(key).sort((u, w) => u - w) }));
       percentileChart(box, series, marks.filter((mk) => mk.v != null), view, (a, b) => { view = [a, b]; draw(); });
-      zoomBar.style.display = "";
       count.replaceChildren(...series.map((q) => el("div", {}, `${q.name}: ${count_(q.values.length)} | ${stats(q.values)}`)));
       return;
     }
@@ -839,14 +837,8 @@ function distributionCard(title, marks, note, guilds = []) {
   };
   load("players.json").then((list) => { ps = list; requestAnimationFrame(draw); }).catch(() => {});
   const picker = tabs.length ? seg([["", "Alle"], ...tabs.map((g) => [g.login, g.login])], "", (k) => { pick = k; draw(); }) : null;
-  const zoomBar = el("div", { class: "seg", style: "display:none" },
-    ...[["Alles", 0], ["Obere 50 %", 50], ["Obere 20 %", 80], ["Obere 5 %", 95]].map(([label, from]) => {
-      const b = el("button", {}, label);
-      b.addEventListener("click", () => { view = [from, 100]; draw(); });
-      return b;
-    }));
   const modes = tabs.length ? seg([["bars", "Spieler je Wert"], ["pct", "Wert je Perzentil"]], "bars", (k) => { mode = k; draw(); }) : null;
-  return card(title, el("div", { class: "head start" }, modes, picker, zoomBar), box, count, noteEl);
+  return card(title, el("div", { class: "head start" }, modes, picker), box, count, noteEl);
 }
 const count_ = (n) => count(n, "aktiver Spieler", "aktive Spieler");
 

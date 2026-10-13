@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.41.3 (14.10.2026)
+
+**Behoben**
+- Zwei-Finger-Zoom in den Verlaufsdiagrammen auf dem Handy (Versuch): Der Browser nahm zwei Finger im Diagramm für ein Scrollen der Seite und brach die Geste ab. Das Diagramm hält ihn dabei jetzt zurück. Auf einem echten Handy noch nicht bestätigt.
+
 ## 0.41.2 (14.10.2026)
 
 **Oberfläche**

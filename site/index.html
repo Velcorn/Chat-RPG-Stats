@@ -616,6 +616,10 @@ function lineChart(box, points, { label, fmt = fmtInt, invert = false, until, em
     hit.addEventListener("pointerup", release);
     hit.addEventListener("pointercancel", (ev) => { touches.delete(ev.pointerId); drag = pinch = null; sel.setAttribute("visibility", "hidden"); hide(); });
     hit.addEventListener("pointerleave", (ev) => { if (ev.pointerType === "mouse" && !drag) hide(); });
+    // With touch-action: pan-y the browser takes two fingers for a page scroll and cancels the pointers: hold it off.
+    for (const type of ["touchstart", "touchmove"]) {
+      hit.addEventListener(type, (ev) => { if (ev.touches.length >= 2 && ev.cancelable) ev.preventDefault(); }, { passive: false });
+    }
     hit.addEventListener("dblclick", () => setView(null));
     fresh = false;
   }

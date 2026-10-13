@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.36.2 (13.10.2026)
+
+**Verbessert**
+- Die Verteilung der Ausrüstungswerte nennt bei der Linie für Platz 100 (und beim Spieler) jetzt auch den Wert.
+
 ## 0.36.1 (13.10.2026)
 
 **Verbessert**

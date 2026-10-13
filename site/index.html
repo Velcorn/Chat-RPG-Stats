@@ -1218,7 +1218,7 @@ async function viewPlayer(s, login) {
     if (!fold.open || fold.dataset.built) return;
     fold.dataset.built = "1";
     fold.append(el("div", { class: "grid two" }, buildMapCard(split, p.gear),
-      distributionCard("Ausrüstungswert aller Spieler", [{ v: p.gear, label: p.name, cls: "me" }, { v: s.top100.gear, label: "Platz 100", cls: "ref" }])));
+      distributionCard("Ausrüstungswert aller Spieler", [{ v: p.gear, label: `${p.name}: ${fmtInt(p.gear)}`, cls: "me" }, { v: s.top100.gear, label: `Platz 100: ${fmtInt(s.top100.gear)}`, cls: "ref" }])));
   });
   out.push(fold);
   return out.filter(Boolean);
@@ -1360,7 +1360,7 @@ function viewStart(s) {
       ], guilds), more("#/gilden/vergleich", "Gilden im Vergleich")] : el("p", { class: "note" }, "Noch keine Gilden mit mindestens 10 aktiven Mitgliedern.")),
     ),
     ...[roleMixCard(s)].filter(Boolean),
-    distributionCard("Ausrüstungswert aller Spieler", [{ v: s.top100.gear, label: "Platz 100", cls: "ref" }],
+    distributionCard("Ausrüstungswert aller Spieler", [{ v: s.top100.gear, label: `Platz 100: ${fmtInt(s.top100.gear)}`, cls: "ref" }],
       "Jeder Balken zählt die Spieler mit diesem Ausrüstungswert; der Strich ist die Grenze zur Top 100."),
     card("Zuletzt", el("dl", { class: "facts" },
         el("dt", {}, "Regeländerung"), el("dd", {}, lastRule

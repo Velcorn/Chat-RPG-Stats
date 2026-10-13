@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.36.0 (13.10.2026)
+
+**Neu**
+- Die Seite aktualisiert sich alle 5 statt alle 15 Minuten (7 bis 24 Uhr). Damit die Last klein bleibt, liest ein Lauf nur ein Hundertachtzigstel der übrigen aktiven Spieler (jeder wird weiter etwa einmal am Tag gelesen): etwa 36 Anfragen je Lauf, 7.500 am Tag (etwa 7 in der Minute).
+
 ## 0.35.1 (13.10.2026)
 
 **Oberfläche**

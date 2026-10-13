@@ -44,7 +44,7 @@ def apply(body: str, path: Path = LIST, exists=None) -> tuple[bool, str, str]:
     with path.open("a", encoding="utf-8") as fh:
         fh.write(login + "\n")
     return True, f"add {login}", (f"{login} steht jetzt auf der Liste. Die ersten Daten kommen mit dem nächsten Lauf "
-                                  "(höchstens 15 Minuten, nachts erst ab 7 Uhr).")
+                                  "(höchstens 5 Minuten, nachts erst ab 7 Uhr).")
 
 
 def player_exists(login: str) -> bool:

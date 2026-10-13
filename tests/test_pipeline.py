@@ -79,7 +79,7 @@ class CollectTests(unittest.TestCase):
         pipe = Pipeline()
         pipe.run(snap({"karni": [member("a", 100)]}), T0)
         summary, _ = pipe.build(T0)
-        self.assertEqual(summary["load"], {"per_run": 15, "runs_per_day": 68})
+        self.assertEqual(summary["load"], {"per_run": 15, "runs_per_day": 204})
 
     def test_player_leaving_every_guild_keeps_the_last_gear(self):
         pipe = Pipeline()

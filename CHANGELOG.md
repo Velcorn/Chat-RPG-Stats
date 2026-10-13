@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.42.1 (14.10.2026)
+
+**Behoben**
+- Werte und Überleben in Bosssiegen: Beim Darüberfahren über "Gefallen nach Verteidigung" stand bei Schildträgern eine Zahl ohne Namen ("Ø 221") und bei Kämpfern und Unterstützern der Text "null". Die Zeile ist weg, die Zahl steht ohnehin im Diagramm darunter.
+
 ## 0.42.0 (14.10.2026)
 
 **Neu**

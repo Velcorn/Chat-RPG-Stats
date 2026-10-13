@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.38.0 (13.10.2026)
+
+**Neu**
+- Unter "Spiel" gibt es den Reiter "Spezialitems": Bossbeute und besondere Waffen (Notwehr des Prinzen, Kutchers linker Haken, Gumayushis Bogen) mit Stufe, Teil, Quelle und ihren festen Werten, nach der Tabelle von fireworker2000, donmerkuzio und AirFighterKI.
+
 ## 0.37.0 (13.10.2026)
 
 **Neu**

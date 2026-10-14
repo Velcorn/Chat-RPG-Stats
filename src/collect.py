@@ -220,6 +220,7 @@ def live_digest(e: dict) -> dict:
     recommendation and the fight engine's numbers. Only the fight the site still shows."""
     b = e.get("battle") or {}
     return {"gear": e.get("averageGear"), "power": e.get("averagePower"), "rec": e.get("recommendedGear"),
+            "gg": e.get("groupGear") or None, "ggf": bool(e.get("groupGearFinal")),
             "min": e.get("minGear"), "verdict": e.get("verdict"), "secs": b.get("secondsFought"),
             "enraged": b.get("enraged"), "gs": b.get("groupStrength"), "gsmax": b.get("groupStrengthMax"),
             "tanks": [b.get("tanksStanding"), b.get("tanksTotal")]}

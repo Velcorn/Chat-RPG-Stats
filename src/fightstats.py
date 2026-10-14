@@ -83,6 +83,15 @@ def summarize(fs: list[dict], extra: dict[int, dict]) -> dict:
     return row
 
 
+GG_MIN = 10  # fights with the game's group gear (potions, mead, talents counted) before it replaces the Kampfkraft
+
+
+def strength_basis(ds: list[dict]) -> str:
+    """What a group's strength is measured by: the game's group gear (`gg`, in the unit of the recommendation, with
+    talents, potions and mead) once at least GG_MIN fights have it, else the plain Kampfkraft (gear plus talents)."""
+    return "gg" if sum(1 for d in ds if d.get("gg")) >= GG_MIN else "power"
+
+
 def current(f: dict, d: dict, boss_rec: dict | None) -> bool:
     """A boss fight counts for the power numbers only if its recommendation is the boss's recommendation now: a
     boss that was made stronger (its recommendation changed) is not the boss of the older fights. Everything else
@@ -147,8 +156,9 @@ def fight_stats(fights: list[dict], extra: dict[int, dict], now: float, days: in
     with_power = [(extra[f["id"]], f) for f in window
                   if extra.get(f["id"], {}).get("power") and current(f, extra[f["id"]], boss_rec)]
     margins = []
+    basis = strength_basis([d for d, _ in with_power])
     for lo, hi in MARGINS:
-        sel = [f for d, f in with_power if d.get("rec") and lo <= d["power"] / d["rec"] < hi]
+        sel = [f for d, f in with_power if d.get("rec") and d.get(basis) and lo <= d[basis] / d["rec"] < hi]
         margins.append({"from": lo, "to": hi if hi < 1e9 else None, **summarize(sel, extra)} if sel
                         else {"from": lo, "to": hi if hi < 1e9 else None, "n": 0})
     return {
@@ -165,7 +175,7 @@ def fight_stats(fights: list[dict], extra: dict[int, dict], now: float, days: in
         "power": {"n": len(with_power), "avg": mean([d["power"] for d, _ in with_power]),
                   "avg_gear": mean([d["gear"] for d, _ in with_power]),
                   "rec": mean([d["rec"] for d, _ in with_power if d.get("rec")]),
-                  "margins": margins,
+                  "margins": margins, "basis": basis,
                   "recent": [{"id": f["id"], "kind": f.get("kind"), "name": f.get("name"), "outcome": f.get("outcome"),
                               "power": d["power"], "gear": d.get("gear"), "rec": d.get("rec") or None,
                               "enraged": d.get("enraged"), "secs": d.get("secs"), **fallen(d)}
@@ -252,16 +262,20 @@ def logistic_fit(xs: list[float], ys: list[int], ridge: float = 0.001, steps: in
 
 def win_odds(fights: list[dict], extra: dict[int, dict], now: float, days: int = 30,
              boss_rec: dict | None = None) -> dict:
-    """Boss fights of the last `days` whose live view gave the group's average Kampfkraft and the recommendation:
-    each as [Kampfkraft / recommendation, won, boss], and a logistic curve through them ([[ratio, win %], ...]) with
+    """Boss fights of the last `days` whose live view gave the group's strength and the recommendation (the game's
+    group gear once enough fights have it, else the average Kampfkraft, see `strength_basis`; `basis` says which):
+    each as [strength / recommendation, won, boss], and a logistic curve through them ([[ratio, win %], ...]) with
     the ratio at which it crosses 50 % (`mid`). Few fights or one outcome only: no curve."""
-    points = []
+    seen = []
     for f in fights:
         d, t = extra.get(f["id"], {}), iso_ts(f.get("endedAt"))
         if f.get("kind") == "BOSS" and d.get("power") and d.get("rec") and t and t >= now - days * DAY \
                 and current(f, d, boss_rec):
-            points.append([round(d["power"] / d["rec"], 3), int(f.get("outcome") == "VICTORY"), f.get("name")])
-    out: dict = {"n": len(points), "points": points, "fit": [], "mid": None}
+            seen.append((f, d))
+    basis = strength_basis([d for _, d in seen])
+    points = [[round(d[basis] / d["rec"], 3), int(f.get("outcome") == "VICTORY"), f.get("name")]
+              for f, d in seen if d.get(basis)]
+    out: dict = {"n": len(points), "points": points, "fit": [], "mid": None, "basis": basis}
     if len(points) < 8 or len({p[1] for p in points}) < 2:
         return out
     a, b = logistic_fit([p[0] for p in points], [p[1] for p in points])

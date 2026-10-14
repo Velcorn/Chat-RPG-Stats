@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.43.0 (14.10.2026)
+
+**Verbessert**
+- Siegchance und Siegquote nach Abstand zur Empfehlung: Die Kampfkraft rechnet Met, Tränke und andere Boosts im Kampf nicht mit, deshalb lagen die Gruppen meist unter der Empfehlung (die Kurve kreuzt 50 % bei etwa 76 %). Die Seite liest jetzt zusätzlich die Gruppenausrüstung, die das Spiel selbst angibt (mit Talenten, Tränken und Met, wie die Empfehlung gemessen) und nimmt sie, sobald mindestens 10 Bosskämpfe sie haben; bis dahin gilt weiter die Kampfkraft, mit einem Hinweis auf der Karte. Die Karte heißt jetzt "Siegchance nach Gruppenstärke".
+
 ## 0.42.1 (14.10.2026)
 
 **Behoben**

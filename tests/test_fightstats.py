@@ -50,6 +50,8 @@ class DigestTests(unittest.TestCase):
                                  "battle": {"secondsFought": 50, "enraged": False, "tanksStanding": 3,
                                             "tanksTotal": 4, "groupStrength": 10, "groupStrengthMax": 12}})
         self.assertEqual((d["gear"], d["power"], d["secs"], d["tanks"]), (196, 222, 50, [3, 4]))
+        d = collect.live_digest({"groupGear": 512, "groupGearFinal": True, "battle": {}})
+        self.assertEqual((d["gg"], d["ggf"]), (512, True))
 
     def test_record_keeps_details_of_new_fights_once(self):
         snap = {"fights": [{"id": 5, "kind": "BOSS"}], "details": {5: detail()}, "guilds": {}, "boards": {},
@@ -191,6 +193,22 @@ class WinOddsTests(unittest.TestCase):
         self.assertGreater(fit[-1][1], 80)
         self.assertTrue(all(a[1] <= b[1] for a, b in itertools.pairwise(fit)))
         self.assertTrue(0.8 < odds["mid"] < 0.95)
+
+    def test_the_game_group_gear_replaces_the_kampfkraft_once_enough_fights_have_it(self):
+        now = fightstats.iso_ts("2026-10-11T12:00:00Z")
+        fights, extra = [], {}
+        for i in range(12):
+            fights.append({"id": i, "kind": "BOSS", "name": "Drache", "outcome": "VICTORY" if i >= 5 else "DEFEAT",
+                           "endedAt": "2026-10-11T10:00:00Z"})
+            extra[i] = {"power": 70 + 3 * i, "gear": 60, "rec": 100, "gg": 90 + 3 * i if i != 4 else None}
+        odds = fightstats.win_odds(fights, extra, now)
+        self.assertEqual((odds["basis"], odds["n"], odds["points"][0]), ("gg", 11, [0.9, 0, "Drache"]))  # 4 has none
+        stats = fightstats.fight_stats(fights, extra, now)
+        self.assertEqual(stats["power"]["basis"], "gg")
+        self.assertEqual(sum(m["n"] for m in stats["power"]["margins"]), 11)
+        few = {i: {**d, "gg": d["gg"] if i < 5 else None} for i, d in extra.items()}  # under GG_MIN: the Kampfkraft
+        self.assertEqual((fightstats.win_odds(fights, few, now)["basis"], fightstats.win_odds(fights, few, now)["n"]),
+                         ("power", 12))
 
     def test_a_boss_made_stronger_leaves_its_old_fights_out_of_the_power_numbers(self):
         now = fightstats.iso_ts("2026-10-11T12:00:00Z")

@@ -936,7 +936,7 @@ function oddsChart(box, odds) {
   for (const pc of [0, 25, 50, 75, 100]) axis.append(sv("line", { x1: m.l, x2: W - m.r, y1: y(pc), y2: y(pc), class: "gridline" }),
     sv("text", { x: m.l - 6, y: y(pc) + 4, "text-anchor": "end" }, `${pc} %`));
   for (const v of niceTicks(lo * 100, hi * 100, 5)) if (v / 100 >= lo && v / 100 <= hi) axis.append(sv("text", { x: x(v / 100), y: H - 16, "text-anchor": "middle" }, `${v} %`));
-  axis.append(sv("text", { x: (m.l + W - m.r) / 2, y: H - 2, "text-anchor": "middle" }, "Ø Kampfkraft der Gruppe in % der Empfehlung"));
+  axis.append(sv("text", { x: (m.l + W - m.r) / 2, y: H - 2, "text-anchor": "middle" }, odds.basis === "gg" ? "Gruppenausrüstung des Spiels (mit Met und Tränken) in % der Empfehlung" : "Ø Kampfkraft der Gruppe in % der Empfehlung"));
   svg.append(axis);
   svg.append(sv("line", { x1: x(1), x2: x(1), y1: m.t, y2: H - m.b, class: "mark ref" }));
   const bosses = [...new Set(odds.points.map((p) => p[2]))];
@@ -961,17 +961,18 @@ function oddsChart(box, odds) {
   return bosses;
 }
 function oddsCard(odds, summary = "") {
-  if (!odds || !odds.n) return card("Siegchance nach Kampfkraft", el("p", { class: "note" }, "Noch keine Bosskämpfe mit Kampfkraft erfasst."));
+  if (!odds || !odds.n) return card("Siegchance nach Gruppenstärke", el("p", { class: "note" }, "Noch keine Bosskämpfe mit Gruppenstärke erfasst."));
   const box = el("div", { class: "chart" }), legend = el("div", { class: "legend" });
   requestAnimationFrame(() => {
     const bosses = oddsChart(box, odds);
     legend.replaceChildren(...bosses.map((b, i) => el("span", {}, el("i", { class: `odot-key b${i % 6}` }), b.replace(/^(Die|Das|Der) /, ""))));
   });
-  return card("Siegchance nach Kampfkraft", box, legend, el("p", { class: "note" },
-    `${count(odds.n, "Bosskampf", "Bosskämpfe")} in 30 Tagen: oben gewonnen, unten verloren, die Kurve schätzt die Siegchance. ${summary}`));
+  const basis = odds.basis === "gg"
+    ? "Gemessen wird die Gruppenausrüstung, die das Spiel angibt (mit Talenten, Tränken und Met), wie die Empfehlung."
+    : "Gemessen wird die Kampfkraft (Ausrüstung plus Talente). Met, Tränke und andere Boosts im Kampf zählen nicht mit, deshalb liegen die Gruppen meist unter der Empfehlung und die Kurve kreuzt 50 % deutlich unter 100 %.";
+  return card("Siegchance nach Gruppenstärke", box, legend, el("p", { class: "note" },
+    `${count(odds.n, "Bosskampf", "Bosskämpfe")} in 30 Tagen: oben gewonnen, unten verloren, die Kurve schätzt die Siegchance. ${basis} ${summary}`));
 }
-
-// Fall rate per step of a role's own stat, with its 95 % range (Wilson): the fewer fighters, the wider.
 function wilson(k, n, z = 1.96) {
   if (!n) return [0, 100];
   const p = k / n, d = 1 + z * z / n, c = p + z * z / (2 * n), e = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n));
@@ -1672,7 +1673,7 @@ function viewPower(s) {
   return [
     oddsCard(s.win_odds, summary),
     card("Siegquote nach Abstand zur Empfehlung", p.margins.some((m) => m.n) ? el("div", { class: "scroll" }, table([
-      { label: "Kampfkraft / Empfehlung", get: bucket },
+      { label: p.basis === "gg" ? "Gruppenausrüstung / Empfehlung" : "Kampfkraft / Empfehlung", get: bucket },
       { label: "Kämpfe", num: true, get: (m) => fmtInt(m.n) },
       { label: "Siege", num: true, get: (m) => m.n ? pct(m.wins, m.n) : "-" },
       { label: "Gefallen", num: true, title: "in gewonnenen Kämpfen", get: (m) => pctv(m.death_win) },

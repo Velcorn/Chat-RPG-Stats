@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.44.2 (14.10.2026)
+
+**Verbessert**
+- Ausrüstungsformen: Die ersten Stücke der Stufe 13 und 14 sind gemessen (Boss-Beute und Märkte): Turmschild 3/65/0, Rüstung des Duellanten 37/24/7, des Pilgers 0/24/44, des Kreuzritters 10/20/38 und der Zweihänder des Kriegsherrn 124/22/0 (Stufe 14). Die übrigen Formen dieser Stufen bleiben geschätzt.
+
 ## 0.44.1 (14.10.2026)
 
 **Verbessert**

@@ -11,6 +11,7 @@ import json
 import shutil
 import statistics
 import time
+import tomllib
 from collections import defaultdict
 from pathlib import Path
 
@@ -220,7 +221,7 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
 
     boss_rec = state.get("boss_rec", {})
     summary_stats = fightstats.fight_stats(h.fights, h.fightx, now, boss_rec=boss_rec)
-    summary = {"generated": int(now), "since": h.first, "runs": h.runs,
+    summary = {"generated": int(now), "version": project_version(), "since": h.first, "runs": h.runs,
                "load": {"per_run": h.requests,
                         "runs_per_day": (collect.PLAY_TO - collect.PLAY_FROM) * collect.RUNS_PER_HOUR},
                "players": len(players),
@@ -353,6 +354,15 @@ def gear_series(series: list, share: float = DIP_SHARE, within: float = 3600) ->
         out.append([t, v])
         i += 1
     return out
+
+
+def project_version() -> str | None:
+    """The version in pyproject.toml (the page shows it behind its title), None if there is no such file."""
+    path = Path(__file__).resolve().parent.parent / "pyproject.toml"
+    try:
+        return tomllib.loads(path.read_text("utf-8"))["project"]["version"]
+    except (OSError, KeyError, ValueError):
+        return None
 
 
 def main_stat(d: dict) -> str:

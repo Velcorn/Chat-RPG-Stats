@@ -1,6 +1,7 @@
 """Collector and build on made-up snapshots: changes only, history replay, pace, forecasts, guild standing."""
 import io
 import json
+import re
 import tempfile
 import unittest
 from contextlib import redirect_stdout
@@ -74,6 +75,15 @@ class CollectTests(unittest.TestCase):
         self.assertEqual(again["players"], {"b": {"gear": 95, "gs": 95}})  # only the fields that changed
         self.assertEqual(again["guilds"], {"karni": {"gear": 195}})
         self.assertNotIn("channels", again)  # unchanged
+
+    def test_summary_carries_the_project_version_for_the_page_header(self):
+        text = (Path(build.__file__).resolve().parent.parent / "pyproject.toml").read_text("utf-8")
+        pipe = Pipeline()
+        pipe.run(snap({"karni": [member("a", 100)]}), T0)
+        summary, _ = pipe.build(T0)
+        self.assertEqual(summary["version"], re.search(r'^version = "([^"]+)"', text, re.M)[1])
+        with mock.patch.object(build.Path, "read_text", side_effect=OSError):
+            self.assertIsNone(build.project_version())
 
     def test_summary_names_the_daily_load_on_the_game(self):
         pipe = Pipeline()

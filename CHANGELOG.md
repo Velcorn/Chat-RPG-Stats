@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.44.0 (14.10.2026)
+
+**Neu**
+- Der Titel "Chat-RPG Statistik" führt jetzt zum Quellcode auf GitHub (nicht mehr zur Startseite; dafür gibt es den Knopf "Start"). Dahinter stehen die Version der Seite und der Stand der letzten Aktualisierung.
+
 ## 0.43.1 (14.10.2026)
 
 **Entfernt**

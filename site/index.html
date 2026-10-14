@@ -31,6 +31,7 @@
   body { margin: 0; background: var(--page); color: var(--text-primary);
          font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
   main { max-width: 1440px; margin: 0 auto; padding: 12px clamp(12px, 3vw, 20px); display: grid; gap: 12px; }
+  .ver { margin-left: 8px; font-size: 11px; font-weight: 400; color: var(--text-muted); white-space: nowrap; }
   header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
   header .tabs { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
   .tabs a { color: var(--text-secondary); text-decoration: none; padding: 5px 12px; border-radius: 6px;
@@ -294,7 +295,7 @@
 <body>
 <main>
   <header>
-    <h1><a href="#/">Chat-RPG Statistik</a></h1>
+    <h1><a id="repo-link" href="https://github.com/Velcorn/Chat-RPG-Stats" title="Quellcode auf GitHub">Chat-RPG Statistik</a><span id="ver" class="ver"></span></h1>
     <div class="search">
       <input id="q" type="search" placeholder="Spieler suchen (Twitch-Name)" autocomplete="off" aria-label="Spieler suchen">
       <div id="suggest" class="suggest" hidden></div>
@@ -1982,6 +1983,8 @@ async function route() {
   if (view !== "start" && search.parentNode !== header) header.insertBefore(search, header.querySelector(".tabs"));
   $("view").replaceChildren(...parts.filter(Boolean));
   if (view === "start") $("hero-search").replaceWith(search);
+  $("repo-link").href = `https://github.com/${REPO}`;
+  $("ver").textContent = [s.version ? `v${s.version}` : "", `Stand ${fmtTime(s.generated)}`].filter(Boolean).join(" | ");
   document.title = view === "player" ? `${login} | Chat-RPG Statistik` : "Chat-RPG Statistik";
   const ld = s.load;
   const requests = ld && ld.per_run ? `, zusammen etwa ${fmtInt(ld.per_run * ld.runs_per_day)} Anfragen am Tag: ${fmtInt(ld.per_run)} pro Lauf, ${fmtInt(ld.runs_per_day)} Läufe` : "";

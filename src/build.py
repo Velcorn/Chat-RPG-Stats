@@ -220,11 +220,13 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
                                       for m in sorted(members, key=lambda m: -(players[m].get("donated") or 0))[:10]],
                            "series": h.guilds.get(g, [])})
 
+    window = collect.play_window(state.get("rules"))
     boss_rec = state.get("boss_rec", {})
     summary_stats = fightstats.fight_stats(h.fights, h.fightx, now, boss_rec=boss_rec)
     summary = {"generated": int(now), "version": project_version(), "since": h.first, "runs": h.runs,
                "load": {"per_run": h.requests,
-                        "runs_per_day": (collect.PLAY_TO - collect.PLAY_FROM) * collect.RUNS_PER_HOUR},
+                        "runs_per_day": collect.window_hours(window) * collect.RUNS_PER_HOUR,
+                        "window": list(window)},
                "players": len(players),
                "ranked": len(gear),
                "active": sum(1 for p in players.values() if p.get("active")),

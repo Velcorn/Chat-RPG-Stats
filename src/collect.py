@@ -438,8 +438,21 @@ def record(snap: dict, prev: dict, cur: dict, t: int) -> dict:
     return rec
 
 
-def in_play_window(now: datetime) -> bool:
-    return PLAY_FROM <= now.hour < PLAY_TO
+def play_window(rules: dict | None) -> tuple[int, int]:
+    """The game's play window (hour from, hour to) from its rules; the end after midnight is read modulo 24 (the window
+    9 to 3 o'clock wraps), without rules the default."""
+    rules = rules or {}
+    return int(rules.get("playWindowFrom", PLAY_FROM)) % 24, int(rules.get("playWindowTo", PLAY_TO)) % 24
+
+
+def window_hours(window: tuple[int, int]) -> int:
+    """How many hours a day the window is open (equal ends = all day)."""
+    return (window[1] - window[0]) % 24 or 24
+
+
+def in_play_window(now: datetime, window: tuple[int, int] | None = None) -> bool:
+    start, end = window or play_window(None)
+    return start == end or (start <= now.hour < end if start < end else (now.hour >= start or now.hour < end))
 
 
 def main() -> int:
@@ -452,12 +465,19 @@ def main() -> int:
                     help="core: everything but the profiles (the page is published after it); profiles: only those")
     args = ap.parse_args()
     now = datetime.now(BERLIN)
-    if not args.force and not in_play_window(now):
-        print("Außerhalb der Spielzeit, nichts zu tun.")
-        return 0
     site = Site()
     state_file = args.data / "state.json"
     prev = json.loads(state_file.read_text("utf-8")) if state_file.exists() else {}
+    window = play_window(prev.get("rules"))
+    if not args.force and not in_play_window(now, window) and now.minute < 5:
+        # The game may move its window: once an hour, outside it, one look at the rules.
+        try:
+            window = play_window(site.get("/api/rules"))
+        except (urllib.error.URLError, TimeoutError, ValueError):
+            pass
+    if not args.force and not in_play_window(now, window):
+        print("Außerhalb der Spielzeit, nichts zu tun.")
+        return 0
     if args.part == "profiles" and not prev.get("boards"):
         print("Noch kein Stand, keine Profile zu lesen.")
         return 0

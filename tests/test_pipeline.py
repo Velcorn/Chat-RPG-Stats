@@ -89,7 +89,7 @@ class CollectTests(unittest.TestCase):
         pipe = Pipeline()
         pipe.run(snap({"karni": [member("a", 100)]}), T0)
         summary, _ = pipe.build(T0)
-        self.assertEqual(summary["load"], {"per_run": 15, "runs_per_day": 204})
+        self.assertEqual(summary["load"], {"per_run": 15, "runs_per_day": 204, "window": [7, 0]})
 
     def test_player_leaving_every_guild_keeps_the_last_gear(self):
         pipe = Pipeline()
@@ -113,6 +113,13 @@ class CollectTests(unittest.TestCase):
         self.assertTrue(collect.in_play_window(datetime(2026, 9, 30, 7, 0)))
         self.assertTrue(collect.in_play_window(datetime(2026, 9, 30, 23, 59)))
         self.assertFalse(collect.in_play_window(datetime(2026, 9, 30, 6, 59)))
+        night = collect.play_window({"playWindowFrom": 9, "playWindowTo": 3})  # closed 3 to 9 since 15.10.2026
+        self.assertEqual((night, collect.window_hours(night)), ((9, 3), 18))
+        self.assertEqual(collect.play_window({"playWindowFrom": 9, "playWindowTo": 27}), (9, 3))
+        self.assertEqual([h for h in range(24) if collect.in_play_window(datetime(2026, 10, 15, h), night)],
+                         [0, 1, 2, *range(9, 24)])
+        self.assertEqual(collect.window_hours(collect.play_window({"playWindowFrom": 0, "playWindowTo": 24})), 24)
+        self.assertEqual(collect.window_hours(collect.play_window(None)), 17)
 
     def test_watchlist_file(self):
         path = Path(tempfile.mkdtemp()) / "watchlist.txt"

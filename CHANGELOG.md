@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.45.1 (15.10.2026)
+
+**Verbessert**
+- Die Spielzeit (ab heute 9 bis 3 Uhr, Sperrstunde 3 bis 9 Uhr) liest der Sammler aus den Regeln des Spiels und folgt Änderungen selbst. Die Fußzeile nennt die aktuelle Spielzeit, und die Zahl der Läufe am Tag richtet sich danach.
+
 ## 0.45.0 (14.10.2026)
 
 **Neu**

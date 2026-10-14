@@ -6,7 +6,7 @@ benutzt, steht in der [README](../README.md).
 ## Ablauf
 
 ```
-Zeitplan (alle 5 Min., 7-24 Uhr) -> src/collect.py -> Zweig "data" -> src/build.py -> GitHub Pages
+Zeitplan (alle 5 Min., in der Spielzeit) -> src/collect.py -> Zweig "data" -> src/build.py -> GitHub Pages
 ```
 
 1. **Sammeln** (`src/collect.py`): fragt die öffentlichen Schnittstellen ab (Tabelle in der README), bildet daraus den
@@ -29,13 +29,12 @@ Zeitplan (alle 5 Min., 7-24 Uhr) -> src/collect.py -> Zweig "data" -> src/build.
 4. **Veröffentlichen:** die Action lädt die Dateien samt `site/index.html` auf GitHub Pages. Besucher lesen nur diese
    fertigen Dateien; ihre Zahl ändert nichts an den Anfragen ans Spiel.
 
-Läuft der Sammler außerhalb der Spielzeit (Zeitplan deckt 4 bis 22 Uhr UTC ab, also Sommer- und Winterzeit), tut er
-nichts. Ist die Seite nicht erreichbar, fällt der Lauf aus; die nächste Zeitplan-Ausführung versucht es wieder.
+Läuft der Sammler außerhalb der Spielzeit, tut er nichts. Die Spielzeit liest er aus den Regeln des Spiels (`playWindowFrom`/`playWindowTo` im letzten Stand, `collect.play_window`; ein Ende nach Mitternacht kommt als 3 oder 27 und wird modulo 24 gelesen), seit 0.45.1 nicht mehr fest 7 bis 24 Uhr. Außerhalb davon schaut er einmal in der Stunde (in den ersten fünf Minuten) mit einer Anfrage auf die Regeln, damit er eine verschobene Öffnung bemerkt. Der Zeitplan deckt 0 bis 2 und 7 bis 23 Uhr UTC ab (9 bis 3 Uhr Berliner Zeit und die alte 7 bis 24 Uhr, Sommer- und Winterzeit); wer die Spielzeit weiter verschiebt, passt Zeitplan und Timer an. Ist die Seite nicht erreichbar, fällt der Lauf aus; die nächste Zeitplan-Ausführung versucht es wieder.
 Von Hand gestartet (`workflow_dispatch`) sammelt er immer.
 
 GitHubs eigener Zeitplan löst bei kleinen Repos unzuverlässig aus (am 30.09.2026 nur einmal am Tag). Darum startet zusätzlich
 ein systemd-Timer (`deploy/chat-rpg-stats-collect.timer`, Einrichtung im Kopf der Service-Datei) die Action alle 5 Minuten
-von 7 bis 24 Uhr per `gh workflow run` (bis 0.36.0 alle 15 Minuten; das ist ein Lauf von etwa zwei Minuten, die Läufe überlappen also nicht, und eine Minute wäre auf GitHub nicht machbar: ein Lauf mit Bauen und Veröffentlichen dauert mindestens zwei Minuten, GitHubs eigener Zeitplan kennt nichts unter 5 Minuten). Der Zeitplan auf GitHub bleibt als Rückfall. Die Scheibe der übrigen aktiven Spieler ist seit 0.36.0 ein Hundertachtzigstel statt ein Sechzigstel (`SWEEP_RUNS`), damit jeder Spieler weiter etwa einmal am Tag gelesen wird: etwa 15 statt 48 Anfragen je Lauf; der Kern etwa 12, die Beobachtungsliste 7, die geänderten Top-100-Profile im Mittel etwa 2, zusammen etwa 36 Anfragen je Lauf und 7.500 am Tag (vorher 62 je Lauf und 4.200, bei Lauf alle 5 Minuten ohne diese Änderung wären es 12.600 gewesen).
+von 7 bis 3 Uhr (Berliner Zeit, `07..23,00..02`; der Sammler selbst prüft die Spielzeit) per `gh workflow run` (bis 0.36.0 alle 15 Minuten; das ist ein Lauf von etwa zwei Minuten, die Läufe überlappen also nicht, und eine Minute wäre auf GitHub nicht machbar: ein Lauf mit Bauen und Veröffentlichen dauert mindestens zwei Minuten, GitHubs eigener Zeitplan kennt nichts unter 5 Minuten). Der Zeitplan auf GitHub bleibt als Rückfall. Die Scheibe der übrigen aktiven Spieler ist seit 0.36.0 ein Hundertachtzigstel statt ein Sechzigstel (`SWEEP_RUNS`), damit jeder Spieler weiter etwa einmal am Tag gelesen wird: etwa 15 statt 48 Anfragen je Lauf; der Kern etwa 12, die Beobachtungsliste 7, die geänderten Top-100-Profile im Mittel etwa 2, zusammen etwa 36 Anfragen je Lauf und 7.500 am Tag (vorher 62 je Lauf und 4.200, bei Lauf alle 5 Minuten ohne diese Änderung wären es 12.600 gewesen).
 
 Änderungen an `site/` oder `src/` lösen nur Bauen und Veröffentlichen aus, ohne neue Anfragen.
 

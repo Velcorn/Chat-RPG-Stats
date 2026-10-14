@@ -22,7 +22,7 @@ nichts in den Chat. Kein offizielles Angebot des Spiels.
 
 ## Was erfasst wird
 
-Ein Sammler läuft etwa alle 5 Minuten von 7 bis 24 Uhr (Berliner Zeit, die Spielzeit des Spiels; nachts ändert sich nichts)
+Ein Sammler läuft etwa alle 5 Minuten während der Spielzeit des Spiels (Berliner Zeit, seit 15.10.2026 9 bis 3 Uhr, vorher 7 bis 24 Uhr; sie wird aus den Regeln des Spiels gelesen, in der Sperrstunde ändert sich nichts)
 als GitHub Action und fragt die öffentlichen Schnittstellen der Seite ab, dieselben, die sie selbst ohne Anmeldung
 zeigt:
 

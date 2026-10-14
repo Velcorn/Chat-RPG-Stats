@@ -2,9 +2,10 @@ name: collect
 
 on:
   schedule:
-    # Every 5 minutes, 4-22 UTC: covers 7-24 Uhr Berlin in summer and winter time; collect.py skips the rest.
+    # Every 5 minutes, 0-2 and 7-23 UTC: covers 9-3 Uhr Berlin (the window since 15.10.2026) and the old 7-24 in summer
+    # and winter time; collect.py skips what is outside the window it reads from the game's rules.
     # (The host's systemd timer is the one that really runs it; this is the fallback.)
-    - cron: "*/5 4-22 * * *"
+    - cron: "*/5 0-2,7-23 * * *"
   workflow_dispatch:
     inputs:
       full_top:

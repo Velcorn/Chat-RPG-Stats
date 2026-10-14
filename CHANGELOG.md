@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.45.3 (15.10.2026)
+
+**Verbessert**
+- Handy: Die Tabellen sind schmaler (kleinere Schrift und Abstände, lange Spaltenköpfe brechen um, weniger wichtige Spalten wie Gilde, Pro Tag, Kasse 7 Tage oder Kanal sind ausgeblendet). Wo eine Tabelle trotzdem breiter ist als der Bildschirm, bleibt die Namensspalte stehen, und ein Schatten am Rand zeigt, dass es seitlich weitergeht. Betrifft die Ranglisten, Gilden, Kämpfe und Letzte Kämpfe.
+
 ## 0.45.2 (15.10.2026)
 
 **Verbessert**

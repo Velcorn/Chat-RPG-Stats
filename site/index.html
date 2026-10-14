@@ -103,7 +103,20 @@
   td.num, th.num { text-align: right; white-space: nowrap; }
   td a { color: var(--text-primary); text-decoration: none; } td a:hover { text-decoration: underline; }
   .scroll { max-height: 520px; overflow: auto; }
-  .wide-table { overflow-x: auto; }
+  /* A table wider than its card scrolls sideways; the shadows at the edges show that there is more (they only appear
+     where something is hidden), and the main column stays in view. */
+  .wide-table { overflow-x: auto;
+    background: linear-gradient(to right, var(--surface-1) 30%, transparent) left / 28px 100% no-repeat local,
+                linear-gradient(to left, var(--surface-1) 30%, transparent) right / 28px 100% no-repeat local,
+                radial-gradient(farthest-side at 0 50%, rgba(255, 255, 255, .16), transparent) left / 12px 100% no-repeat scroll,
+                radial-gradient(farthest-side at 100% 50%, rgba(255, 255, 255, .16), transparent) right / 12px 100% no-repeat scroll; }
+  .wide-table .stick { position: sticky; left: 0; background: var(--surface-1); z-index: 1; }
+  @media (max-width: 600px) {
+    table { font-size: 13px; }
+    th, td { padding: 5px 5px; }
+    th.num { white-space: normal; }  /* long headings wrap instead of widening their column */
+    .hide-sm { display: none; }
+  }
   .up { color: var(--good); } .down { color: var(--critical); }
   .tag { font-size: 11px; padding: 1px 6px; border-radius: 4px; background: var(--surface-2);
          border: 1px solid var(--border); color: var(--text-secondary); white-space: nowrap; margin-left: 6px; }
@@ -379,10 +392,14 @@ function tile(label, value, sub, power) {
 function card(title, ...body) { return el("section", { class: "card" }, title ? el("h2", {}, title) : null, ...body); }
 function delta(n, d = 0) { return el("span", { class: n > 0 ? "up" : n < 0 ? "down" : "muted" }, signed(n, d)); }
 function playerLink(r) { return el("a", { href: `#/spieler/${r.login}` }, r.name || r.login); }
+// Columns: `num` right-aligned, `sm: false` hidden on a phone, `stick` stays in view while the table scrolls sideways
+// (default: the first column that is no number and no rank).
 function table(cols, rows) {
+  const stick = cols.some((c) => c.stick) ? cols.findIndex((c) => c.stick) : cols.findIndex((c) => !c.num && c.label !== "#");
+  const cls = (c, i) => [c.num ? "num" : "", c.sm === false ? "hide-sm" : "", i === stick ? "stick" : ""].filter(Boolean).join(" ") || null;
   return el("div", { class: "wide-table" }, el("table", {},
-    el("thead", {}, el("tr", {}, cols.map((c) => el("th", { class: c.num ? "num" : null, title: c.title }, c.label)))),
-    el("tbody", {}, rows.map((r) => el("tr", {}, cols.map((c) => el("td", { class: c.num ? "num" : null }, c.get(r))))))));
+    el("thead", {}, el("tr", {}, cols.map((c, i) => el("th", { class: cls(c, i), title: c.title }, c.label)))),
+    el("tbody", {}, rows.map((r) => el("tr", {}, cols.map((c, i) => el("td", { class: cls(c, i) }, c.get(r))))))));
 }
 function seg(options, current, onPick) {
   const box = el("div", { class: "seg" });
@@ -1078,7 +1095,7 @@ function viewRanks(s, sub) {
     ...scroll("Rangliste Kampfkraft (Top 100)", [
       { label: "#", num: true, get: (r) => r.rank },
       { label: "Spieler", get: playerLink },
-      { label: "Gilde", get: (r) => r.guild || "-" },
+      { label: "Gilde", sm: false, get: (r) => r.guild || "-" },
       { label: "Kampfkraft", num: true, get: (r) => fmtInt(r.power) },
       { label: "24 h", num: true, title: "Änderung der Kampfkraft", get: (r) => delta(r.power_day) },
       { label: "Ausrüstungswert", num: true, title: "Ohne Talente; danach ordnet das Spiel", get: (r) => fmtInt(r.gear) },
@@ -1106,10 +1123,10 @@ function viewRanks(s, sub) {
       { label: "#", num: true, get: (r) => r.rank },
       { label: "", title: "Plätze seit gestern", get: (r) => r.rank_change ? delta(r.rank_change) : "" },
       { label: "Spieler", get: playerLink },
-      { label: "Gilde", get: (r) => r.guild || "-" },
+      { label: "Gilde", sm: false, get: (r) => r.guild || "-" },
       { label: "Ausrüstungswert", num: true, get: (r) => fmtInt(r.gear) },
       { label: "24 h", num: true, title: "Änderung des Ausrüstungswerts", get: (r) => delta(r.day) },
-      { label: "Pro Tag", num: true, title: "Ausrüstungswert, Durchschnitt der letzten 7 Tage", get: (r) => r.pace == null ? "-" : fmtDec(r.pace) },
+      { label: "Pro Tag", num: true, sm: false, title: "Ausrüstungswert, Durchschnitt der letzten 7 Tage", get: (r) => r.pace == null ? "-" : fmtDec(r.pace) },
       { label: "ATK", num: true, get: (r) => fmtInt(r.atk) },
       { label: "DEF", num: true, get: (r) => fmtInt(r.def) },
       { label: "SUP", num: true, get: (r) => fmtInt(r.sup) },
@@ -1419,10 +1436,10 @@ function viewGuildRace(s) {
     { label: "Ø Ausrüstungswert", num: true, title: "Durchschnitt der aktiven Mitglieder", get: (g) => fmtDec(g.avg_gear, 1) },
     { label: "24 h", num: true, title: "Kampfkraft der ganzen Gilde", get: (g) => delta(g.day) },
     { label: "7 Tage", num: true, title: "Kampfkraft der ganzen Gilde", get: (g) => delta(g.week) },
-    { label: "7 Tage je Mitglied", num: true, get: (g) => delta(per(g, g.week), 1) },
+    { label: "7 Tage je Mitglied", num: true, sm: false, get: (g) => delta(per(g, g.week), 1) },
     { label: "Kasse", num: true, get: (g) => fmtSilver(g.treasury) },
-    { label: "Kasse 7 Tage", num: true, get: (g) => g.treasury_week == null ? "-" : el("span", { class: g.treasury_week >= 0 ? "up" : "down" }, signed(g.treasury_week) + " Silber") },
-    { label: "Gespendet", num: true, get: (g) => fmtSilver(g.donated) },
+    { label: "Kasse 7 Tage", num: true, sm: false, get: (g) => g.treasury_week == null ? "-" : el("span", { class: g.treasury_week >= 0 ? "up" : "down" }, signed(g.treasury_week) + " Silber") },
+    { label: "Gespendet", num: true, sm: false, get: (g) => fmtSilver(g.donated) },
     { label: "Bosse", num: true, title: "Siege / Niederlagen", get: (g) => `${fmtInt(g.boss_wins)} / ${fmtInt(g.boss_losses)}` },
   ];
   // Small guilds would top every average, so they only count from 10 active members and stand last in the table.
@@ -1543,12 +1560,12 @@ function viewStart(s) {
 
 const RECENT_COLS = (s) => [
   { label: "Ende", get: (f) => fmtTime(iso(f.endedAt)) },
-  { label: "Kanal", get: (f) => "#" + f.channel },
-  { label: "Kampf", get: (f) => gameLink(`/kampfbericht/${f.id}`, fightLabel(f)) },
-  { label: "Gilde", title: "Die Gilde, um die es im Kampf ging (Überfall auf ihre Kasse, beschworener Boss)", get: (f) => f.gn || "-" },
+  { label: "Kanal", sm: false, get: (f) => "#" + f.channel },
+  { label: "Kampf", stick: true, get: (f) => gameLink(`/kampfbericht/${f.id}`, fightLabel(f)) },
+  { label: "Gilde", sm: false, title: "Die Gilde, um die es im Kampf ging (Überfall auf ihre Kasse, beschworener Boss)", get: (f) => f.gn || "-" },
   { label: "Teilnehmer", num: true, get: (f) => fmtInt(f.fighters) },
-  { label: "Kasse", num: true, title: "Was die Gildenkasse im Kampf verloren (-) oder gewonnen (+) hat", get: (f) => f.gc == null ? "-" : el("span", { class: f.gc < 0 ? "down" : "up" }, signed(f.gc)) },
-  { label: "Gefallen", num: true, title: "Anteil der Teilnehmer, die in diesem Kampf gefallen sind (nur bei Kämpfen mit Einzelheiten)", get: (f) => pctv(f.death) },
+  { label: "Kasse", num: true, sm: false, title: "Was die Gildenkasse im Kampf verloren (-) oder gewonnen (+) hat", get: (f) => f.gc == null ? "-" : el("span", { class: f.gc < 0 ? "down" : "up" }, signed(f.gc)) },
+  { label: "Gefallen", num: true, sm: false, title: "Anteil der Teilnehmer, die in diesem Kampf gefallen sind (nur bei Kämpfen mit Einzelheiten)", get: (f) => pctv(f.death) },
   { label: "Ausgang", get: (f) => f.outcome === "VICTORY" ? el("span", { class: "up" }, "gewonnen") : el("span", { class: "down" }, "verloren") },
 ];
 
@@ -1680,9 +1697,9 @@ function guildFightsCard(s) {
       { label: "Überfälle", num: true, get: (r) => fmtInt(r.raids) },
       { label: "Abgewehrt", num: true, get: (r) => r.raids ? `${fmtInt(r.raid_wins)} (${pct(r.raid_wins, r.raids)})` : "-" },
       { label: "Kasse verloren", num: true, title: "Silber, das die Gildenkasse in Überfällen verloren hat", get: (r) => r.raid_known ? fmtSilver(r.lost) : "-" },
-      { label: "Kasse gewonnen", num: true, get: (r) => r.raid_known ? fmtSilver(r.won) : "-" },
+      { label: "Kasse gewonnen", num: true, sm: false, get: (r) => r.raid_known ? fmtSilver(r.won) : "-" },
       { label: "Bosse beschworen", num: true, get: (r) => fmtInt(r.bosses) },
-      { label: "Davon besiegt", num: true, get: (r) => r.bosses ? `${fmtInt(r.boss_wins)} (${pct(r.boss_wins, r.bosses)})` : "-" },
+      { label: "Davon besiegt", num: true, sm: false, get: (r) => r.bosses ? `${fmtInt(r.boss_wins)} (${pct(r.boss_wins, r.bosses)})` : "-" },
     ], rows)) : el("p", { class: "note" }, "Noch keine Kämpfe mit Gildenangaben gesammelt."),
     el("p", { class: "note" }, `Kassenänderung bekannt bei ${fmtInt(known)} von ${fmtInt(raids)} Überfällen.`));
 }
@@ -1704,7 +1721,7 @@ function viewFights(s, sub) {
       { label: "Siege", num: true, get: (g) => `${fmtInt(g.wins)} (${pct(g.wins, g.n)})` },
       { label: "Ø Teilnehmer", num: true, get: (g) => fmtInt(g.fighters) },
       { label: "Gefallen", num: true, title: "Anteil der Teilnehmer, die in gewonnenen Kämpfen gefallen sind", get: (g) => pctv(g.death_win) },
-      { label: "Boss-Leben bei Niederlage", num: true, title: "Wie viel Leben der Boss in verlorenen Kämpfen noch hatte", get: (g) => g.kind === "BOSS" ? pctv(g.boss_left) : "" },
+      { label: "Boss-Leben bei Niederlage", num: true, sm: false, title: "Wie viel Leben der Boss in verlorenen Kämpfen noch hatte", get: (g) => g.kind === "BOSS" ? pctv(g.boss_left) : "" },
     ], types)) : el("p", { class: "note" }, "Noch keine Kämpfe erfasst."),
     few.length ? el("p", { class: "note" }, `Weniger als ${FEW} Kämpfe: ${few.map((g) => `${fightLabel(g)} (${g.wins} von ${g.n} gewonnen)`).join(", ")}.`) : null,
     el("p", { class: "note" }, since ? `Erfasst seit ${fmtSince(s.since)}. ` : "", gameLink("/kampf", "Kämpfe im Spiel"))),

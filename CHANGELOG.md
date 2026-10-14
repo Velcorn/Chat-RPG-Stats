@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.45.2 (15.10.2026)
+
+**Verbessert**
+- Von 1 bis 9 Uhr wird nur noch alle 15 Minuten gesammelt (sonst alle 5), zusammen 224 Läufe am Tag.
+
 ## 0.45.1 (15.10.2026)
 
 **Verbessert**

@@ -2,9 +2,9 @@ name: collect
 
 on:
   schedule:
-    # Every 5 minutes, round the clock (the game's play window moves now and then, the data does not mind the night).
+    # Every 15 minutes, round the clock (the game's play window moves now and then, the data does not mind the night).
     # (The host's systemd timer is the one that really runs it; this is the fallback.)
-    - cron: "*/5 * * * *"
+    - cron: "*/15 * * * *"
   workflow_dispatch:
     inputs:
       full_top:

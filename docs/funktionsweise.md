@@ -6,7 +6,7 @@ benutzt, steht in der [README](../README.md).
 ## Ablauf
 
 ```
-Zeitplan (alle 5 Min., rund um die Uhr) -> src/collect.py -> Zweig "data" -> src/build.py -> GitHub Pages
+Zeitplan (alle 5 Min., von 1 bis 9 Uhr alle 15) -> src/collect.py -> Zweig "data" -> src/build.py -> GitHub Pages
 ```
 
 1. **Sammeln** (`src/collect.py`): fragt die öffentlichen Schnittstellen ab (Tabelle in der README), bildet daraus den
@@ -30,12 +30,12 @@ Zeitplan (alle 5 Min., rund um die Uhr) -> src/collect.py -> Zweig "data" -> src
    fertigen Dateien; ihre Zahl ändert nichts an den Anfragen ans Spiel.
 
 Seit 0.45.1 sammelt er rund um die Uhr, ohne Rücksicht auf die Spielzeit des Spiels (bis 0.45.0 nur von 7 bis 24 Uhr; die
-Spielzeit ändert sich ab und zu, ab 15.10.2026 ist die Sperrstunde 3 bis 9 Uhr, und nachts mitzulaufen kostet kaum etwas). Ist die
+Spielzeit ändert sich ab und zu, ab 15.10.2026 ist die Sperrstunde 3 bis 9 Uhr, und nachts mitzulaufen kostet kaum etwas; seit 0.45.2 von 1 bis 9 Uhr nur alle 15 Minuten). Ist die
 Seite nicht erreichbar, fällt der Lauf aus; die nächste Zeitplan-Ausführung versucht es wieder.
 
 GitHubs eigener Zeitplan löst bei kleinen Repos unzuverlässig aus (am 30.09.2026 nur einmal am Tag). Darum startet zusätzlich
 ein systemd-Timer (`deploy/chat-rpg-stats-collect.timer`, Einrichtung im Kopf der Service-Datei) die Action alle 5 Minuten
-rund um die Uhr per `gh workflow run` (bis 0.36.0 alle 15 Minuten; das ist ein Lauf von etwa zwei Minuten, die Läufe überlappen also nicht, und eine Minute wäre auf GitHub nicht machbar: ein Lauf mit Bauen und Veröffentlichen dauert mindestens zwei Minuten, GitHubs eigener Zeitplan kennt nichts unter 5 Minuten). Der Zeitplan auf GitHub bleibt als Rückfall. Die Scheibe der übrigen aktiven Spieler ist seit 0.36.0 ein Hundertachtzigstel statt ein Sechzigstel (`SWEEP_RUNS`), damit jeder Spieler weiter etwa einmal am Tag gelesen wird: etwa 15 statt 48 Anfragen je Lauf; der Kern etwa 12, die Beobachtungsliste 7, die geänderten Top-100-Profile im Mittel etwa 2, zusammen etwa 36 Anfragen je Lauf und 7.500 am Tag (vorher 62 je Lauf und 4.200, bei Lauf alle 5 Minuten ohne diese Änderung wären es 12.600 gewesen).
+rund um die Uhr per `gh workflow run` (von 1 bis 9 Uhr Berliner Zeit alle 15 Minuten, `OnCalendar` mit zwei Zeilen) (bis 0.36.0 alle 15 Minuten; das ist ein Lauf von etwa zwei Minuten, die Läufe überlappen also nicht, und eine Minute wäre auf GitHub nicht machbar: ein Lauf mit Bauen und Veröffentlichen dauert mindestens zwei Minuten, GitHubs eigener Zeitplan kennt nichts unter 5 Minuten). Der Zeitplan auf GitHub bleibt als Rückfall. Die Scheibe der übrigen aktiven Spieler ist seit 0.36.0 ein Hundertachtzigstel statt ein Sechzigstel (`SWEEP_RUNS`), damit jeder Spieler weiter etwa einmal am Tag gelesen wird: etwa 15 statt 48 Anfragen je Lauf; der Kern etwa 12, die Beobachtungsliste 7, die geänderten Top-100-Profile im Mittel etwa 2, zusammen etwa 36 Anfragen je Lauf und 7.500 am Tag (vorher 62 je Lauf und 4.200, bei Lauf alle 5 Minuten ohne diese Änderung wären es 12.600 gewesen).
 
 Änderungen an `site/` oder `src/` lösen nur Bauen und Veröffentlichen aus, ohne neue Anfragen.
 

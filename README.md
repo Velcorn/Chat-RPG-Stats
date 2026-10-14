@@ -22,7 +22,7 @@ nichts in den Chat. Kein offizielles Angebot des Spiels.
 
 ## Was erfasst wird
 
-Ein Sammler läuft etwa alle 5 Minuten, rund um die Uhr (die Spielzeit des Spiels ändert sich ab und zu, nachts ändert sich meist nichts, das Sammeln schadet aber nicht)
+Ein Sammler läuft etwa alle 5 Minuten, rund um die Uhr, von 1 bis 9 Uhr nur alle 15 Minuten (die Spielzeit des Spiels ändert sich ab und zu, nachts ändert sich meist nichts)
 als GitHub Action und fragt die öffentlichen Schnittstellen der Seite ab, dieselben, die sie selbst ohne Anmeldung
 zeigt:
 
@@ -40,9 +40,9 @@ zeigt:
 | Spieler auf der Beobachtungsliste | Spielerseite | 1 pro Spieler |
 | Top 100 der Rangliste (ohne Liste) | Spielerseite | 100 einmal am Tag im ersten Lauf, sonst nur, wessen Ausrüstungswert sich seit dem letzten Profil geändert hat (etwa 6 je Lauf) |
 
-Ein Lauf macht also etwa 73 Anfragen (rund 14 für Ranglisten, Gilden, Kämpfe und Kanäle, die zuerst auf die Seite kommen, den Rest für Profile danach) und eine pro neuem Kampf, im Abstand von 2 Sekunden. Bei 12 Läufen pro Stunde rund um
-die Uhr (288 am Tag) kommt über den Tag eine entsprechend große Zahl zusammen, egal wie viele Leute die Seite ansehen: Besucher lesen nur fertige Dateien. Die Seite nennt diese Zahl
-im Fuß (gemessen am letzten Lauf, mal 288 Läufe am Tag). Jede Anfrage nennt
+Ein Lauf macht also etwa 73 Anfragen (rund 14 für Ranglisten, Gilden, Kämpfe und Kanäle, die zuerst auf die Seite kommen, den Rest für Profile danach) und eine pro neuem Kampf, im Abstand von 2 Sekunden. Bei 12 Läufen pro Stunde (von 1 bis 9 Uhr 4)
+(224 am Tag) kommt über den Tag eine entsprechend große Zahl zusammen, egal wie viele Leute die Seite ansehen: Besucher lesen nur fertige Dateien. Die Seite nennt diese Zahl
+im Fuß (gemessen am letzten Lauf, mal 224 Läufe am Tag). Jede Anfrage nennt
 das Projekt im User-Agent. Ist die Seite nicht erreichbar, fällt der Lauf aus. Gespeichert wird nur, was sich geändert hat.
 
 Wie gerechnet wird (Rang, Tempo, Prognose, Vergleich) und wie die Daten liegen: [docs/funktionsweise.md](docs/funktionsweise.md).

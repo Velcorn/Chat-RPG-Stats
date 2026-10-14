@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.43.1 (14.10.2026)
+
+**Entfernt**
+- Der Knopf "CSV" neben "Teilen" auf der Spielerseite ist wieder weg (0.42.0): Er brachte wenig.
+
 ## 0.43.0 (14.10.2026)
 
 **Verbessert**

@@ -1253,23 +1253,6 @@ function shareText(p, login) {
     `${f.exact ? "Rang" : "etwa Rang"} ${fmtInt(f.rank)}, mehr Ausrüstung als ${fmtDec(p.standing.better, 1)} % der Spieler` + (g ? `, Gilde ${g.name}` : ""),
     `${location.origin}${location.pathname}#/spieler/${encodeURIComponent(login)}`].join("\n");
 }
-// The player's lines as a CSV (long format: time; series; value), for a spreadsheet; semicolons and a BOM for German Excel.
-function exportButton(p, login) {
-  const b = el("button", { class: "pill", type: "button", style: "cursor:pointer;background:none", title: "Verlauf als Tabelle herunterladen" }, "CSV");
-  b.addEventListener("click", () => {
-    const names = { gear: "Ausrüstungswert", rank: "Platz", silver: "Silber" }, rows = [["Zeit", "Reihe", "Wert"]];
-    for (const [key, name] of Object.entries(names)) {
-      for (const [t, v] of (p.series[key] || [])) {
-        if (v != null) rows.push([new Date(t * 1000).toLocaleString("sv-SE", { timeZone: TZ }), name, v]);
-      }
-    }
-    const blob = new Blob(["\ufeff" + rows.map((r) => r.join(";")).join("\n")], { type: "text/csv;charset=utf-8" });
-    const a = el("a", { href: URL.createObjectURL(blob), download: `${login}-verlauf.csv` });
-    document.body.append(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  });
-  return b;
-}
 function shareButton(p, login) {
   const b = el("button", { class: "pill", type: "button", style: "cursor:pointer;background:none" }, "Teilen");
   b.addEventListener("click", async () => {
@@ -1370,7 +1353,7 @@ async function viewPlayer(s, login) {
   const out = [
     el("div", { class: "head start" }, el("h1", {}, p.name), g ? el("a", { href: `#/gilden/${g.login}` }, g.name) : null,
       p.active === false ? el("span", { class: "tag" }, "laut Gilde inaktiv") : null,
-      gameLink(`/spieler/${login}`, "Im Spiel"), shareButton(p, login), exportButton(p, login)),
+      gameLink(`/spieler/${login}`, "Im Spiel"), shareButton(p, login)),
     el("div", { class: "grid two" }, hero, chartCard("Ausrüstungswert", p.series.gear, { until: s.generated, compare: gearCompare(s, p, login) })),
     hasGear ? gearCard(p.watch.slots, p.power) : null,
     hasGear ? upgradePlanCard(p.watch.slots) : null,

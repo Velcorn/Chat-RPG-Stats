@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.44.1 (14.10.2026)
+
+**Verbessert**
+- Der Titel öffnet GitHub in einem neuen Tab (statt im selben).
+
 ## 0.44.0 (14.10.2026)
 
 **Neu**

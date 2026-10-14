@@ -22,10 +22,9 @@ from zoneinfo import ZoneInfo
 
 BASE = "https://rpg.sola.rip"
 BERLIN = ZoneInfo("Europe/Berlin")
-PLAY_FROM, PLAY_TO = 7, 24  # the game's play window (Berlin time); nothing changes outside it
 PAUSE = 2.0
 BOUND_SOURCES = ("PERSONAL_SHOP", "AUCTION", "TRADER", "SEALED")  # bound to the player, not for the market
-RUNS_PER_HOUR = 12  # a run every 5 minutes during the play window (every 15 until 0.36.0)
+RUNS_PER_HOUR = 12  # a run every 5 minutes, round the clock (every 15 until 0.36.0)
 SWEEP_RUNS = 180  # the active players' profiles are read in this many slices: each one about once a day (60 at 15 min)
 TOP_WATCH = 100  # the board's top players get the watchlist's detailed profile data, all in the day's first run
 # The site's four rankings (`by=` value -> the value they rank by). Others (silver, level) just return the gear board.
@@ -438,23 +437,15 @@ def record(snap: dict, prev: dict, cur: dict, t: int) -> dict:
     return rec
 
 
-def in_play_window(now: datetime) -> bool:
-    return PLAY_FROM <= now.hour < PLAY_TO
-
-
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", type=Path, default=Path("data"))
     ap.add_argument("--watchlist", type=Path, default=Path("watchlist.txt"))
-    ap.add_argument("--force", action="store_true", help="also outside the play window")
     ap.add_argument("--full-top", action="store_true", help="read the top 100 in this run even if it was read today")
     ap.add_argument("--part", choices=("all", "core", "profiles"), default="all",
                     help="core: everything but the profiles (the page is published after it); profiles: only those")
     args = ap.parse_args()
     now = datetime.now(BERLIN)
-    if not args.force and not in_play_window(now):
-        print("Außerhalb der Spielzeit, nichts zu tun.")
-        return 0
     site = Site()
     state_file = args.data / "state.json"
     prev = json.loads(state_file.read_text("utf-8")) if state_file.exists() else {}

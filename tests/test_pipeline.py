@@ -89,7 +89,7 @@ class CollectTests(unittest.TestCase):
         pipe = Pipeline()
         pipe.run(snap({"karni": [member("a", 100)]}), T0)
         summary, _ = pipe.build(T0)
-        self.assertEqual(summary["load"], {"per_run": 15, "runs_per_day": 204})
+        self.assertEqual(summary["load"], {"per_run": 15, "runs_per_day": 288})
 
     def test_player_leaving_every_guild_keeps_the_last_gear(self):
         pipe = Pipeline()
@@ -108,11 +108,6 @@ class CollectTests(unittest.TestCase):
         self.assertNotIn("quests", first)  # a player's quest lines are read but never stored
         again = pipe.run(snap({"karni": [member("a", 100)]}, fights=[fight], watch=watch), T0 + 900)
         self.assertNotIn("fights", again)
-
-    def test_play_window(self):
-        self.assertTrue(collect.in_play_window(datetime(2026, 9, 30, 7, 0)))
-        self.assertTrue(collect.in_play_window(datetime(2026, 9, 30, 23, 59)))
-        self.assertFalse(collect.in_play_window(datetime(2026, 9, 30, 6, 59)))
 
     def test_watchlist_file(self):
         path = Path(tempfile.mkdtemp()) / "watchlist.txt"

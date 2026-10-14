@@ -22,7 +22,7 @@ nichts in den Chat. Kein offizielles Angebot des Spiels.
 
 ## Was erfasst wird
 
-Ein Sammler läuft etwa alle 5 Minuten von 7 bis 24 Uhr (Berliner Zeit, die Spielzeit des Spiels; nachts ändert sich nichts)
+Ein Sammler läuft etwa alle 5 Minuten, rund um die Uhr (die Spielzeit des Spiels ändert sich ab und zu, nachts ändert sich meist nichts, das Sammeln schadet aber nicht)
 als GitHub Action und fragt die öffentlichen Schnittstellen der Seite ab, dieselben, die sie selbst ohne Anmeldung
 zeigt:
 
@@ -38,11 +38,11 @@ zeigt:
 | Regeln des Spiels (für den Änderungsverlauf) | Regeln | 1 |
 | Erste Siege der Gilden über jeden Boss | Erstkills | 1 pro Tag |
 | Spieler auf der Beobachtungsliste | Spielerseite | 1 pro Spieler |
-| Top 100 der Rangliste (ohne Liste) | Spielerseite | 100 einmal am Tag um 7 Uhr, sonst nur, wessen Ausrüstungswert sich seit dem letzten Profil geändert hat (etwa 6 je Lauf) |
+| Top 100 der Rangliste (ohne Liste) | Spielerseite | 100 einmal am Tag im ersten Lauf, sonst nur, wessen Ausrüstungswert sich seit dem letzten Profil geändert hat (etwa 6 je Lauf) |
 
-Ein Lauf macht also etwa 73 Anfragen (rund 14 für Ranglisten, Gilden, Kämpfe und Kanäle, die zuerst auf die Seite kommen, den Rest für Profile danach) und eine pro neuem Kampf, im Abstand von 2 Sekunden. Bei 4 Läufen pro Stunde und
-17 Stunden Spielzeit sind das rund 5.000 Anfragen am Tag, egal wie viele Leute die Seite ansehen: Besucher lesen nur fertige Dateien. Die Seite nennt diese Zahl
-im Fuß (gemessen am letzten Lauf, mal 68 Läufe am Tag). Jede Anfrage nennt
+Ein Lauf macht also etwa 73 Anfragen (rund 14 für Ranglisten, Gilden, Kämpfe und Kanäle, die zuerst auf die Seite kommen, den Rest für Profile danach) und eine pro neuem Kampf, im Abstand von 2 Sekunden. Bei 12 Läufen pro Stunde rund um
+die Uhr (288 am Tag) kommt über den Tag eine entsprechend große Zahl zusammen, egal wie viele Leute die Seite ansehen: Besucher lesen nur fertige Dateien. Die Seite nennt diese Zahl
+im Fuß (gemessen am letzten Lauf, mal 288 Läufe am Tag). Jede Anfrage nennt
 das Projekt im User-Agent. Ist die Seite nicht erreichbar, fällt der Lauf aus. Gespeichert wird nur, was sich geändert hat.
 
 Wie gerechnet wird (Rang, Tempo, Prognose, Vergleich) und wie die Daten liegen: [docs/funktionsweise.md](docs/funktionsweise.md).
@@ -64,7 +64,7 @@ Python 3.13 ohne Laufzeit-Abhängigkeiten, verwaltet mit [uv](https://docs.astra
 HTML-Datei ohne Build-Schritt.
 
 ```
-uv run python src/collect.py --data data --force    # ein Lauf, auch außerhalb der Spielzeit
+uv run python src/collect.py --data data    # ein Lauf
 uv run python src/build.py --data data --out _site   # die Dateien für die Seite
 uv run python -m http.server -d _site            # ansehen unter http://localhost:8000
 PYTHONPATH=src uv run python -m unittest discover tests

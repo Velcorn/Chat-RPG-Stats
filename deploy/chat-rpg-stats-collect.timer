@@ -1,9 +1,9 @@
-# Alle 5 Minuten von 7 bis 24 Uhr Ortszeit (Berlin, die Spielzeit des Spiels), siehe chat-rpg-stats-collect.service.
+# Alle 5 Minuten rund um die Uhr (seit 0.45.1; die Spielzeit des Spiels ändert sich ab und zu), siehe chat-rpg-stats-collect.service.
 [Unit]
-Description=Statistik-Sammler alle 5 Minuten während der Spielzeit
+Description=Statistik-Sammler alle 5 Minuten
 
 [Timer]
-OnCalendar=*-*-* 07..23:00/5:00
+OnCalendar=*-*-* *:00/5:00
 RandomizedDelaySec=0
 
 [Install]

@@ -336,15 +336,8 @@ class MainTests(unittest.TestCase):
         lines = (data / "days" / "2026-09-30.jsonl").read_text().splitlines()
         self.assertEqual([json.loads(line).get("part") for line in lines], [None, "profiles"])
 
-    def test_nothing_happens_outside_the_play_window(self):
-        code, data, out, printed = self.run_main(now=self.NIGHT)
-        self.assertEqual(code, 0)
-        self.assertFalse((data / "days").exists())
-        self.assertFalse(out.exists())  # no "collected", so no build and no deploy
-        self.assertIn("Außerhalb der Spielzeit", printed)
-
-    def test_force_collects_at_night(self):
-        _, data, out, _ = self.run_main(now=self.NIGHT, args=["--force"])
+    def test_it_collects_at_night_too(self):
+        _, data, out, _ = self.run_main(now=self.NIGHT)
         self.assertTrue((data / "state.json").exists())
         self.assertTrue(out.exists())
 

@@ -224,7 +224,7 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
     summary_stats = fightstats.fight_stats(h.fights, h.fightx, now, boss_rec=boss_rec)
     summary = {"generated": int(now), "version": project_version(), "since": h.first, "runs": h.runs,
                "load": {"per_run": h.requests,
-                        "runs_per_day": (collect.PLAY_TO - collect.PLAY_FROM) * collect.RUNS_PER_HOUR},
+                        "runs_per_day": 24 * collect.RUNS_PER_HOUR},
                "players": len(players),
                "ranked": len(gear),
                "active": sum(1 for p in players.values() if p.get("active")),

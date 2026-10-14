@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.45.1 (15.10.2026)
+
+**Verbessert**
+- Die Daten werden jetzt rund um die Uhr gesammelt, nicht nur in der Spielzeit des Spiels (die ab heute 9 bis 3 Uhr läuft). Die Fußzeile nennt das, und die Zahl der Läufe am Tag steigt auf 288.
+
 ## 0.45.0 (14.10.2026)
 
 **Neu**

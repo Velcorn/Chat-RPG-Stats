@@ -265,11 +265,11 @@ class StateTests(unittest.TestCase):
 
 
 class MainTests(unittest.TestCase):
-    def run_main(self, *, now, snapshot=None, args=(), data=None, rules=None):
+    def run_main(self, *, now, snapshot=None, args=(), data=None):
         data = data or Path(tempfile.mkdtemp())
         out = Path(tempfile.mkdtemp()) / "out"
         patches = [mock.patch.object(collect, "datetime", mock.Mock(now=lambda tz: now)),
-                   mock.patch.object(collect, "Site", lambda: mock.Mock(requests=7, get=lambda path: rules or {})),
+                   mock.patch.object(collect, "Site", lambda: mock.Mock(requests=7)),
                    mock.patch.object(collect, "snapshot", snapshot or (
                        lambda site, wl, after=0, daily=None, sweep_after="", top_day="", part="all", prev=None:
                        snap({"karni": [member("a", 100)]}))),
@@ -342,30 +342,6 @@ class MainTests(unittest.TestCase):
         self.assertFalse((data / "days").exists())
         self.assertFalse(out.exists())  # no "collected", so no build and no deploy
         self.assertIn("Außerhalb der Spielzeit", printed)
-
-    def test_a_window_moved_by_the_game_is_noticed_once_an_hour(self):
-        opens = {"playWindowFrom": 3, "playWindowTo": 24}  # the game now opens at 3
-        _, _, out, _ = self.run_main(now=self.NIGHT, rules=opens)  # 3:00: the hourly look at the rules
-        self.assertTrue(out.exists())
-        later = datetime(2026, 9, 30, 3, 30, tzinfo=collect.BERLIN)
-        _, _, out, printed = self.run_main(now=later, rules=opens)  # no look outside the first minutes of the hour
-        self.assertFalse(out.exists())
-        self.assertIn("Außerhalb der Spielzeit", printed)
-        # The last known window (from the state) counts without a look.
-        kept = Path(tempfile.mkdtemp())
-        (kept / "state.json").write_text(json.dumps({"rules": opens}))
-        _, _, out, _ = self.run_main(now=later, data=kept)
-        self.assertTrue(out.exists())
-
-    def test_an_unreachable_site_at_the_hourly_look_keeps_the_window(self):
-        def down(path):
-            raise TimeoutError("down")
-        with mock.patch.object(collect, "Site", lambda: mock.Mock(requests=7, get=down)):
-            with mock.patch("sys.argv", ["collect.py", "--data", str(tempfile.mkdtemp())]):
-                with mock.patch.object(collect, "datetime", mock.Mock(now=lambda tz: self.NIGHT)):
-                    with redirect_stdout(io.StringIO()) as printed:
-                        self.assertEqual(collect.main(), 0)
-        self.assertIn("Außerhalb der Spielzeit", printed.getvalue())
 
     def test_force_collects_at_night(self):
         _, data, out, _ = self.run_main(now=self.NIGHT, args=["--force"])

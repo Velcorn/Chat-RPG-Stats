@@ -55,7 +55,12 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit --quiet -m "Daten $(date -u +%Y-%m-%dT%H:%MZ)"
-          git push --quiet origin data
+          # GitHub answers a push with a 500 now and then (15:00 UTC on 14.10.2026): try again a few times.
+          for wait in 0 10 30; do
+            sleep "$wait"
+            git push --quiet origin data && exit 0
+          done
+          exit 1
       - name: Seite bauen
         id: build
         if: (steps.collect.outputs.collected == 'true' || github.event_name == 'push') && hashFiles('data/state.json') != ''
@@ -93,4 +98,9 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit --quiet -m "Profile $(date -u +%Y-%m-%dT%H:%MZ)"
-          git push --quiet origin data
+          # GitHub answers a push with a 500 now and then (15:00 UTC on 14.10.2026): try again a few times.
+          for wait in 0 10 30; do
+            sleep "$wait"
+            git push --quiet origin data && exit 0
+          done
+          exit 1

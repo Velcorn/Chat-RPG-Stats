@@ -20,7 +20,9 @@ Zeitplan (alle 5 Min., 7-24 Uhr) -> src/collect.py -> Zweig "data" -> src/build.
    schreibt seine Zeile mit `part: "profiles"`; der Verlauf zählt sie nicht als Lauf und addiert ihre Anfragen zu denen des Laufs.
 2. **Speichern:** im Zweig `data`, eine Datei `days/JJJJ-MM-TT.jsonl` pro Tag (eine Zeile pro Lauf) und `state.json`
    mit dem letzten Stand. Von einem bekannten Spieler oder einer Gilde werden nur die geänderten Werte gespeichert.
-   Ein Lauf ist dadurch rund 25 KB groß, ein Tag etwa 1,6 MB (die Summen je Kampf kommen dazu).
+   Ein Lauf ist dadurch rund 25 KB groß, ein Tag etwa 1,6 MB (die Summen je Kampf kommen dazu). Antwortet GitHub auf
+   den Push mit einem Serverfehler (am 14.10.2026 um 15:00 UTC ein 500), versucht der Lauf es bis zu dreimal (nach 0, 10 und 30
+   Sekunden); schlägt auch das fehl, fehlt dieser Lauf, und der nächste holt die Daten nach.
 3. **Bauen** (`src/build.py`): spielt alle Tagesdateien ab und schreibt `summary.json` (Ranglisten, Gilden, Kämpfe, `stats` und `eras` aus `src/fightstats.py`, `channel_stats`, `rules`, `power_board`, `first_kills`, `guild_fights`, `economy`),
    `players.json` (Suchindex), `builds.json` (seit 0.29.0: ATK, DEF, SUP und Ausrüstungswert jedes Spielers mit bekannter
    Verteilung, ohne Namen, für die Werte-Karte) und eine Datei `p/<name>.json` pro Spieler.

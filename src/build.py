@@ -17,6 +17,7 @@ from pathlib import Path
 
 import collect
 import fightstats
+from observed import observed
 
 DAY = 86400
 PEERS_MIN = 8
@@ -261,6 +262,7 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
     # Every known split without names, for the build map: [attack, defense, support, gear score].
     write(target / "builds.json", [[details[x]["atk"], details[x]["def"], details[x]["sup"], gear[x]]
                                    for x in with_split])
+    write(target / "observed.json", observed(state))
     gear_sorted = sorted(gear.values())
     for login in gear:
         write(target / "p" / f"{login}.json", player_page(login, h, state, now, rank, paces, with_split,

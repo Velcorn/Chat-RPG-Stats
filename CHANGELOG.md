@@ -3,6 +3,15 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.45.5 (15.10.2026)
+
+**Neu**
+- Aufsteiger lassen sich nach Zuwachs oder nach Ausrüstungswert (AW) sortieren.
+
+**Behoben**
+- Handy: Große Beträge in den Kacheln (Kasse) werden nicht mehr abgeschnitten ("5.787.475 Sil...").
+- Die Überfallstufe einer Gilde steht nicht mehr in der Kachel "Bosse", sondern in einer eigenen Kachel.
+
 ## 0.45.4 (15.10.2026)
 
 **Neu**

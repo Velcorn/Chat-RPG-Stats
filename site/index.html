@@ -63,7 +63,7 @@
   .tile .value { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; margin: 2px 0; white-space: nowrap;
                  overflow: hidden; text-overflow: ellipsis; }
   .tile .sub { color: var(--text-muted); font-size: 13px; font-variant-numeric: tabular-nums; }
-  @media (max-width: 600px) { .tile .value { font-size: 20px; } .tile .pwv { font-size: 10px; margin-top: 6px; } .tile.kk { grid-column: 1 / -1; } }
+  @media (max-width: 600px) { .tile .value { font-size: 20px; white-space: normal; overflow-wrap: anywhere; overflow: visible; } .tile .pwv { font-size: 10px; margin-top: 6px; } .tile.kk { grid-column: 1 / -1; } }
   input, button { font: inherit; color: var(--text-primary); background: var(--surface-2);
                   border: 1px solid var(--border); border-radius: 6px; padding: 6px 12px; }
   button { cursor: pointer; } button:hover { border-color: var(--text-muted); }
@@ -1141,10 +1141,10 @@ function viewRanks(s, sub) {
     ], s.power_board),
     el("p", { class: "note" }, "Kampfkraft = Ausrüstung plus Talente. Das Spiel selbst ordnet nach dem Ausrüstungswert.")];
   if (sub === "aufsteiger") {
-    let span = "day";
+    let span = "day", order = "gain";
     const riserBox = el("div");
     const renderRisers = () => {
-      const rows = s.risers[span];
+      const rows = [...s.risers[span]].sort((a, b) => order === "gear" ? (b.gear - a.gear) || (b.gain - a.gain) : 0);  // by gain is the order they come in
       riserBox.replaceChildren(rows.length ? table([
         { label: "Spieler", get: playerLink },
         { label: "Gilde", get: (r) => r.guild || "-" },
@@ -1154,7 +1154,9 @@ function viewRanks(s, sub) {
     };
     renderRisers();
     return [el("section", { class: "card" }, el("div", { class: "head" }, el("h2", {}, "Aufsteiger (Ausrüstungswert)"),
-      seg([["day", "24 Stunden"], ["week", "7 Tage"]], span, (k) => { span = k; renderRisers(); })), riserBox,
+      el("div", { class: "head" },
+        seg([["day", "24 Stunden"], ["week", "7 Tage"]], span, (k) => { span = k; renderRisers(); }),
+        seg([["gain", "Nach Zuwachs"], ["gear", "Nach AW"]], order, (k) => { order = k; renderRisers(); }))), riserBox,
       el("p", { class: "note" }, "Gezählt wird nur, was über dem eigenen Höchstwert der Vorwoche liegt; ein Einbruch mit Wiederanstieg zählt nicht."))];
   }
   return [
@@ -1550,7 +1552,8 @@ function viewGuild(s, login) {
       tile("Kasse", fmtSilver(g.treasury), `gespendet insgesamt: ${fmtSilver(g.donated)}`),
       tile("Mitglieder", fmtInt(g.members), `${fmtInt(g.active)} aktiv (${pct(g.active, g.members)})`),
       tile("Ø Ausrüstungswert", fmtDec(g.avg_gear, 1), "aktive Mitglieder"),
-      tile("Bosse", `${fmtInt(g.boss_wins)} Siege`, `${count(g.boss_losses, "Niederlage", "Niederlagen")}, Überfallstufe ${fmtInt(g.raid)}`)),
+      tile("Bosse", `${fmtInt(g.boss_wins)} Siege`, count(g.boss_losses, "Niederlage", "Niederlagen")),
+      tile("Überfallstufe", fmtInt(g.raid), "laut Spiel")),
     el("div", { class: "grid two" },
       chartCard("Kasse", g.series.map((r) => [r[0], r[1]]), { fmt: fmtSilver, until: s.generated }),
       chartCard("Aktive Mitglieder", g.series.map((r) => [r[0], r[3]]), { until: s.generated })),

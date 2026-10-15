@@ -110,12 +110,34 @@
                 linear-gradient(to left, var(--surface-1) 30%, transparent) right / 28px 100% no-repeat local,
                 radial-gradient(farthest-side at 0 50%, rgba(255, 255, 255, .16), transparent) left / 12px 100% no-repeat scroll,
                 radial-gradient(farthest-side at 100% 50%, rgba(255, 255, 255, .16), transparent) right / 12px 100% no-repeat scroll; }
+  th .st { display: none; }
   .wide-table .stick { position: sticky; left: 0; background: var(--surface-1); z-index: 1; }
   @media (max-width: 600px) {
     table { font-size: 13px; }
     th, td { padding: 5px 5px; }
     th.num { white-space: normal; }  /* long headings wrap instead of widening their column */
     .hide-sm { display: none; }
+    th .lg { display: none; } th .st { display: inline; }
+    /* `cards`: every row a small card, all columns, instead of a table that scrolls sideways. */
+    table.cards, table.cards tbody, table.cards tr, table.cards td { display: block; }
+    table.cards thead { display: none; }
+    table.cards tr { border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; background: var(--surface-2); }
+    table.cards td { display: flex; justify-content: space-between; gap: 12px; border: 0; padding: 2px 0; text-align: right; }
+    table.cards td::before { content: attr(data-label); color: var(--text-secondary); text-align: left; flex: none; }
+    table.cards td:first-child { justify-content: flex-start; font-weight: 600; font-size: 14px; padding-bottom: 4px; text-align: left; }
+    table.cards td:first-child::before { content: none; }
+    table.cards td.hide-sm { display: flex; }
+    table.cards .stick { position: static; background: none; }
+    .wide-table:has(table.cards) { background: none; }
+    .scroll:has(table.cards) { max-height: none; overflow: visible; }
+    /* The five sections as a bar at the bottom, where the thumb is. */
+    header .tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; margin: 0; gap: 6px; flex-wrap: nowrap;
+                   padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); background: var(--surface-1);
+                   border-top: 1px solid var(--border); }
+    header .tabs a { flex: 1 1 0; text-align: center; padding: 8px 2px; white-space: nowrap; }
+    body { padding-bottom: 64px; }
+    .sub { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+    .sub a { flex: 0 0 auto; padding: 3px 8px; }
   }
   .up { color: var(--good); } .down { color: var(--critical); }
   .tag { font-size: 11px; padding: 1px 6px; border-radius: 4px; background: var(--surface-2);
@@ -179,6 +201,7 @@
   .chart-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
   .chart-head h2 { margin: 0; }
   .chart-ctl { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  select.pick { font-size: 14px; padding: 6px 10px; max-width: 100%; }
   select.cmp, input.cmp { font: inherit; font-size: 12px; padding: 2px 6px; border-radius: 6px; background: var(--surface-2); color: var(--text-primary); border: 1px solid var(--border); }
   input.cmp { width: 120px; }
   .tip .tipline { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
@@ -392,14 +415,29 @@ function tile(label, value, sub, power) {
 function card(title, ...body) { return el("section", { class: "card" }, title ? el("h2", {}, title) : null, ...body); }
 function delta(n, d = 0) { return el("span", { class: n > 0 ? "up" : n < 0 ? "down" : "muted" }, signed(n, d)); }
 function playerLink(r) { return el("a", { href: `#/spieler/${r.login}` }, r.name || r.login); }
-// Columns: `num` right-aligned, `sm: false` hidden on a phone, `stick` stays in view while the table scrolls sideways
-// (default: the first column that is no number and no rank).
-function table(cols, rows) {
-  const stick = cols.some((c) => c.stick) ? cols.findIndex((c) => c.stick) : cols.findIndex((c) => !c.num && c.label !== "#");
-  const cls = (c, i) => [c.num ? "num" : "", c.sm === false ? "hide-sm" : "", i === stick ? "stick" : ""].filter(Boolean).join(" ") || null;
-  return el("div", { class: "wide-table" }, el("table", {},
-    el("thead", {}, el("tr", {}, cols.map((c, i) => el("th", { class: cls(c, i), title: c.title }, c.label)))),
-    el("tbody", {}, rows.map((r) => el("tr", {}, cols.map((c, i) => el("td", { class: cls(c, i) }, c.get(r))))))));
+// Columns: `num` right-aligned, `sm: false` hidden on a phone, `short` the heading on a phone (the long one is the
+// tooltip), `stick` stays in view while the table scrolls sideways (several may; none given: the first column that is
+// no number and no rank).
+function table(cols, rows, opts = {}) {
+  const first = cols.findIndex((c) => !c.num && c.label !== "#");
+  const pinned = cols.some((c) => c.stick) ? cols.map((c) => !!c.stick) : cols.map((_, i) => i === first);
+  const cls = (c, i) => [c.num ? "num" : "", c.sm === false ? "hide-sm" : "", pinned[i] ? "stick" : ""].filter(Boolean).join(" ") || null;
+  const head = (c) => c.short ? [el("span", { class: "lg" }, c.label), el("span", { class: "st" }, c.short)] : c.label;
+  const box = el("div", { class: "wide-table" }, el("table", { class: opts.cards ? "cards" : null },
+    el("thead", {}, el("tr", {}, cols.map((c, i) => el("th", { class: cls(c, i), title: c.title || (c.short ? c.label : null) }, head(c))))),
+    el("tbody", {}, rows.map((r) => el("tr", {}, cols.map((c, i) => el("td", { class: cls(c, i), "data-label": c.short || c.label }, c.get(r))))))));
+  // Pinned columns sit next to each other: each one starts where the pinned ones before it end.
+  if (pinned.filter(Boolean).length > 1) requestAnimationFrame(() => {
+    const row = box.querySelector("tr");
+    if (!row) return;
+    let left = 0;
+    cols.forEach((c, i) => {
+      if (!pinned[i] || row.children[i].offsetParent === null) return;
+      for (const tr of box.querySelectorAll("tr")) tr.children[i].style.left = `${left}px`;
+      left += row.children[i].offsetWidth;
+    });
+  });
+  return box;
 }
 function seg(options, current, onPick) {
   const box = el("div", { class: "seg" });
@@ -463,7 +501,7 @@ function lineChart(box, points, { label, fmt = fmtInt, invert = false, until, em
   const change = (a, b) => invert ? a - b : b - a;  // up is better: for ranks that is a smaller number
   const changeText = (d) => d === 0 ? "+-0" : (d > 0 ? "+" : "-") + (invert ? fmtInt(Math.abs(d)) + (Math.abs(d) === 1 ? " Platz" : " Plätze") : fmt(Math.abs(d)));
 
-  // Drag to zoom into a span; two fingers pinch; double-click resets. The gestures live out here and on `box`: a pinch
+  // Mouse: drag to zoom into a span. Touch: one finger shows the values, two fingers pinch. Double-click/tap resets. The gestures live out here and on `box`: a pinch
   // redraws the chart on every move, which replaces the svg under the fingers (state and capture would be lost).
   const touches = new Map();
   let drag = null, pinch = null, cur = null;
@@ -490,6 +528,7 @@ function lineChart(box, points, { label, fmt = fmtInt, invert = false, until, em
     }
     if (!drag) return;
     const px = cur.pxOf(ev);
+    if (ev.pointerType === "touch") { cur.hover(px); return; }  // one finger scrubs the tooltip, only the mouse selects a span
     if (Math.abs(px - drag.x0) > 6) {
       drag.moved = true;
       const l = Math.max(cur.m.l, Math.min(px, drag.x0)), r = Math.min(cur.W - cur.m.r, Math.max(px, drag.x0));
@@ -1096,9 +1135,9 @@ function viewRanks(s, sub) {
       { label: "#", num: true, get: (r) => r.rank },
       { label: "Spieler", get: playerLink },
       { label: "Gilde", sm: false, get: (r) => r.guild || "-" },
-      { label: "Kampfkraft", num: true, get: (r) => fmtInt(r.power) },
+      { label: "Kampfkraft", short: "KK", num: true, get: (r) => fmtInt(r.power) },
       { label: "24 h", num: true, title: "Änderung der Kampfkraft", get: (r) => delta(r.power_day) },
-      { label: "Ausrüstungswert", num: true, title: "Ohne Talente; danach ordnet das Spiel", get: (r) => fmtInt(r.gear) },
+      { label: "Ausrüstungswert", num: true, sm: false, title: "Ohne Talente; danach ordnet das Spiel", get: (r) => fmtInt(r.gear) },
     ], s.power_board),
     el("p", { class: "note" }, "Kampfkraft = Ausrüstung plus Talente. Das Spiel selbst ordnet nach dem Ausrüstungswert.")];
   if (sub === "aufsteiger") {
@@ -1109,7 +1148,7 @@ function viewRanks(s, sub) {
       riserBox.replaceChildren(rows.length ? table([
         { label: "Spieler", get: playerLink },
         { label: "Gilde", get: (r) => r.guild || "-" },
-        { label: "Ausrüstungswert", num: true, get: (r) => fmtInt(r.gear) },
+        { label: "Ausrüstungswert", short: "AW", num: true, get: (r) => fmtInt(r.gear) },
         { label: span === "day" ? "24 Stunden" : "7 Tage", num: true, title: "Über dem eigenen Höchstwert der Vorwoche", get: (r) => delta(r.gain) },
       ], rows) : el("p", { class: "note" }, span === "day" ? "Aufsteiger gibt es nach einem Tag Datensammlung." : "Aufsteiger der Woche gibt es nach sieben Tagen Datensammlung."));
     };
@@ -1120,16 +1159,16 @@ function viewRanks(s, sub) {
   }
   return [
     ...scroll("Rangliste Ausrüstungswert (Top 100)", [
-      { label: "#", num: true, get: (r) => r.rank },
-      { label: "", title: "Plätze seit gestern", get: (r) => r.rank_change ? delta(r.rank_change) : "" },
+      { label: "#", num: true, stick: true, get: (r) => r.rank },
+      { label: "", stick: true, title: "Plätze seit gestern", get: (r) => r.rank_change ? delta(r.rank_change) : "" },
       { label: "Spieler", get: playerLink },
       { label: "Gilde", sm: false, get: (r) => r.guild || "-" },
-      { label: "Ausrüstungswert", num: true, get: (r) => fmtInt(r.gear) },
+      { label: "Ausrüstungswert", short: "AW", num: true, get: (r) => fmtInt(r.gear) },
       { label: "24 h", num: true, title: "Änderung des Ausrüstungswerts", get: (r) => delta(r.day) },
       { label: "Pro Tag", num: true, sm: false, title: "Ausrüstungswert, Durchschnitt der letzten 7 Tage", get: (r) => r.pace == null ? "-" : fmtDec(r.pace) },
-      { label: "ATK", num: true, get: (r) => fmtInt(r.atk) },
-      { label: "DEF", num: true, get: (r) => fmtInt(r.def) },
-      { label: "SUP", num: true, get: (r) => fmtInt(r.sup) },
+      { label: "ATK", num: true, sm: false, get: (r) => fmtInt(r.atk) },
+      { label: "DEF", num: true, sm: false, get: (r) => fmtInt(r.def) },
+      { label: "SUP", num: true, sm: false, get: (r) => fmtInt(r.sup) },
     ], s.board),
   ];
 }
@@ -1271,6 +1310,30 @@ function shareText(p, login) {
     `${f.exact ? "Rang" : "etwa Rang"} ${fmtInt(f.rank)}, mehr Ausrüstung als ${fmtDec(p.standing.better, 1)} % der Spieler` + (g ? `, Gilde ${g.name}` : ""),
     `${location.origin}${location.pathname}#/spieler/${encodeURIComponent(login)}`].join("\n");
 }
+// "Das bin ich": the player's login stays in this browser only (localStorage, never sent anywhere); the start page then
+// shows the player's own line first.
+const ME_KEY = "chat-rpg-me";
+function getMe() { try { return localStorage.getItem(ME_KEY) || ""; } catch { return ""; } }
+function setMe(login) { try { if (login) localStorage.setItem(ME_KEY, login); else localStorage.removeItem(ME_KEY); } catch { /* no storage: the button does nothing */ } }
+function meButton(login) {
+  const text = () => getMe() === login ? "Nicht ich" : "Das bin ich";
+  const b = el("button", { class: "pill", type: "button", style: "cursor:pointer;background:none", title: "Merkt sich deinen Namen nur in diesem Browser" }, text());
+  b.addEventListener("click", () => { setMe(getMe() === login ? "" : login); b.textContent = text(); });
+  return b;
+}
+function meCard() {
+  const me = getMe();
+  if (!me) return null;
+  const box = el("section", { class: "card" }, el("h2", {}, "Du"), el("p", { class: "note" }, "Lade ..."));
+  load(`p/${encodeURIComponent(me)}.json`).then((p) => {
+    const f = p.forecast;
+    box.replaceChildren(el("h2", {}, "Du"),
+      el("div", { class: "head" }, el("a", { href: `#/spieler/${encodeURIComponent(me)}` }, p.name),
+        el("span", {}, `${f.exact ? "Rang" : "etwa Rang"} ${fmtInt(f.rank)}`)),
+      el("p", { class: "note" }, `Ausrüstung ${fmtInt(p.gear)}` + (p.day == null ? "" : ` (${signed(p.day)} in 24 Stunden)`)));
+  }).catch(() => box.remove());
+  return box;
+}
 function shareButton(p, login) {
   const b = el("button", { class: "pill", type: "button", style: "cursor:pointer;background:none" }, "Teilen");
   b.addEventListener("click", async () => {
@@ -1304,7 +1367,7 @@ function gearHero(p) {
       cls ? el("i", { class: "peer", style: `left:${at(cls.med[k])}`, title: `Median von ${clsName}: ${fmtInt(cls.med[k])}` }) : null),
     el("b", {}, fmtInt(sp[k])))) : [el("p", { class: "note" }, "Die Aufteilung auf ATK, DEF und SUP kennt die Seite nur von Spielern mit Profil (Top 100, Beobachtungsliste, sonst etwa einmal am Tag).")];
   return el("section", { class: "card hero" },
-    el("div", { class: "hv" }, el("div", { class: "hl" }, "Ausrüstungswert"),
+    el("div", { class: "hv" }, el("div", { class: "hl" }, "Ausrüstung"),
       p.power != null ? el("span", { class: "hl pwl" }, "Kampfkraft") : el("span"), el("span"),
       el("span", { class: "big" }, fmtInt(p.gear)),
       p.power != null ? el("span", { class: "pwv", title: "Ausrüstung plus Talente; der Rang zählt nur die Ausrüstung" }, fmtInt(p.power)) : el("span"),
@@ -1371,7 +1434,7 @@ async function viewPlayer(s, login) {
   const out = [
     el("div", { class: "head start" }, el("h1", {}, p.name), g ? el("a", { href: `#/gilden/${g.login}` }, g.name) : null,
       p.active === false ? el("span", { class: "tag" }, "laut Gilde inaktiv") : null,
-      gameLink(`/spieler/${login}`, "Im Spiel"), shareButton(p, login)),
+      gameLink(`/spieler/${login}`, "Im Spiel"), shareButton(p, login), meButton(login)),
     el("div", { class: "grid two" }, hero, chartCard("Ausrüstungswert", p.series.gear, { until: s.generated, compare: gearCompare(s, p, login) })),
     hasGear ? gearCard(p.watch.slots, p.power) : null,
     hasGear ? upgradePlanCard(p.watch.slots) : null,
@@ -1433,7 +1496,7 @@ function viewGuildRace(s) {
   const cols = [
     { label: "Gilde", get: (g) => el("a", { href: `#/gilden/${g.login}` }, g.name) },
     { label: "Mitglieder", num: true, get: (g) => `${fmtInt(g.members)} (${fmtInt(g.active)} aktiv)` },
-    { label: "Ø Ausrüstungswert", num: true, title: "Durchschnitt der aktiven Mitglieder", get: (g) => fmtDec(g.avg_gear, 1) },
+    { label: "Ø Ausrüstungswert", short: "Ø AW", num: true, title: "Durchschnitt der aktiven Mitglieder", get: (g) => fmtDec(g.avg_gear, 1) },
     { label: "24 h", num: true, title: "Kampfkraft der ganzen Gilde", get: (g) => delta(g.day) },
     { label: "7 Tage", num: true, title: "Kampfkraft der ganzen Gilde", get: (g) => delta(g.week) },
     { label: "7 Tage je Mitglied", num: true, sm: false, get: (g) => delta(per(g, g.week), 1) },
@@ -1456,7 +1519,7 @@ function viewGuildRace(s) {
       tile("Meiste Mitglieder", largest ? largest.login : "-", largest ? `${fmtInt(largest.members)}, davon ${fmtInt(largest.active)} aktiv` : ""),
       tile("Schnellster Aufstieg", climber ? climber.login : "-", climber ? `${signed(per(climber, climber.day), 1)} je Mitglied in 24 Stunden` : "nach einem Tag Verlauf"),
       tile("Größte Kasse", richest ? richest.login : "-", richest ? fmtSilver(richest.treasury) : "")),
-    card("Alle Gilden nach Ø Ausrüstungswert", el("div", { class: "scroll" }, table(cols, ranked)),
+    card("Alle Gilden nach Ø Ausrüstungswert", el("div", { class: "scroll" }, table(cols, ranked, { cards: true })),
       el("p", { class: "note" }, "Durchschnitt: nur aktive Mitglieder. Gilden unter 10 Aktiven gewinnen keine Kachel.")),
     chartCard("Silber in den Gildenkassen", s.economy.series.map((p) => [p.t, p.treasury]), { fmt: fmtSilver, until: s.generated }),
     guildFightsCard(s),
@@ -1494,7 +1557,7 @@ function viewGuild(s, login) {
     firstKillsCard(s, g.login),
     el("div", { class: "grid two" },
       card("Höchster Ausrüstungswert", table([
-        { label: "Spieler", get: playerLink }, { label: "Ausrüstungswert", num: true, get: (r) => fmtInt(r.gear) },
+        { label: "Spieler", get: playerLink }, { label: "Ausrüstungswert", short: "AW", num: true, get: (r) => fmtInt(r.gear) },
         { label: "24 h", num: true, get: (r) => delta(r.day) }], g.top)),
       card("Größte Spender", table([
         { label: "Spieler", get: playerLink }, { label: "Gespendet", num: true, get: (r) => fmtSilver(r.donated) }], g.donors))))];
@@ -1525,6 +1588,7 @@ function viewStart(s) {
   const lastRule = s.rules.log[0];
   const more = (href, text) => el("p", { class: "note" }, el("a", { href }, text));
   return [
+    meCard(),
     el("div", { class: "grid tiles" },
       tile("Spieler erfasst", fmtInt(s.players), `${fmtInt(s.active)} davon aktiv`),
       tile("Höchster Ausrüstungswert", top[0] ? fmtInt(top[0].gear) : "-", top[0] ? playerLink(top[0]) : ""),
@@ -1535,7 +1599,7 @@ function viewStart(s) {
       card("Top 5 nach Ausrüstungswert", top.length ? [table([
         { label: "#", num: true, get: (r) => fmtInt(r.rank) },
         { label: "Spieler", get: playerLink },
-        { label: "Ausrüstungswert", num: true, get: (r) => fmtInt(r.gear) },
+        { label: "Ausrüstungswert", short: "AW", num: true, get: (r) => fmtInt(r.gear) },
       ], top), more("#/rangliste/ausruestungswert", "Ganze Bestenliste")] : el("p", { class: "note" }, "Noch keine Daten.")),
       card("Gilden", guilds.length ? [table([
         { label: "Gilde", get: (g) => el("a", { href: `#/gilden/${g.login}` }, g.login) },
@@ -1547,7 +1611,7 @@ function viewStart(s) {
     distributionCard("Ausrüstungswert der aktiven Spieler", [{ v: s.top100.gear, label: `Platz 100: ${fmtInt(s.top100.gear)}`, cls: "ref" }],
       "Jeder Balken zählt die aktiven Spieler mit diesem Ausrüstungswert; der Strich ist die Grenze zur Top 100 (aller Spieler). Alle Reiter haben dieselbe Achse der Ausrüstungswerte.", s.guilds),
     card("Zuletzt", el("dl", { class: "facts" },
-        el("dt", {}, "Regeländerung"), el("dd", {}, lastRule
+        el("dt", {}, "Changelog"), el("dd", {}, lastRule
           ? el("a", { href: "#/spiel/aenderungen" }, `${ruleName(lastRule[1])}: ${ruleText(lastRule[1], lastRule[2])} -> ${ruleText(lastRule[1], lastRule[3])} (${fmtTime(lastRule[0])})`)
           : "keine seit Beginn der Aufzeichnung"),
         el("dt", {}, "Kampf"), el("dd", {}, s.fights.recent[0]
@@ -1563,7 +1627,7 @@ const RECENT_COLS = (s) => [
   { label: "Kanal", sm: false, get: (f) => "#" + f.channel },
   { label: "Kampf", stick: true, get: (f) => gameLink(`/kampfbericht/${f.id}`, fightLabel(f)) },
   { label: "Gilde", sm: false, title: "Die Gilde, um die es im Kampf ging (Überfall auf ihre Kasse, beschworener Boss)", get: (f) => f.gn || "-" },
-  { label: "Teilnehmer", num: true, get: (f) => fmtInt(f.fighters) },
+  { label: "Teilnehmer", num: true, sm: false, get: (f) => fmtInt(f.fighters) },
   { label: "Kasse", num: true, sm: false, title: "Was die Gildenkasse im Kampf verloren (-) oder gewonnen (+) hat", get: (f) => f.gc == null ? "-" : el("span", { class: f.gc < 0 ? "down" : "up" }, signed(f.gc)) },
   { label: "Gefallen", num: true, sm: false, title: "Anteil der Teilnehmer, die in diesem Kampf gefallen sind (nur bei Kämpfen mit Einzelheiten)", get: (f) => pctv(f.death) },
   { label: "Ausgang", get: (f) => f.outcome === "VICTORY" ? el("span", { class: "up" }, "gewonnen") : el("span", { class: "down" }, "verloren") },
@@ -1603,7 +1667,7 @@ function survivalCards(st) {
     { label: "Ø erlitten", num: true, get: (r) => fmtInt(r.taken) },
     { label: "Ø Heilung", num: true, get: (r) => fmtInt(r.heal) },
     { label: "Ø Verstärkung", num: true, title: "Schaden, den Unterstützer anderen durch ihre Verstärkung dazugegeben haben", get: (r) => fmtInt(r.boost) },
-  ], st.roles)), el("p", { class: "note" }, "Je Teilnehmer und Kampf, seit dem 07.10.2026."));
+  ], st.roles, { cards: true })), el("p", { class: "note" }, "Je Teilnehmer und Kampf, seit dem 07.10.2026."));
   const facts = card("Überleben", el("dl", { class: "facts" },
     el("dt", {}, "Gefallen in Siegen"), el("dd", {}, pctv(t.death_win)),
     el("dt", {}, "in Niederlagen"), el("dd", {}, t.death_loss === 100 ? "alle (100 %)" : pctv(t.death_loss)),
@@ -1700,7 +1764,7 @@ function guildFightsCard(s) {
       { label: "Kasse gewonnen", num: true, sm: false, get: (r) => r.raid_known ? fmtSilver(r.won) : "-" },
       { label: "Bosse beschworen", num: true, get: (r) => fmtInt(r.bosses) },
       { label: "Davon besiegt", num: true, sm: false, get: (r) => r.bosses ? `${fmtInt(r.boss_wins)} (${pct(r.boss_wins, r.bosses)})` : "-" },
-    ], rows)) : el("p", { class: "note" }, "Noch keine Kämpfe mit Gildenangaben gesammelt."),
+    ], rows, { cards: true })) : el("p", { class: "note" }, "Noch keine Kämpfe mit Gildenangaben gesammelt."),
     el("p", { class: "note" }, `Kassenänderung bekannt bei ${fmtInt(known)} von ${fmtInt(raids)} Überfällen.`));
 }
 
@@ -1722,7 +1786,7 @@ function viewFights(s, sub) {
       { label: "Ø Teilnehmer", num: true, get: (g) => fmtInt(g.fighters) },
       { label: "Gefallen", num: true, title: "Anteil der Teilnehmer, die in gewonnenen Kämpfen gefallen sind", get: (g) => pctv(g.death_win) },
       { label: "Boss-Leben bei Niederlage", num: true, sm: false, title: "Wie viel Leben der Boss in verlorenen Kämpfen noch hatte", get: (g) => g.kind === "BOSS" ? pctv(g.boss_left) : "" },
-    ], types)) : el("p", { class: "note" }, "Noch keine Kämpfe erfasst."),
+    ], types, { cards: true })) : el("p", { class: "note" }, "Noch keine Kämpfe erfasst."),
     few.length ? el("p", { class: "note" }, `Weniger als ${FEW} Kämpfe: ${few.map((g) => `${fightLabel(g)} (${g.wins} von ${g.n} gewonnen)`).join(", ")}.`) : null,
     el("p", { class: "note" }, since ? `Erfasst seit ${fmtSince(s.since)}. ` : "", gameLink("/kampf", "Kämpfe im Spiel"))),
     ...survivalCards(stFor(s))];
@@ -1820,14 +1884,14 @@ const ruleName = (key) => (RULE_INFO[key] || { label: key }).label;
 const berlinDay = (t) => new Date(t * 1000).toLocaleDateString("sv-SE", { timeZone: TZ });
 function viewChanges(s) {
   const log = s.rules.log;
-  const intro = el("p", { class: "note" }, "Geänderte Regeln, oft ohne Eintrag im ", gameLink("/changelog", "Änderungsprotokoll des Spiels"),
+  const intro = el("p", { class: "note" }, "Geänderte Regeln, oft ohne Eintrag im ", gameLink("/changelog", "Changelog des Spiels"),
     s.rules.since ? `, geprüft seit ${fmtSince(s.rules.since)}.` : ". Die Regeln werden gerade erst gesammelt.");
-  if (!log.length) return [card("Regeländerungen", intro, el("p", { class: "note" }, s.rules.since ? "Seit Beginn der Aufzeichnung hat sich keine Regel geändert." : ""))];
+  if (!log.length) return [card("Changelog", intro, el("p", { class: "note" }, s.rules.since ? "Seit Beginn der Aufzeichnung hat sich keine Regel geändert." : ""))];
   const days = new Map();
   for (const r of log) { const k = berlinDay(r[0]); (days.get(k) || days.set(k, []).get(k)).push(r); }
   const heading = (k) => k.split("-").reverse().join(".");
   const rule = (r) => el("div", { class: "rule" }, `${fmtClock(r[0])} Uhr: ${ruleName(r[1])} ${ruleText(r[1], r[2])} -> ${ruleText(r[1], r[3])}`);
-  return [card("Regeländerungen", intro, el("div", { class: "log" }, [...days.keys()].sort().reverse().flatMap((k) => [el("h3", {}, heading(k)), ...days.get(k).map(rule)])))];
+  return [card("Changelog", intro, el("div", { class: "log" }, [...days.keys()].sort().reverse().flatMap((k) => [el("h3", {}, heading(k)), ...days.get(k).map(rule)])))];
 }
 
 // Item forms (the name suffix fixes how a piece splits its points). Observed 09.10.2026 (worn gear of the watched
@@ -1961,7 +2025,7 @@ async function viewGame(s, sub) {
       : `Seit Beginn der Aufzeichnung (${fmtSince(s.rules.since)}) hat sich keine Regel geändert.`;
     return [card("Die Regeln des Spiels", el("p", { class: "note" },
         "Die Zahlen, mit denen das Spiel gerade rechnet. Was sich wann geändert hat, steht unter ",
-        el("a", { href: "#/spiel/aenderungen" }, "Regeländerungen"), "."),
+        el("a", { href: "#/spiel/aenderungen" }, "Changelog"), "."),
       el("p", {}, el("b", {}, changed))),
       el("div", { class: "grid two" }, groups.map(([title, keys]) => card(title, el("dl", { class: "rules" },
         keys.filter((k) => k in now).flatMap((k) => [
@@ -1978,8 +2042,9 @@ const SECTIONS = {
   start: { subs: () => [], render: viewStart },
   rangliste: { subs: () => [["ausruestungswert", "Ausrüstungswert"], ["kampfkraft", "Kampfkraft"], ["aufsteiger", "Aufsteiger"]],
                render: viewRanks },
-  gilden: { subs: (s) => [["vergleich", "Vergleich"], ...s.guilds.map((g) => [g.login, g.login])], render: viewGuild },
-  spiel: { subs: () => [["regeln", "Regeln"], ["aenderungen", "Regeländerungen"], ["formen", "Formen"], ["spezial", "Spezialitems"]],
+  gilden: { subs: (s) => [["vergleich", "Vergleich"], ...s.guilds.map((g) => [g.login, g.name || g.login])], render: viewGuild,
+            dropdown: true },
+  spiel: { subs: () => [["regeln", "Regeln"], ["aenderungen", "Changelog"], ["formen", "Formen"], ["spezial", "Spezialitems"]],
            render: viewGame },
   kaempfe: { subs: () => [["uebersicht", "Übersicht"], ["kraft", "Kampfkraft"], ["letzte", "Letzte Kämpfe"]],
              render: viewFights },
@@ -2000,8 +2065,15 @@ async function route() {
   } else {
     const subs = SECTIONS[view].subs(s);
     const sub = (subs.find(([key]) => key === login) || subs[0] || [])[0];
-    $("subtabs").replaceChildren(...subs.map(([key, label]) =>
-      el("a", { href: `#/${view}/${key}`, ...(key === sub ? { "aria-current": "page" } : {}) }, label)));
+    if (SECTIONS[view].dropdown) {  // many entries (the guilds, more to come): one dropdown instead of a row of tabs
+      const pick = el("select", { class: "cmp pick", "aria-label": "Auswahl" },
+        ...subs.map(([key, label]) => el("option", { value: key, ...(key === sub ? { selected: "" } : {}) }, label)));
+      pick.addEventListener("change", () => { location.hash = `#/${view}/${pick.value}`; });
+      $("subtabs").replaceChildren(pick);
+    } else {
+      $("subtabs").replaceChildren(...subs.map(([key, label]) =>
+        el("a", { href: `#/${view}/${key}`, ...(key === sub ? { "aria-current": "page" } : {}) }, label)));
+    }
     $("subtabs").hidden = subs.length < 2;
     parts = await SECTIONS[view].render(s, sub);
   }

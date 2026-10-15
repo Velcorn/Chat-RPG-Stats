@@ -3,6 +3,19 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.45.4 (15.10.2026)
+
+**Neu**
+- Handy: Die fünf Bereiche sind jetzt eine feste Leiste am unteren Rand (mit dem Daumen erreichbar), oben bleiben Titel und Suche.
+- "Das bin ich" auf der Spielerseite merkt sich deinen Namen (nur in diesem Browser); die Startseite zeigt dann zuerst eine Zeile "Du" mit Rang und Ausrüstung.
+- Gilden: Die Auswahl der einzelnen Gilde ist ein Aufklappmenü (praktisch, wenn mehr Gilden dazukommen).
+
+**Verbessert**
+- Handy: Gilden, Überfälle je Gilde, Rollen und Kämpfe sind kleine Karten statt einer seitlich scrollenden Tabelle.
+- Handy: Spaltenköpfe "AW" (Ausrüstungswert) und "KK" (Kampfkraft); die Rangliste behält Rang und Rangänderung beim Scrollen, lässt ATK, DEF und SUP weg, und die Kampfkraft-Rangliste zeigt den Ausrüstungswert nicht mehr.
+- Diagramme auf dem Handy: Ein Finger zeigt die Werte (kein Auswählen eines Bereichs mehr), zwei Finger zoomen, senkrechtes Wischen scrollt die Seite.
+- Der Reiter "Regeländerungen" heißt "Changelog" wie im Spiel, die Spielerkarte nennt "Ausrüstung" statt "Ausrüstungswert".
+
 ## 0.45.3 (15.10.2026)
 
 **Verbessert**

@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.45.14 (15.10.2026)
+
+**Verbessert**
+- Spezialitems: Lek'Mhirs Oberschenkelknochen (jetzt Stufe 13, 88/18/6 statt Stufe 10, 78/18/6) und Mel'Khmals Nasenring (7/28/1 statt 7/21/1) haben die neuen Werte, die Seite sagt dazu, welche Stücke nachgemessen sind.
+
 ## 0.45.13 (15.10.2026)
 
 **Oberfläche**

@@ -136,6 +136,11 @@
 ]
 },
 "ring": {
+"des Paladins": [
+3,
+12,
+15
+],
 "des Zorns": [
 18,
 6,
@@ -1335,6 +1340,11 @@
 10,
 18
 ],
+"des Kriegspriesters": [
+16,
+7,
+10
+],
 "des Paladins": [
 0,
 15,
@@ -1416,6 +1426,11 @@
 ]
 },
 "w1": {
+"des Kriegspriesters": [
+26,
+3,
+4
+],
 "des Ritters": [
 28,
 5,

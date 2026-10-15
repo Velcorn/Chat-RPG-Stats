@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.45.10 (15.10.2026)
+
+**Verbessert**
+- Regeln: Bei "Fehlschlag kostet erst ab" steht jetzt dabei, dass ein Fehlschlag 10 % des Silbers kostet.
+
 ## 0.45.9 (15.10.2026)
 
 **Oberfläche**

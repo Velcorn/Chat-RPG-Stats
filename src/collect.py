@@ -52,10 +52,23 @@ class Site:
         return json.loads(self.fetch(path, "application/json"))
 
 
+# From this line on watchlist.txt lists the board's top 100, kept in sync by `watchlist.sync`. Those are read the
+# way the top 100 always were (once a day and when their gear changed), not in every run like the entries above it.
+AUTO_MARK = "# --- Top 100 (automatisch, bitte hier nichts eintragen) ---"
+
+
+def manual_lines(text: str) -> tuple[list[str], list[str] | None]:
+    """The lines above the automatic part, and the automatic part's lines (None: the file has none yet)."""
+    lines = text.splitlines()
+    cut = next((i for i, line in enumerate(lines) if line.strip() == AUTO_MARK), None)
+    return (lines, None) if cut is None else (lines[:cut], lines[cut + 1:])
+
+
 def read_watchlist(path: Path) -> list[str]:
+    """The entries read in every run: the channel owners and the ones added by hand, not the top 100 part."""
     if not path.exists():
         return []
-    names = (line.split("#")[0].strip().lower() for line in path.read_text("utf-8").splitlines())
+    names = (line.split("#")[0].strip().lower() for line in manual_lines(path.read_text("utf-8"))[0])
     return sorted({n for n in names if n})
 
 

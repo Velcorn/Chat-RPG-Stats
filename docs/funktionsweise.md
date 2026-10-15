@@ -41,6 +41,8 @@ rund um die Uhr per `gh workflow run` (von 1 bis 9 Uhr Berliner Zeit alle 15 Min
 
 ## Beobachtungsliste
 
+`watchlist.txt` hat zwei Teile: oben die Kanalbetreiber und alle per Formular Eingetragenen, unten (ab der Zeile `# --- Top 100 ...`) die Top 100 der Rangliste. Den unteren Teil schreibt der Lauf selbst um (`src/watchlist.py --sync`, Schritt "Beobachtungsliste abgleichen" in `collect.yml`, Commit "Watchlist: Top 100 abgeglichen" nur bei einer Änderung): wer aus den Top 100 fällt, verschwindet, wer neu hineinkommt, wird ergänzt, Einträge oben bleiben immer. Gelesen werden nur die oberen Einträge bei jedem Lauf; die Top 100 wie bisher einmal am Morgen und wenn sich ihre Ausrüstung ändert.
+
 Das Issue-Formular legt ein Issue mit dem Label `beobachtungsliste` an. Die Action `Beobachtungsliste` liest den
 Issue-Text (untrusted: nur ein gültiger Twitch-Name, `^[a-z0-9_]{3,25}$`, und nur wenn es den Spieler im Spiel gibt),
 ändert `watchlist.txt`, antwortet und schließt das Issue. Höchstens 150 Einträge, weil jeder eine Anfrage pro Lauf

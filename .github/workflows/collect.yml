@@ -47,6 +47,24 @@ jobs:
         id: collect
         if: github.event_name != 'push'
         run: uv run --no-dev python src/collect.py --data data --part core
+      - name: Beobachtungsliste abgleichen
+        if: steps.collect.outputs.collected == 'true'
+        id: watchlist
+        run: uv run --no-dev python src/watchlist.py --sync data/state.json >> "$GITHUB_OUTPUT"
+      - name: Beobachtungsliste speichern
+        if: steps.watchlist.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add watchlist.txt
+          git commit --quiet -m "Watchlist: Top 100 abgeglichen"
+          # A push from here does not start this workflow again (its paths do not include the list); main may have
+          # moved meanwhile, so rebase and try a few times.
+          for wait in 0 10 30; do
+            sleep "$wait"
+            git pull --quiet --rebase origin main && git push --quiet origin HEAD:main && exit 0
+          done
+          exit 0
       - name: Daten sichern
         if: steps.collect.outputs.collected == 'true'
         working-directory: data

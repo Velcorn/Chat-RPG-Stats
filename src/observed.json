@@ -75,6 +75,11 @@
 2,
 0
 ],
+"des Lichts": [
+2,
+2,
+12
+],
 "des Sturms": [
 4,
 1,
@@ -435,6 +440,11 @@
 },
 "13": {
 "armor": {
+"des Bollwerks": [
+7,
+51,
+10
+],
 "des Duellanten": [
 37,
 24,
@@ -466,6 +476,11 @@
 3,
 65,
 0
+],
+"Wappenschild": [
+7,
+51,
+10
 ]
 }
 },
@@ -1017,10 +1032,20 @@
 ]
 },
 "w2": {
+"der Heilung": [
+5,
+12,
+29
+],
 "der Morgenröte": [
 32,
 7,
 7
+],
+"der Wacht": [
+2,
+16,
+28
 ],
 "des Bergfrieds": [
 34,
@@ -1179,6 +1204,11 @@
 14,
 36
 ],
+"des Bergfrieds": [
+42,
+14,
+0
+],
 "des Inquisitors": [
 45,
 6,
@@ -1291,6 +1321,11 @@
 5,
 28,
 0
+],
+"Wappenschild": [
+3,
+25,
+5
 ]
 },
 "w1": {

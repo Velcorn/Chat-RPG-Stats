@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.45.12 (15.10.2026)
+
+**Oberfläche**
+- Spielerseite: Die Kampfkraft steht als kleinerer Wert neben der großen Zahl, ihr Name klein darunter (statt einer zweiten Beschriftungszeile). Auf dem Handy ohne Kürzel.
+
 ## 0.45.11 (15.10.2026)
 
 **Verbessert**

@@ -110,15 +110,15 @@
                 linear-gradient(to left, var(--surface-1) 30%, transparent) right / 28px 100% no-repeat local,
                 radial-gradient(farthest-side at 0 50%, rgba(255, 255, 255, .16), transparent) left / 12px 100% no-repeat scroll,
                 radial-gradient(farthest-side at 100% 50%, rgba(255, 255, 255, .16), transparent) right / 12px 100% no-repeat scroll; }
-  th .st, .hv .st { display: none; }
+  th .st { display: none; }
   .wide-table .stick { position: sticky; left: 0; background: var(--surface-1); z-index: 1; }
   @media (max-width: 600px) {
     table { font-size: 13px; }
     th, td { padding: 5px 5px; }
     th.num { white-space: normal; }  /* long headings wrap instead of widening their column */
     .hide-sm { display: none; }
-    th .lg, .hv .lg { display: none; } th .st, .hv .st { display: inline; }
-    .hv .pwl { font-size: 11px; }
+    th .lg { display: none; } th .st { display: inline; }
+    .hero .hv .pwv { font-size: 20px; }
     /* `cards`: every row a small card, all columns, instead of a table that scrolls sideways. */
     table.cards, table.cards tbody, table.cards tr, table.cards td { display: block; }
     table.cards thead { display: none; }
@@ -214,10 +214,12 @@
   .tip .key { display: inline-block; width: 12px; height: 2px; background: var(--series-1); vertical-align: middle; margin-right: 6px; }
   .hero { background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 22%, var(--surface-1)) 0%, var(--surface-1) 60%); }
   .hero .hl { color: var(--text-secondary); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
-  .hv { display: grid; grid-template-columns: auto auto 1fr; align-items: center; column-gap: 12px; margin: 0 0 6px; }
+  .hv { display: grid; grid-template-columns: auto auto 1fr; align-items: center; column-gap: 14px; margin: 0 0 6px; }
+  .hv .hlw { grid-column: 1 / -1; }
   .hv .rankpill { grid-column: 3; grid-row: 2; justify-self: end; }
-  .hv .pwl { align-self: start; font-size: 12px; text-transform: none; letter-spacing: 0; }
-  .hv .pwv { align-self: start; margin-top: 4px; font-size: 26px; font-weight: 650; line-height: 1; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+  .hv .pwb { display: flex; flex-direction: column; align-self: start; margin-top: 6px; gap: 2px; }
+  .hv .pwl { font-size: 11px; line-height: 1.1; color: var(--text-muted); }
+  .hv .pwv { font-size: 26px; font-weight: 650; line-height: 1; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
   .hv .big { font-size: 52px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
   .rankpill { display: flex; flex-direction: column; align-items: center; line-height: 1.1; padding: 6px 14px; border-radius: 999px;
               font-size: 22px; font-weight: 650; background: color-mix(in srgb, var(--text-primary) 8%, transparent);
@@ -1370,10 +1372,10 @@ function gearHero(p) {
       cls ? el("i", { class: "peer", style: `left:${at(cls.med[k])}`, title: `Median von ${clsName}: ${fmtInt(cls.med[k])}` }) : null),
     el("b", {}, fmtInt(sp[k])))) : [el("p", { class: "note" }, "Die Aufteilung auf ATK, DEF und SUP kennt die Seite nur von Spielern mit Profil (Top 100, Beobachtungsliste, sonst etwa einmal am Tag).")];
   return el("section", { class: "card hero" },
-    el("div", { class: "hv" }, el("div", { class: "hl" }, el("span", { class: "lg" }, "Ausrüstungswert"), el("span", { class: "st" }, "AW")),
-      p.power != null ? el("span", { class: "hl pwl" }, el("span", { class: "lg" }, "Kampfkraft"), el("span", { class: "st" }, "KK")) : el("span"), el("span"),
+    el("div", { class: "hv" }, el("div", { class: "hl hlw" }, "Ausrüstungswert"),
       el("span", { class: "big" }, fmtInt(p.gear)),
-      p.power != null ? el("span", { class: "pwv", title: "Ausrüstung plus Talente; der Rang zählt nur die Ausrüstung" }, fmtInt(p.power)) : el("span"),
+      p.power != null ? el("span", { class: "pwb", title: "Ausrüstung plus Talente; der Rang zählt nur die Ausrüstung" },
+        el("span", { class: "pwv" }, fmtInt(p.power)), el("span", { class: "pwl" }, "Kampfkraft")) : el("span"),
       el("span", { class: "rankpill", title: f.exact ? "Platz in der Rangliste des Spiels" : "geschätzt unter allen erfassten Spielern" }, rank, el("small", {}, "Rang"))),
     el("div", { class: "chips" }, p.day == null ? null : el("span", {}, "24 h ", delta(p.day)),
       gap ? el("span", { class: "muted" }, gap) : null,

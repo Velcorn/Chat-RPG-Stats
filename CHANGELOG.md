@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.45.16 (16.10.2026)
+
+**Verbessert**
+- Spezialitems: Hat ein Stück dieselbe Stufe wie der Loot seines Bosses (Oberschenkelknochen, Höllenfeuerhandschuhe), steht beim Vergleich jetzt "(T13 = Loot T13)", wie bei den anderen der Vergleich mit dem Loot-Tier.
+
 ## 0.45.15 (16.10.2026)
 
 **Verbessert**

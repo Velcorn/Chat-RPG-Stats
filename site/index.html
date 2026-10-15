@@ -1986,7 +1986,7 @@ function viewSpecial() {
     const loot = LOOT_TIER[r[0]];
     const both = loot && loot !== r[2];
     return el("tr", {}, el("td", {}, r[1], el("div", { class: "special-sub" }, sub),
-        el("div", { class: "special-sub" }, vs(r[2], both ? ` (T${r[2]})` : loot ? ` (T${r[2]} = Loot T${loot})` : ""), both ? " | " : null, both ? vs(loot, ` (Loot T${loot})`) : null)),
+        el("div", { class: "special-sub" }, vs(r[2], loot ? ` (T${r[2]})` : ""), both ? " | " : null, both ? vs(loot, ` (Loot T${loot})`) : null)),
       ...[0, 1, 2].map((i) => el("td", { class: i === main ? "num special-main" : "num" }, String(r[5 + i]))),
       el("td", { class: "num" }, String(sum)));
   };

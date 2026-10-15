@@ -238,14 +238,16 @@
   @media (max-width: 900px) { .grid.three { grid-template-columns: minmax(0, 1fr); } }
   .statrole h2 { margin-bottom: 2px; }
   .gear { display: grid; }
-  .grow { display: grid; grid-template-columns: 44px 34px minmax(0, 1fr) repeat(3, 62px); gap: 0 12px; align-items: center;
+  .grow { display: grid; grid-template-columns: 44px 34px 104px minmax(0, 1fr) repeat(3, 62px); gap: 0 12px; align-items: center;
           padding: 8px 0; border-top: 1px solid var(--grid); }
   .grow.head { border-top: 0; padding: 0 0 6px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
                color: var(--text-muted); }
   .grow.head .s, .grow.sum .s { text-align: right; }
   .grow.head .atk { color: var(--atk); } .grow.head .def { color: var(--def); } .grow.head .sup { color: var(--sup); }
   .grow.sum { border-top: 1px solid var(--border); font-weight: 600; }
-  .grow.sum .lead { grid-column: 1 / 4; }
+  .grow.sum .lead { grid-column: 1 / 5; }
+  .grow .slot { color: var(--text-secondary); font-size: 13px; white-space: nowrap; }
+  .grow .slotpre { display: none; }
   .grow .kk { display: block; font-size: 12px; font-weight: 400; color: var(--text-secondary); }
   .grow .chip { justify-self: start; min-width: 30px; text-align: center; font-size: 12px; font-weight: 700; padding: 2px 0; position: relative;
                 border-radius: 6px; color: var(--text-primary); background: color-mix(in srgb, var(--c, var(--accent)) 62%, var(--surface-2));
@@ -278,7 +280,8 @@
     /* the +x floats above and right of the number like a superscript, in the row's padding, so the columns stay narrow */
     .grow .s { padding-right: 0; } .grow .s .add { font-size: 9px; top: -5px; left: auto; right: -10px; }
     .grow.head { padding-bottom: 6px; font-size: 10px; }
-    .grow.head > :first-child { display: none; }
+    .grow.head > :first-child, .grow.head > :nth-child(3), .grow .slot { display: none; }
+    .grow .slotpre { display: inline; }
     .grow .chip { grid-column: 1; grid-row: 1; }
     .grow .piece { grid-column: 2; grid-row: 1; }
     .grow .dur { grid-column: 1; grid-row: 2; justify-self: center; font-size: 10px; margin-top: 3px; white-space: nowrap; }
@@ -1276,13 +1279,14 @@ function gearCard(slots, power) {
       el("i", { style: `width:${Math.max(6, 100 * v / max)}%` }));
   };
   const max = Math.max(1, ...rows.flatMap((v) => [v[3], v[4], v[5]]));
-  const head = el("div", { class: "grow head" }, el("span", { title: "Haltbarkeit" }, "D"), el("span", { title: "Stufe" }, "T"), el("span", {}, "Gegenstand"),
+  const head = el("div", { class: "grow head" }, el("span", { title: "Haltbarkeit" }, "D"), el("span", { title: "Stufe" }, "T"), el("span", {}, "Platz"), el("span", {}, "Gegenstand"),
     el("span", { class: "s atk" }, "ATK"), el("span", { class: "s def" }, "DEF"), el("span", { class: "s sup" }, "SUP"));
   const lines = entries.map(([slot, v]) => {
-    if (!v[1]) return el("div", { class: "grow" }, el("span", { class: "dur" }), el("span", { class: "chip" }, "-"), el("span", { class: "piece muted" }, `${v[0]}: leer`));
+    if (!v[1]) return el("div", { class: "grow" }, el("span", { class: "dur" }), el("span", { class: "chip" }, "-"), el("span", { class: "slot" }, v[0]),
+      el("span", { class: "piece muted" }, el("span", { class: "slotpre" }, `${v[0]}: `), "leer"));
     const d = v[6], adds = extras(slot, v);
     return el("div", { class: "grow" }, el("span", { class: `dur ${d == null ? "" : d < 25 ? "broken" : d < 50 ? "worn" : d >= 100 ? "full" : ""}` }, d == null ? "" : `${fmtInt(d)} %`),
-      tierChip(v[2], v[7]),
+      tierChip(v[2], v[7]), el("span", { class: "slot" }, v[0]),
       el("span", { class: "piece", title: v[1] }, v[1].charAt(0).toUpperCase() + v[1].slice(1).replace(/ \+\d+$/, ""),
         ...adds.filter((a) => !a.k).map((a) => el("span", { class: "lvl", title: `Schriftrollen +${a.level}`, "data-tip": `Schriftrollen +${a.level}, Wert unbekannt` }, ` +${a.level}`))),
       stat(v[3], "atk", max, adds), stat(v[4], "def", max, adds), stat(v[5], "sup", max, adds));

@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.45.13 (15.10.2026)
+
+**Oberfläche**
+- Spielerseite, Ausrüstung: Am Computer steht eine Spalte "Platz" zwischen Stufe und Gegenstand (am Handy nicht).
+
 ## 0.45.12 (15.10.2026)
 
 **Oberfläche**

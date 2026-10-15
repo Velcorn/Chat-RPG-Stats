@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.45.7 (15.10.2026)
+
+**Verbessert**
+- Handy: Die Top 5 auf der Startseite schreiben "Ausrüstungswert" aus (es passt dort).
+
 ## 0.45.6 (15.10.2026)
 
 **Verbessert**

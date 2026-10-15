@@ -1601,7 +1601,7 @@ function viewStart(s) {
       card("Top 5 nach Ausrüstungswert", top.length ? [table([
         { label: "#", num: true, get: (r) => fmtInt(r.rank) },
         { label: "Spieler", get: playerLink },
-        { label: "Ausrüstungswert", short: "AW", num: true, get: (r) => fmtInt(r.gear) },
+        { label: "Ausrüstungswert", num: true, get: (r) => fmtInt(r.gear) },
       ], top), more("#/rangliste/ausruestungswert", "Ganze Bestenliste")] : el("p", { class: "note" }, "Noch keine Daten.")),
       card("Gilden", guilds.length ? [table([
         { label: "Gilde", get: (g) => el("a", { href: `#/gilden/${g.login}` }, g.login) },

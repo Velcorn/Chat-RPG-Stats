@@ -1494,14 +1494,10 @@ function reductionCurve(box, def, survival) {
   svg.append(sv("text", { x: W - m.r, y: m.t + 4, "text-anchor": "end", class: "marklabel" }, "100 x DEF / (DEF + 80)"));
 }
 function viewGuildRace(s) {
-  const per = (g, v) => v == null || !g.members ? null : v / g.members;
   const cols = [
     { label: "Gilde", get: (g) => el("a", { href: `#/gilden/${g.login}` }, g.name) },
     { label: "Mitglieder", num: true, get: (g) => `${fmtInt(g.members)} (${fmtInt(g.active)} aktiv)` },
     { label: "Ø Ausrüstungswert", short: "Ø AW", num: true, title: "Durchschnitt der aktiven Mitglieder", get: (g) => fmtDec(g.avg_gear, 1) },
-    { label: "24 h", num: true, title: "Kampfkraft der ganzen Gilde", get: (g) => delta(g.day) },
-    { label: "7 Tage", num: true, title: "Kampfkraft der ganzen Gilde", get: (g) => delta(g.week) },
-    { label: "7 Tage je Mitglied", num: true, sm: false, get: (g) => delta(per(g, g.week), 1) },
     { label: "Kasse", num: true, get: (g) => fmtSilver(g.treasury) },
     { label: "Kasse 7 Tage", num: true, sm: false, get: (g) => g.treasury_week == null ? "-" : el("span", { class: g.treasury_week >= 0 ? "up" : "down" }, signed(g.treasury_week) + " Silber") },
     { label: "Gespendet", num: true, sm: false, get: (g) => fmtSilver(g.donated) },
@@ -1512,14 +1508,13 @@ function viewGuildRace(s) {
   const ranked = [...s.guilds].sort((x, y) => (big(y) - big(x)) || ((y.avg_gear || 0) - (x.avg_gear || 0)));
   const bigOnes = ranked.filter(big);
   const top = (key) => bigOnes.reduce((a, g) => (!a || (g[key] ?? -Infinity) > (a[key] ?? -Infinity) ? g : a), null);
-  const strongest = top("avg_gear"), largest = top("members"), richest = top("treasury");
-  const climber = bigOnes.filter((g) => g.day != null).reduce((a, g) => (!a || per(g, g.day) > per(a, a.day) ? g : a), null);
+  const strongest = top("avg_gear"), largest = top("members"), busiest = top("active"), richest = top("treasury");
   return [el("section", { class: "grid" },
     el("div", { class: "head" }, el("h1", {}, "Gilden im Vergleich")),
     el("div", { class: "grid tiles" },
       tile("Höchster Ø Ausrüstungswert", strongest ? strongest.login : "-", strongest ? `${fmtDec(strongest.avg_gear, 1)} je aktivem Mitglied` : ""),
       tile("Meiste Mitglieder", largest ? largest.login : "-", largest ? `${fmtInt(largest.members)}, davon ${fmtInt(largest.active)} aktiv` : ""),
-      tile("Schnellster Aufstieg", climber ? climber.login : "-", climber ? `${signed(per(climber, climber.day), 1)} je Mitglied in 24 Stunden` : "nach einem Tag Verlauf"),
+      tile("Meiste Aktive", busiest ? busiest.login : "-", busiest ? `${fmtInt(busiest.active)} aktive Mitglieder` : ""),
       tile("Größte Kasse", richest ? richest.login : "-", richest ? fmtSilver(richest.treasury) : "")),
     card("Alle Gilden nach Ø Ausrüstungswert", el("div", { class: "scroll" }, table(cols, ranked, { cards: true })),
       el("p", { class: "note" }, "Durchschnitt: nur aktive Mitglieder. Gilden unter 10 Aktiven gewinnen keine Kachel.")),
@@ -1763,7 +1758,6 @@ function guildFightsCard(s) {
       { label: "Überfälle", num: true, get: (r) => fmtInt(r.raids) },
       { label: "Abgewehrt", num: true, get: (r) => r.raids ? `${fmtInt(r.raid_wins)} (${pct(r.raid_wins, r.raids)})` : "-" },
       { label: "Kasse verloren", num: true, title: "Silber, das die Gildenkasse in Überfällen verloren hat", get: (r) => r.raid_known ? fmtSilver(r.lost) : "-" },
-      { label: "Kasse gewonnen", num: true, sm: false, get: (r) => r.raid_known ? fmtSilver(r.won) : "-" },
       { label: "Bosse beschworen", num: true, get: (r) => fmtInt(r.bosses) },
       { label: "Davon besiegt", num: true, sm: false, get: (r) => r.bosses ? `${fmtInt(r.boss_wins)} (${pct(r.boss_wins, r.bosses)})` : "-" },
     ], rows, { cards: true })) : el("p", { class: "note" }, "Noch keine Kämpfe mit Gildenangaben gesammelt."),

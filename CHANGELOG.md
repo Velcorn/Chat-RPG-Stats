@@ -3,6 +3,12 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.45.8 (15.10.2026)
+
+**Verbessert**
+- Gilden im Vergleich: Die Spalten "24 h", "7 Tage" und "7 Tage je Mitglied" (Veränderung des Ausrüstungswerts der Gilde) und die Kachel "Schnellster Aufstieg" sind weg: Sie schwankten mit den Wechseln der aktiven Spieler und sagten wenig. Dafür gibt es die Kachel "Meiste Aktive".
+- Überfälle je Gilde: Die Spalte "Kasse gewonnen" ist weg, denn bei Überfällen gewinnt die Kasse nie etwas.
+
 ## 0.45.7 (15.10.2026)
 
 **Verbessert**

@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.45.15 (16.10.2026)
+
+**Verbessert**
+- Spezialitems: Die Höllenfeuerhandschuhe haben die neuen Werte (Stufe 13, 45/14/9 statt Stufe 10, 35/14/9).
+
 ## 0.45.14 (15.10.2026)
 
 **Verbessert**

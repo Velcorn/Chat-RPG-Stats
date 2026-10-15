@@ -1104,6 +1104,11 @@
 7,
 32
 ],
+"des Sturms": [
+12,
+2,
+32
+],
 "des Zerstörers": [
 44,
 2,
@@ -1172,6 +1177,11 @@
 1,
 18,
 9
+],
+"des Veteranen": [
+6,
+18,
+4
 ],
 "des Wächters": [
 7,
@@ -1575,6 +1585,11 @@
 19,
 49
 ],
+"des Inquisitors": [
+61,
+8,
+7
+],
 "des Lichts": [
 11,
 11,
@@ -1958,6 +1973,11 @@
 72,
 24,
 0
+],
+"des Inquisitors": [
+77,
+10,
+9
 ],
 "des Kriegsherrn": [
 82,

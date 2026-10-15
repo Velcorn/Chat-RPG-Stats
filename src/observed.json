@@ -887,6 +887,11 @@
 ]
 },
 "w2": {
+"der Heilung": [
+4,
+9,
+23
+],
 "der Morgenröte": [
 25,
 5,
@@ -1387,6 +1392,11 @@
 "Rundschild": [
 5,
 28,
+0
+],
+"Turmschild": [
+2,
+31,
 0
 ],
 "Wappenschild": [

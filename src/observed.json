@@ -50,6 +50,11 @@
 ]
 },
 "w2": {
+"der Heilung": [
+2,
+4,
+10
+],
 "der Morgenröte": [
 11,
 2,
@@ -103,6 +108,11 @@
 34,
 19,
 0
+],
+"des Bollwerks": [
+5,
+40,
+8
 ],
 "des Jägers": [
 32,
@@ -450,10 +460,20 @@
 24,
 7
 ],
+"des Hospitaliters": [
+7,
+27,
+34
+],
 "des Kreuzritters": [
 10,
 20,
 38
+],
+"des Paladins": [
+0,
+31,
+37
 ],
 "des Pilgers": [
 0,
@@ -1264,6 +1284,11 @@
 21,
 12,
 0
+],
+"des Bollwerks": [
+3,
+25,
+5
 ],
 "des Duellanten": [
 18,

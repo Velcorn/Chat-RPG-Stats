@@ -110,14 +110,15 @@
                 linear-gradient(to left, var(--surface-1) 30%, transparent) right / 28px 100% no-repeat local,
                 radial-gradient(farthest-side at 0 50%, rgba(255, 255, 255, .16), transparent) left / 12px 100% no-repeat scroll,
                 radial-gradient(farthest-side at 100% 50%, rgba(255, 255, 255, .16), transparent) right / 12px 100% no-repeat scroll; }
-  th .st { display: none; }
+  th .st, .hv .st { display: none; }
   .wide-table .stick { position: sticky; left: 0; background: var(--surface-1); z-index: 1; }
   @media (max-width: 600px) {
     table { font-size: 13px; }
     th, td { padding: 5px 5px; }
     th.num { white-space: normal; }  /* long headings wrap instead of widening their column */
     .hide-sm { display: none; }
-    th .lg { display: none; } th .st { display: inline; }
+    th .lg, .hv .lg { display: none; } th .st, .hv .st { display: inline; }
+    .hv .pwl { font-size: 11px; }
     /* `cards`: every row a small card, all columns, instead of a table that scrolls sideways. */
     table.cards, table.cards tbody, table.cards tr, table.cards td { display: block; }
     table.cards thead { display: none; }
@@ -1369,8 +1370,8 @@ function gearHero(p) {
       cls ? el("i", { class: "peer", style: `left:${at(cls.med[k])}`, title: `Median von ${clsName}: ${fmtInt(cls.med[k])}` }) : null),
     el("b", {}, fmtInt(sp[k])))) : [el("p", { class: "note" }, "Die Aufteilung auf ATK, DEF und SUP kennt die Seite nur von Spielern mit Profil (Top 100, Beobachtungsliste, sonst etwa einmal am Tag).")];
   return el("section", { class: "card hero" },
-    el("div", { class: "hv" }, el("div", { class: "hl" }, "Ausrüstung"),
-      p.power != null ? el("span", { class: "hl pwl" }, "Kampfkraft") : el("span"), el("span"),
+    el("div", { class: "hv" }, el("div", { class: "hl" }, el("span", { class: "lg" }, "Ausrüstungswert"), el("span", { class: "st" }, "AW")),
+      p.power != null ? el("span", { class: "hl pwl" }, el("span", { class: "lg" }, "Kampfkraft"), el("span", { class: "st" }, "KK")) : el("span"), el("span"),
       el("span", { class: "big" }, fmtInt(p.gear)),
       p.power != null ? el("span", { class: "pwv", title: "Ausrüstung plus Talente; der Rang zählt nur die Ausrüstung" }, fmtInt(p.power)) : el("span"),
       el("span", { class: "rankpill", title: f.exact ? "Platz in der Rangliste des Spiels" : "geschätzt unter allen erfassten Spielern" }, rank, el("small", {}, "Rang"))),

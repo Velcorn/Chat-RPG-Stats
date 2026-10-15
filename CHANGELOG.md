@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.45.9 (15.10.2026)
+
+**Oberfläche**
+- Spielerseite: Die große Kachel heißt jetzt "Ausrüstungswert" (vorher "Ausrüstung") neben "Kampfkraft"; auf dem Handy stehen dafür "AW" und "KK" klein nebeneinander.
+
 ## 0.45.8 (15.10.2026)
 
 **Verbessert**

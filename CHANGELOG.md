@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.47.3 (16.10.2026)
+
+**Verbessert**
+- Zeitraffer Top 100: Farben dezenter (sanfterer Verlauf, kein Leuchten außer beim Ersten, Rang und Wert wieder grau).
+
 ## 0.47.2 (16.10.2026)
 
 **Verbessert**

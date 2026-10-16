@@ -194,6 +194,14 @@
   .b3 { fill: #e5534b; background: #e5534b; } .b4 { fill: #a77de0; background: #a77de0; } .b5 { fill: #3fb8c4; background: #3fb8c4; }
   .lapse-ctl { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
   .lapse-ctl input[type=range] { flex: 1 1 160px; min-width: 120px; accent-color: var(--accent); }
+  .tl-box { position: relative; overflow: hidden; }
+  .tl-row { position: absolute; left: 0; right: 0; top: 0; height: 28px; display: flex; align-items: center; gap: 8px;
+            padding: 0 8px; text-decoration: none; will-change: transform, opacity; }
+  .tl-bar { position: absolute; left: 0; top: 3px; bottom: 3px; border-radius: 4px; background: hsl(var(--h) 70% 45% / .34); }
+  .tl-rank { position: relative; width: 2.4em; text-align: right; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .tl-name { position: relative; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+             font-weight: 600; color: hsl(var(--h) 90% 70%); }
+  .tl-score { position: relative; font-variant-numeric: tabular-nums; color: var(--text-secondary); }
   .lapse-play { min-width: 92px; }
   .lapse-when { min-width: 7.5em; font-variant-numeric: tabular-nums; }
   .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
@@ -1139,6 +1147,7 @@ function roleMixCard(s) {
     "Rolle = größter Wert der Ausrüstung (DEF Schildträger, ATK Kämpfer, SUP Unterstützer). Die gewählte Rolle nennt das Spiel nicht."));
 }
 function viewRanks(s, sub) {
+  if (sub === "zeitraffer") return viewTopLapse();
   const scroll = (title, cols, rows) => [card(title, el("div", { class: "scroll" }, table(cols, rows)))];
   if (sub === "kampfkraft") return [
     ...scroll("Rangliste Kampfkraft (Top 100)", [
@@ -2158,11 +2167,89 @@ async function viewLapse() {
     card("Spieler je Wert", histBox, el("p", { class: "note" }, "Anteil der aktiven Spieler je Ausrüstungswert (in Stufen von 20). Anteile statt Anzahlen, weil die Profile der Spieler außerhalb der Top 100 erst nach und nach gelesen wurden. Der Zeitraffer beginnt dort, wo von mindestens 80 % der heutigen aktiven Spieler ein Wert vorliegt.")))];
 }
 
+// ---- top 100 time lapse ----
+// The gear board every two hours (toplapse.json), played as a race: every player has a colour of their own, the rows
+// glide to their new place, the bars show the score. Until the evening of 04.10.2026 the board counted the Kampfkraft.
+const BOARD_GEAR_SINCE = 1791151200;  // 2026-10-04 22:00 UTC, as GEAR_SINCE in build.py
+async function viewTopLapse() {
+  const head = el("div", { class: "head" }, el("h1", {}, "Zeitraffer Top 100"));
+  let d = null;
+  try { d = await load("toplapse.json"); } catch { /* none yet */ }
+  if (!d || d.frames.length < 2) return [el("section", { class: "grid" }, head, el("p", { class: "note" }, "Noch nicht genug Daten für einen Zeitraffer."))];
+  const F = d.frames.length, P = d.names.length, ROW = 28;
+  const rank = Array.from({ length: P }, () => new Uint8Array(F)), score = Array.from({ length: P }, () => new Int16Array(F));
+  d.rows.forEach((row, k) => row.forEach(([i, sc], r) => { rank[i][k] = r + 1; score[i][k] = sc; }));
+  const best = rank.map((r) => Math.min(...Array.from(r).filter(Boolean)));
+  const hue = (i) => (i * 137.508) % 360;  // the golden angle: neighbours in the list get far apart colours
+  let f = 0, playing = false, last = 0, speed = 1, N = 25, rows = [];
+  const box = el("div", { class: "tl-box" }), when = el("strong", { class: "lapse-when" }), era = el("span", { class: "muted" }), lead = el("div", { class: "legend" });
+  const play = el("button", { class: "lapse-play" }, "Abspielen");
+  const slider = el("input", { type: "range", min: "0", max: String(F - 1), step: "0.01", value: "0", "aria-label": "Zeitpunkt" });
+  const rebuild = () => {
+    const shown = [...Array(P).keys()].filter((i) => best[i] <= N);
+    const top = Math.max(...shown.flatMap((i) => Array.from(score[i]).filter((v, k) => v && rank[i][k] <= N)));
+    box.replaceChildren(); box.style.height = `${N * ROW}px`;
+    rows = shown.map((i) => {
+      const bar = el("span", { class: "tl-bar" }), rk = el("span", { class: "tl-rank" }), sc = el("span", { class: "tl-score" });
+      const a = el("a", { class: "tl-row", href: `#/spieler/${encodeURIComponent(d.logins[i])}`, style: `--h:${hue(i).toFixed(0)}` },
+        bar, rk, el("span", { class: "tl-name" }, d.names[i]), sc);
+      box.append(a);
+      return { i, a, bar, rk, sc };
+    });
+    rows.top = top;
+    draw();
+  };
+  const draw = () => {
+    const a = Math.floor(f), b = Math.min(F - 1, a + 1), at = Math.round(f);
+    // The switch from Kampfkraft to gear score reshuffles everything: jump instead of gliding through a tangle.
+    const w = d.frames[a] < BOARD_GEAR_SINCE && d.frames[b] >= BOARD_GEAR_SINCE ? (f - a >= 0.5 ? 1 : 0) : f - a;
+    let leader = null;
+    for (const r of rows) {
+      const ra = rank[r.i][a], rb = rank[r.i][b];
+      const pa = ra ? ra - 1 : N + 1, pb = rb ? rb - 1 : N + 1, pos = pa + (pb - pa) * w;
+      if (pos >= N) { r.a.style.display = "none"; continue; }
+      const sa = score[r.i][a] || score[r.i][b], sb = score[r.i][b] || sa, sc = sa + (sb - sa) * w;
+      r.a.style.display = "";
+      r.a.style.transform = `translateY(${(pos * ROW).toFixed(1)}px)`;
+      r.a.style.opacity = String(Math.max(0, Math.min(1, N - pos)));
+      r.bar.style.width = `${(sc / rows.top * 100).toFixed(1)}%`;
+      r.rk.textContent = String(Math.round(pos) + 1);
+      r.sc.textContent = fmtInt(sc);
+      if (pos < 0.5) leader = r.i;
+    }
+    const t = d.frames[at], gear = t >= BOARD_GEAR_SINCE;
+    when.textContent = fmtTime(t);
+    era.textContent = gear ? "Ausrüstungswert" : "Kampfkraft (so ordnete das Spiel bis zum 05.10.2026)";
+    lead.replaceChildren(leader == null ? "" : el("span", {}, "Platz 1: ", el("strong", { style: `color:hsl(${hue(leader).toFixed(0)} 90% 70%)` }, d.names[leader])));
+    slider.value = String(f);
+    play.textContent = playing ? "Anhalten" : f >= F - 1 ? "Von vorn" : "Abspielen";
+  };
+  const tick = (now) => {
+    if (!playing || !box.isConnected) { playing = false; draw(); return; }
+    f = Math.min(F - 1, f + (now - last) / 1000 * 6 * speed);
+    last = now; draw();
+    if (f >= F - 1) { playing = false; draw(); return; }
+    requestAnimationFrame(tick);
+  };
+  play.addEventListener("click", () => {
+    if (playing) { playing = false; draw(); return; }
+    if (f >= F - 1) f = 0;
+    playing = true; last = performance.now(); requestAnimationFrame(tick);
+  });
+  slider.addEventListener("input", () => { f = +slider.value; draw(); });
+  rebuild();
+  return [el("section", { class: "grid" }, head,
+    card("", el("div", { class: "lapse-ctl" }, play, slider, when,
+        seg([["1", "1×"], ["2", "2×"], ["4", "4×"]], "1", (k) => { speed = +k; })),
+      el("div", { class: "lapse-ctl" }, seg([["10", "Top 10"], ["25", "Top 25"], ["50", "Top 50"], ["100", "Top 100"]], "25", (k) => { N = +k; rebuild(); }), era), lead),
+    card("", box, el("p", { class: "note" }, "Die Rangliste des Spiels alle zwei Stunden. Jeder Spieler hat seine eigene Farbe, ein Klick auf den Namen öffnet seine Seite. Spieler, die aus der Anzeige fallen oder nachrücken, gleiten von unten ein und aus.")))];
+}
+
 // ---- routing ----
 // Each section has sub pages (one per ranking, guild or fight table), shown as a second tab row.
 const SECTIONS = {
   start: { subs: () => [], render: viewStart },
-  rangliste: { subs: () => [["ausruestungswert", "Ausrüstungswert"], ["kampfkraft", "Kampfkraft"], ["aufsteiger", "Aufsteiger"]],
+  rangliste: { subs: () => [["ausruestungswert", "Ausrüstungswert"], ["kampfkraft", "Kampfkraft"], ["aufsteiger", "Aufsteiger"], ["zeitraffer", "Zeitraffer"]],
                render: viewRanks },
   gilden: { subs: (s) => [["vergleich", "Vergleich"], ["zeitraffer", "Zeitraffer"], ...s.guilds.map((g) => [g.login, g.name || g.login])], render: viewGuild,
             dropdown: true },

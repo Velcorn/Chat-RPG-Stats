@@ -18,9 +18,10 @@ from pathlib import Path
 import collect
 import fightstats
 from observed import observed
-from timelapse import timelapse
+from timelapse import timelapse, top_lapse
 
 DAY = 86400
+BOARD_GRID = 2 * 3600  # the top-100 time lapse has a frame every two hours
 PEERS_MIN = 8
 PEERS_CLASS_MIN = 20  # class peers for the stat bars: within 10 % of the gear score, else this many nearest
 PEERS_BAND = 4  # class peers from which on the stat bars show the band (10 % to 90 %)
@@ -48,10 +49,13 @@ class History:
         self.fightx: dict[int, dict] = defaultdict(dict)  # fight id -> detail and live digests (since 0.9.0)
         self.rules_log: list[list] = []                      # [[t, rule, old, new], ...] (since 0.10.0)
         self.live_runs: dict[str, list] = defaultdict(lambda: [0, 0])  # channel -> [runs live, runs seen]
+        self.board_at: dict[int, list] = {}                  # grid time -> [[login, score], ...] of the gear board then
         self.first = self.last = None
         self.runs = 0
         self.requests = None  # requests of the latest run (recorded since 0.8.4)
         board: list[str] = []
+        board_scores: list = []
+        next_grid = None
         guild_now: dict[str, dict] = {}
         rules_now: dict = {}
         live_now: dict[str, bool] = {}
@@ -59,6 +63,11 @@ class History:
             t = rec["t"]
             self.first = self.first or t
             self.last = t
+            next_grid = next_grid or -(-t // BOARD_GRID) * BOARD_GRID
+            while next_grid <= t:  # the board as it stood at each grid time (before this record changed it)
+                if board_scores:
+                    self.board_at[next_grid] = board_scores
+                next_grid += BOARD_GRID
             if rec.get("part") == "profiles":  # the second half of a run: its requests add to the run's
                 self.requests = (self.requests or 0) + rec.get("req", 0)
             else:
@@ -71,6 +80,7 @@ class History:
             for login, d in rec.get("details", {}).items():
                 self.details[login].append([t, d])
             if "gear" in rec.get("boards", {}):
+                board_scores = rec["boards"]["gear"]
                 new = [login for login, _ in rec["boards"]["gear"]]
                 for login in set(board) - set(new):
                     put(self.rank[login], t, None)
@@ -266,6 +276,8 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
     write(target / "observed.json", observed(state))
     if lapse := timelapse(h, players, h.border):
         write(target / "timelapse.json", lapse)
+    if top := top_lapse(h, players):
+        write(target / "toplapse.json", top)
     gear_sorted = sorted(gear.values())
     for login in gear:
         write(target / "p" / f"{login}.json", player_page(login, h, state, now, rank, paces, with_split,

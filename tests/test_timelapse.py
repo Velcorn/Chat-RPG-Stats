@@ -40,3 +40,16 @@ class TimelapseTests(unittest.TestCase):
         h = FakeHistory({"p": [[5, 1]]}, {"p": [[5, "a"]]}, 5, 5)
         self.assertIsNone(timelapse(h, {"p": {"active": True}}, []))
         self.assertIsNone(timelapse(h, {}, []))
+
+
+class TopLapseTests(unittest.TestCase):
+    def test_rows_follow_the_board_with_one_index_per_player(self):
+        from timelapse import top_lapse
+        h = FakeHistory({}, {}, 0, 0)
+        h.board_at = {7200: [["a", 10], ["b", 9]], 14400: [["b", 11], ["a", 10], ["c", 5]]}
+        out = top_lapse(h, {"a": {"name": "Anna"}, "b": {}})
+        self.assertEqual(out["frames"], [7200, 14400])
+        self.assertEqual(out["names"], ["Anna", "b", "c"])
+        self.assertEqual(out["rows"], [[[0, 10], [1, 9]], [[1, 11], [0, 10], [2, 5]]])
+        h.board_at = {7200: [["a", 1]]}
+        self.assertIsNone(top_lapse(h, {}))

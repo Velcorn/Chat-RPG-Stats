@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.47.0 (16.10.2026)
+
+**Neu**
+- Zeitraffer Top 100 unter Ranglisten: Die Rangliste seit dem ersten Tag als Wettlauf, alle zwei Stunden, mit einer eigenen Farbe für jeden Spieler, Abspielknopf, Regler und Geschwindigkeit. Angezeigt werden die Top 10, 25, 50 oder 100. Ein Klick auf einen Namen öffnet die Spielerseite. Bis zum 05.10.2026 ordnete das Spiel nach Kampfkraft, das steht dabei.
+
 ## 0.46.0 (16.10.2026)
 
 **Neu**

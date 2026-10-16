@@ -65,3 +65,23 @@ def timelapse(h, players: dict, border_series: list) -> dict | None:
             grp["hist"].append([round(100 * c / n, 2) for c in counts] if n else None)
     return {"frames": [round(t) for t in times], "bin": BIN, "lo": lo, "groups": groups,
             "border": [_at(border_series, [x for x, _ in border_series], t) for t in times]}
+
+
+def top_lapse(h, players: dict) -> dict | None:
+    """The gear board (top 100) at every grid time of `h.board_at`: {"names", "frames", "rows"}, rows per frame
+    [[player index, score], ...] in board order. None with fewer than two frames."""
+    times = sorted(h.board_at)
+    if len(times) < 2:
+        return None
+    index: dict[str, int] = {}
+    names: list[str] = []
+    rows = []
+    for t in times:
+        row = []
+        for login, score in h.board_at[t]:
+            if login not in index:
+                index[login] = len(names)
+                names.append((players.get(login) or {}).get("name") or login)
+            row.append([index[login], score])
+        rows.append(row)
+    return {"names": names, "logins": list(index), "frames": times, "rows": rows}

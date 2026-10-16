@@ -3,6 +3,15 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.45.18 (16.10.2026)
+
+**Neu**
+- Spezialitems: Fakers Vermächtnis (Stufe 13, Zweihänder, 135/9/0) ist dabei.
+- Gegenstandsformen: Die Werte von 41 weiteren Formen sind hinterlegt (Stufe 10 bis 14, vor allem Brustpanzer, Ringe und Zweihänder), auch wenn gerade niemand sie trägt.
+
+**Verbessert**
+- Spezialitems: Lek'Mhirs Oberschenkelknochen hat die neuen Werte (112/18/6), und die Seite sagt dazu, welche Stücke nachgemessen sind und unverändert blieben.
+
 ## 0.45.17 (16.10.2026)
 
 **Verbessert**

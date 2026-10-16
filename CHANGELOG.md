@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.49.0 (16.10.2026)
+
+**Neu**
+- Zeitraffer Top 100: Ein Spieler lässt sich verfolgen (Name ins Feld "Spieler verfolgen", mit Vorschlägen). Seine Zeile ist umrahmt, die anderen sind blasser, darunter stehen sein Platz, sein Wert und seine beste Platzierung, auch wenn er außerhalb der gezeigten Top 10, 25, 50 oder 100 liegt.
+
 ## 0.48.0 (16.10.2026)
 
 **Neu**

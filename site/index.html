@@ -199,6 +199,8 @@
             text-decoration: none; will-change: transform, opacity; border-radius: 6px; }
   .tl-bar { position: absolute; left: 0; top: 2px; bottom: 2px; border-radius: 6px; min-width: 6px;
             background: linear-gradient(90deg, hsl(var(--h) 45% 24% / .55), hsl(var(--h) 60% 42% / .75)); }
+  .tl-box.following .tl-row:not(.follow) { filter: saturate(.45) brightness(.75); }
+  .tl-row.follow { z-index: 2; outline: 2px solid hsl(var(--h) 90% 65%); background: hsl(var(--h) 45% 18% / .85); }
   .tl-row.lead .tl-bar { box-shadow: 0 0 10px hsl(var(--h) 80% 55% / .5); }
   .tl-rank { position: relative; width: 2.2em; text-align: right; font-variant-numeric: tabular-nums; color: var(--text-muted); }
   .tl-name { position: relative; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -2240,8 +2242,9 @@ async function viewTopLapse() {
   d.rows.forEach((row, k) => row.forEach(([i, sc], r) => { rank[i][k] = r + 1; score[i][k] = sc; }));
   const best = rank.map((r) => Math.min(...Array.from(r).filter(Boolean)));
   const hue = (i) => (i * 137.508) % 360;  // the golden angle: neighbours in the list get far apart colours
+  let follow = null;  // the player index being followed
   let f = 0, playing = false, last = 0, speed = 1, N = 25, rows = [], lay = { cols: 1, rpc: 25, cw: 300, row: 28 };
-  const box = el("div", { class: "tl-box" }), when = el("strong", { class: "lapse-when" }), era = el("span", { class: "muted" }), lead = el("div", { class: "legend" });
+  const status = el("div", { class: "legend" }), box = el("div", { class: "tl-box" }), when = el("strong", { class: "lapse-when" }), era = el("span", { class: "muted" }), lead = el("div", { class: "legend" });
   const play = el("button", { class: "lapse-play" }, "Abspielen");
   const slider = el("input", { type: "range", min: "0", max: String(F - 1), step: "0.01", value: "0", "aria-label": "Zeitpunkt" });
   // Up to 25 rows per column; 50 and 100 use more columns side by side so the whole race fits on one screen.
@@ -2250,6 +2253,14 @@ async function viewTopLapse() {
     const cols = Math.min(Math.ceil(N / 25), fit), rpc = Math.ceil(N / cols);
     lay = { cols, rpc, cw: width / cols, row: Math.max(20, Math.min(30, Math.floor((window.innerHeight - 300) / rpc))) };
   };
+  const pick = el("input", { type: "search", class: "cmp pick", list: "tl-names", placeholder: "Spieler verfolgen", "aria-label": "Spieler verfolgen" });
+  const names = el("datalist", { id: "tl-names" }, ...[...Array(P).keys()].sort((u, w) => d.names[u].localeCompare(d.names[w], "de")).map((i) => el("option", { value: d.names[i] })));
+  pick.addEventListener("input", () => {
+    const q = pick.value.trim().toLowerCase();
+    const i = q ? d.names.findIndex((n, k) => n.toLowerCase() === q || d.logins[k] === q) : -1;
+    follow = i < 0 ? null : i;
+    draw();
+  });
   const rebuild = () => {
     layout();
     const shown = [...Array(P).keys()].filter((i) => best[i] <= N);
@@ -2294,6 +2305,15 @@ async function viewTopLapse() {
       if (pos < 0.5) leader = r.i;
     }
     for (const [r, sc] of now) r.bar.style.width = `${(10 + 90 * (sc - lo * 0.97) / (hi - lo * 0.97 || 1)).toFixed(1)}%`;
+    box.classList.toggle("following", follow != null);
+    for (const r of rows) r.a.classList.toggle("follow", r.i === follow);
+    if (follow == null) status.replaceChildren();
+    else {
+      const here = rank[follow][at], sc = score[follow][at];
+      status.replaceChildren(el("strong", { style: `color:hsl(${hue(follow).toFixed(0)} 80% 76%)` }, d.names[follow]), here
+        ? ` auf Platz ${here} mit ${fmtInt(sc)}${here > N ? " (außerhalb der Anzeige)" : ""}` : " in diesem Moment nicht in den Top 100",
+        ` | beste Platzierung: ${best[follow]}`);
+    }
     const t = d.frames[at], gear = t >= BOARD_GEAR_SINCE;
     when.textContent = fmtTime(t);
     era.textContent = gear ? "Ausrüstungswert" : "Kampfkraft (so ordnete das Spiel bis zum 05.10.2026)";
@@ -2322,7 +2342,7 @@ async function viewTopLapse() {
   return [el("section", { class: "grid" }, head,
     card("", el("div", { class: "lapse-ctl" }, play, slider, when,
         speedControl((v) => { speed = v; })),
-      el("div", { class: "lapse-ctl" }, seg([["10", "Top 10"], ["25", "Top 25"], ...(window.innerWidth >= 560 ? [["50", "Top 50"], ["100", "Top 100"]] : [])], "25", (k) => { N = +k; rebuild(); }), era), lead),
+      el("div", { class: "lapse-ctl" }, pick, names, seg([["10", "Top 10"], ["25", "Top 25"], ...(window.innerWidth >= 560 ? [["50", "Top 50"], ["100", "Top 100"]] : [])], "25", (k) => { N = +k; rebuild(); }), era), lead, status),
     card("", box, el("p", { class: "note" }, "Die Rangliste des Spiels alle zwei Stunden. Jeder Spieler hat seine eigene Farbe, ein Klick auf den Namen öffnet seine Seite. Spieler, die aus der Anzeige fallen oder nachrücken, gleiten von unten ein und aus.")))];
 }
 

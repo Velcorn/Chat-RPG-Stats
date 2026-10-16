@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.49.4 (16.10.2026)
+
+**Behoben**
+- Kämpfe, Kampfkraft: Der Reiter der Ostmauer bei "Werte und Überleben in Bosssiegen" hieß nur "Verteidigung" und war leicht zu übersehen, jetzt steht dort "Ostmauer".
+
 ## 0.49.3 (16.10.2026)
 
 **Behoben**

@@ -1750,7 +1750,7 @@ function statCurvesCard(s) {
   render();
   return el("section", { class: "grid" },
     el("div", { class: "head" }, el("h1", {}, "Werte und Überleben in Bosssiegen"),
-      curves.length > 1 ? seg(curves.map((c) => [c.boss, c.boss.replace(/ der .*$/, "").replace(/^(Die|Das|Der) /, "")]), statBoss, (k) => { statBoss = k; render(); }) : null),
+      curves.length > 1 ? seg(curves.map((c) => [c.boss, c.boss.replace(/^Verteidigung der /, "").replace(/ der .*$/, "").replace(/^(Die|Das|Der) /, "")]), statBoss, (k) => { statBoss = k; render(); }) : null),
     el("p", { class: "note" }, intro), box);
 }
 

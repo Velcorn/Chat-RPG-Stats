@@ -2288,7 +2288,7 @@ async function viewTopLapse() {
   };
   const tick = (now) => {
     if (!playing || !box.isConnected) { playing = false; draw(); return; }
-    f = Math.min(F - 1, f + (now - last) / 1000 * 1.2 * speed);
+    f = Math.min(F - 1, f + (now - last) / 1000 * 1 * speed);
     last = now; draw();
     if (f >= F - 1) { playing = false; draw(); return; }
     requestAnimationFrame(tick);

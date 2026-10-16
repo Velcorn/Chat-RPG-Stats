@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.47.5 (16.10.2026)
+
+**Verbessert**
+- Zeitraffer Top 100: 1x ist genau ein Schritt je Sekunde (gut drei Minuten für alles).
+
 ## 0.47.4 (16.10.2026)
 
 **Verbessert**

@@ -1352,6 +1352,11 @@
 17,
 0
 ],
+"Tempelschild": [
+0,
+20,
+3
+],
 "Turmschild": [
 1,
 22,
@@ -1592,6 +1597,11 @@
 45,
 6,
 5
+],
+"des Kriegsherrn": [
+48,
+8,
+0
 ],
 "des Sturms": [
 14,

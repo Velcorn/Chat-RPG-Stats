@@ -2052,12 +2052,49 @@ function viewSpecial() {
       el("p", { class: "note" }, "Werte der Stücke von Bossen und besonderen Waffen (ATK/DEF/SUP) mit dem Stand davor, wenn das Spiel sie ändert oder neu gemessen wird.")))];
 }
 
+// Upgrading with scrolls: the points each step adds (the same for every material), what a try costs, how hard each step is.
+const UPGRADE_GAIN = { "Einhandwaffe, Rüstung, Schild": [1, 3, 4, 6], "Zweihandwaffe": [3, 5, 8, 11], "Ring": [1, 2, 3, 4] };
+const UPGRADE_WORDS = ["leicht", "machbar", "riskant", "schwer"];
+function viewUpgrade(s, tries) {
+  const per3 = (s.rules.now || {}).upgradeScrollsPerThreeTiers ?? 1;
+  const gainRows = Object.entries(UPGRADE_GAIN).map(([kind, g]) => ({ kind, g, total: g.reduce((a, b) => Math.max(a, b), 0) }));
+  const steps = [0, 1, 2, 3].map((i) => {
+    const byTier = tries[String(i)] || {}, ok = Object.values(byTier).reduce((a, [o]) => a + o, 0), bad = Object.values(byTier).reduce((a, [, f]) => a + f, 0);
+    return { step: i, word: UPGRADE_WORDS[i], ok, n: ok + bad };
+  });
+  const oneTier = (kind) => kind === "Ring" ? 3 : kind === "Zweihandwaffe" ? 10 : 5;
+  return [el("section", { class: "grid" }, el("div", { class: "head" }, el("h1", {}, "Verbessern")),
+    el("p", { class: "note" }, "Mit Schriftrollen macht ein Stück einen Schritt besser, bis +4. Material, Stufe und Form bleiben; misslingt ein Versuch, sind nur die Rollen weg. Die Punkte je Schritt sind für jedes Material gleich."),
+    card("Was jeder Schritt bringt", el("div", { class: "scroll" }, table([
+        { label: "Art", get: (r) => r.kind },
+        ...[0, 1, 2, 3].map((i) => ({ label: `auf +${i + 1}`, num: true, get: (r) => `+${r.g[i] - (i ? r.g[i - 1] : 0)}` })),
+        { label: "Summe bei +4", num: true, get: (r) => `+${r.total}` },
+        { label: "ein Stufen-Schritt", num: true, title: "Punkte, die ein Stück der nächsten Stufe mehr hat", get: (r) => `+${oneTier(r.kind)}` }], gainRows, { cards: true })),
+      el("p", { class: "note" }, "Ein Stück auf +4 hat mehr Punkte als eines der nächsten Stufe (Einhandwaffe +6 gegen +5), kostet aber Rollen und Versuche. Die Summe der Basiswerte bleibt gleich, die Punkte kommen in den Wert, den du beim Verbessern wählst (anteilig oder alles in einen).")),
+    card("Rollen je Versuch", el("div", { class: "scroll" }, table([
+        { label: "Stufe des Stücks", get: (r) => r.t },
+        { label: "Rollen je Versuch", num: true, get: (r) => fmtInt(r.n) }], [1, 4, 7, 10, 13].map((from) => ({ t: `Stufe ${from} bis ${from + 2}`, n: per3 * Math.ceil(from / 3) })), { cards: true })),
+      el("p", { class: "note" }, `Je angefangene drei Stufen des Stücks kommen ${count(per3, "Rolle", "Rollen")} dazu (Regel "upgradeScrollsPerThreeTiers").`)),
+    card("Chancen je Schritt", el("div", { class: "scroll" }, table([
+        { label: "Schritt", get: (r) => `+${r.step} auf +${r.step + 1}` },
+        { label: "Das Spiel sagt", get: (r) => r.word },
+        { label: "Versuche", num: true, get: (r) => fmtInt(r.n) },
+        { label: "Geglückt", num: true, get: (r) => r.n ? `${fmtInt(r.ok)} (${pct(r.ok, r.n)})` : "-" },
+        { label: "Chance", num: true, title: "erst ab 30 Versuchen angezeigt", get: (r) => r.n >= 30 ? pct(r.ok, r.n) : "noch zu wenige Versuche" }], steps, { cards: true })),
+      el("p", { class: "note" }, "Das Spiel nennt keine Zahlen, nur Wörter: \"die ersten Schritte gelingen leicht, +4 ist schwer\". Die Chancen werden aus beobachteten Versuchen gezählt und erscheinen ab 30 Versuchen je Schritt; bis dahin stehen hier nur die Zahlen, die da sind.")))];
+}
+
 async function viewGame(s, sub) {
   if (sub === "formen") {
     try { OBSERVED = await load("observed.json"); } catch { /* the table then shows the sheet only */ }
     return viewForms();
   }
   if (sub === "spezial") return viewSpecial();
+  if (sub === "verbessern") {
+    let tries = { tries: {} };
+    try { tries = await load("upgrades.json"); } catch { /* none yet */ }
+    return viewUpgrade(s, tries.tries || {});
+  }
   if (sub === "regeln") {
     const now = s.rules.now;
     if (!Object.keys(now).length) return [card("Regeln des Spiels", el("p", { class: "note" }, "Die Regeln werden gerade erst gesammelt."))];
@@ -2376,7 +2413,7 @@ const SECTIONS = {
                render: viewRanks },
   gilden: { subs: (s) => [["vergleich", "Vergleich"], ["zeitraffer", "Zeitraffer"], ...s.guilds.map((g) => [g.login, g.name || g.login])], render: viewGuild,
             dropdown: true },
-  spiel: { subs: () => [["regeln", "Regeln"], ["aenderungen", "Changelog"], ["formen", "Formen"], ["spezial", "Spezialitems"]],
+  spiel: { subs: () => [["regeln", "Regeln"], ["aenderungen", "Changelog"], ["formen", "Formen"], ["spezial", "Spezialitems"], ["verbessern", "Verbessern"]],
            render: viewGame },
   kaempfe: { subs: () => [["uebersicht", "Übersicht"], ["kraft", "Kampfkraft"], ["letzte", "Letzte Kämpfe"]],
              render: viewFights },

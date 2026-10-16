@@ -423,3 +423,14 @@ class HelperTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class UpgradeTriesTests(unittest.TestCase):
+    def test_the_committed_tries_are_well_formed(self):
+        import json
+        from pathlib import Path
+        data = json.loads((Path(__file__).parent.parent / "src" / "upgrades.json").read_text("utf-8"))
+        for step, tiers in data["tries"].items():
+            self.assertIn(step, {"0", "1", "2", "3"})
+            for tier, (ok, failed) in tiers.items():
+                self.assertTrue(1 <= int(tier) <= 14 and ok >= 0 and failed >= 0)

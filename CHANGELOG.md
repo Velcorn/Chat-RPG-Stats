@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.51.0 (16.10.2026)
+
+**Neu**
+- Spiel, Verbessern: Was das Verbessern mit Schriftrollen bringt (Punkte je Schritt bis +4 für Einhandwaffen, Rüstung, Schilde, Zweihänder und Ringe), wie viele Rollen ein Versuch je Stufe kostet und wie schwer jeder Schritt ist. Die Chancen nennt das Spiel nicht; die Seite zählt beobachtete Versuche und zeigt Prozente ab 30 Versuchen je Schritt.
+
 ## 0.50.3 (16.10.2026)
 
 **Neu**

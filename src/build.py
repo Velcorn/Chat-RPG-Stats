@@ -274,6 +274,7 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
     write(target / "builds.json", [[details[x]["atk"], details[x]["def"], details[x]["sup"], gear[x]]
                                    for x in with_split])
     write(target / "observed.json", observed(state))
+    write(target / "upgrades.json", json.loads((Path(__file__).with_name("upgrades.json")).read_text("utf-8")))
     if lapse := timelapse(h, players, h.border):
         write(target / "timelapse.json", lapse)
     if top := top_lapse(h, players):

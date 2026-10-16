@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.49.1 (16.10.2026)
+
+**Neu**
+- Formen: 7 weitere Formen mit ihren Werten (Rüstung der Stufe 10 und 13 mit "des Hospitaliters" und "des Paladins", ein Ring "des Paladins" und ein Stab "der Wacht" der Stufe 13, dazu drei Funde auf niedrigeren Stufen).
+
 ## 0.49.0 (16.10.2026)
 
 **Neu**

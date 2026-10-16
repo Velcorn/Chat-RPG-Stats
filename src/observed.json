@@ -119,6 +119,11 @@
 19,
 5
 ],
+"des Hospitaliters": [
+5,
+21,
+27
+],
 "des Jägers": [
 32,
 13,
@@ -133,6 +138,11 @@
 26,
 11,
 16
+],
+"des Paladins": [
+0,
+24,
+29
 ],
 "des Pilgers": [
 0,
@@ -642,6 +652,11 @@
 ]
 },
 "ring": {
+"des Paladins": [
+4,
+16,
+19
+],
 "des Schutzes": [
 8,
 23,
@@ -717,6 +732,11 @@
 14,
 34,
 88
+],
+"der Wacht": [
+7,
+48,
+81
 ],
 "des Bergfrieds": [
 102,
@@ -1435,6 +1455,11 @@
 8,
 16
 ],
+"des Kriegspriesters": [
+14,
+6,
+8
+],
 "des Paladins": [
 0,
 13,
@@ -1720,6 +1745,11 @@
 10,
 10
 ],
+"der Wacht": [
+3,
+23,
+40
+],
 "des Bergfrieds": [
 50,
 16,
@@ -1886,6 +1916,11 @@
 8,
 19,
 49
+],
+"der Morgenröte": [
+53,
+11,
+12
 ],
 "des Inquisitors": [
 61,

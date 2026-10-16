@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.46.0 (16.10.2026)
+
+**Neu**
+- Zeitraffer unter Gilden: "Wert je Perzentil" und "Spieler je Wert" für alle Spieler und jede Gilde über die Tage, mit Abspielknopf, Regler und Geschwindigkeit. Die Kurven gleiten von Zeitpunkt zu Zeitpunkt, der Anfang steht blass dahinter, dazu die Grenze zur Top 100 und der Durchschnitt je Gilde. Der Zeitraffer beginnt am 08.10.2026, weil die Werte der Spieler außerhalb der Top 100 erst ab da ausreichend vorliegen.
+
 ## 0.45.18 (16.10.2026)
 
 **Neu**

@@ -192,6 +192,10 @@
   .chart .odot, .odot-key { stroke: var(--surface-1); stroke-width: 1.5; opacity: .9; }
   .b0 { fill: #3987e5; background: #3987e5; } .b1 { fill: #d99a1c; background: #d99a1c; } .b2 { fill: #2fae6d; background: #2fae6d; }
   .b3 { fill: #e5534b; background: #e5534b; } .b4 { fill: #a77de0; background: #a77de0; } .b5 { fill: #3fb8c4; background: #3fb8c4; }
+  .lapse-ctl { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .lapse-ctl input[type=range] { flex: 1 1 160px; min-width: 120px; accent-color: var(--accent); }
+  .lapse-play { min-width: 92px; }
+  .lapse-when { min-width: 7.5em; font-variant-numeric: tabular-nums; }
   .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
   .legend i.ln { width: 16px; height: 0; border-radius: 0; border-top: 2px solid var(--series-2); background: none; }
   .legend i.ln.ref { border-top: 2px dashed var(--text-muted); }
@@ -1547,6 +1551,7 @@ function firstKillsCard(s, login) {
 
 function viewGuild(s, login) {
   if (login === "vergleich") return viewGuildRace(s);
+  if (login === "zeitraffer") return viewLapse();
   const g = s.guilds.find((x) => x.login === login);
   return [el("section", { class: "grid" },
     el("div", { class: "head" }, el("h1", {}, g.name), gameLink(`/gilden/${login}`, "Im Spiel")),
@@ -2039,13 +2044,127 @@ async function viewGame(s, sub) {
   if (sub === "aenderungen") return viewChanges(s);
 }
 
+// ---- time lapse (Zeitraffer) ----
+// The gear scores of the active players every six hours (timelapse.json): the score at each percentile and the share
+// of players per score, for everyone and each guild, played as a time lapse. The curves glide between two frames;
+// the pale dashed ones are the first frame.
+async function viewLapse() {
+  let d = null;
+  try { d = await load("timelapse.json"); } catch { /* none yet */ }
+  const head = el("div", { class: "head" }, el("h1", {}, "Zeitraffer"));
+  if (!d || d.frames.length < 2) return [el("section", { class: "grid" }, head, el("p", { class: "note" }, "Noch nicht genug Daten für einen Zeitraffer."))];
+  const N = d.frames.length, groups = d.groups, nb = groups[0].hist[0].length;
+  const colorOf = (g, i) => pctColor({ name: g.login || g.name }, i);
+  const mix = (rows, f) => {
+    const a = Math.floor(f), b = Math.min(N - 1, a + 1), w = f - a;
+    return rows[a].map((v, i) => v + (rows[b][i] - v) * w);
+  };
+  const one = (arr, f) => { const a = Math.floor(f), b = Math.min(N - 1, a + 1); return arr[a] + (arr[b] - arr[a]) * (f - a); };
+  let f = 0, playing = false, last = 0, speed = 1;
+  const when = el("strong", { class: "lapse-when" }), legend = el("div", { class: "legend" });
+  const play = el("button", { class: "lapse-play" }, "Abspielen");
+  const slider = el("input", { type: "range", min: "0", max: String(N - 1), step: "0.01", value: "0", "aria-label": "Zeitpunkt" });
+  const pctBox = el("div", { class: "chart" }), histBox = el("div", { class: "chart" });
+  let pctDraw = () => {}, histDraw = () => {};
+  const setLegend = () => legend.replaceChildren(...groups.map((g, i) => el("span", {}, el("i", { style: `background:${colorOf(g, i)}` }),
+    `${g.name}: Ø ${fmtDec(one(g.mean, f), 1)}`)), el("span", {}, el("i", { class: "ln ref" }), "Platz 100"));
+  const draw = () => {
+    when.textContent = fmtTime(d.frames[Math.round(f)]);
+    slider.value = String(f);
+    play.textContent = playing ? "Anhalten" : f >= N - 1 ? "Von vorn" : "Abspielen";
+    pctDraw(); histDraw(); setLegend();
+  };
+  const tick = (now) => {
+    if (!playing || !pctBox.isConnected) { playing = false; draw(); return; }
+    f = Math.min(N - 1, f + (now - last) / 1000 * 2 * speed);
+    last = now; draw();
+    if (f >= N - 1) { playing = false; draw(); return; }
+    requestAnimationFrame(tick);
+  };
+  play.addEventListener("click", () => {
+    if (playing) { playing = false; draw(); return; }
+    if (f >= N - 1) f = 0;
+    playing = true; last = performance.now(); requestAnimationFrame(tick);
+  });
+  slider.addEventListener("input", () => { f = +slider.value; draw(); });
+  const frame = (box, H, m) => {
+    box.replaceChildren();
+    const W = Math.max(260, box.clientWidth), svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, role: "img" });
+    box.append(svg);
+    return { W, svg, iw: W - m.l - m.r, ih: H - m.t - m.b };
+  };
+  const build = () => {
+    const H = 260, m = { l: 44, r: 12, t: 14, b: 40 };
+    {  // gear score at each percentile
+      const { W, svg, iw, ih } = frame(pctBox, H, m), all = groups.flatMap((g) => g.pct.flat()).sort((u, w) => u - w);
+      const ys = niceTicks(all[Math.floor(all.length * 0.03)], all[all.length - 1], 5), lo = ys[0], hi = ys[ys.length - 1];
+      const x = (p) => m.l + p / 100 * iw, y = (v) => m.t + (hi - v) / (hi - lo) * ih;
+      const axis = sv("g", { class: "axis" });
+      for (const v of ys) axis.append(sv("line", { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), class: "gridline" }), sv("text", { x: m.l - 6, y: y(v) + 4, "text-anchor": "end" }, fmtInt(v)));
+      for (const p of [0, 25, 50, 75, 100]) axis.append(sv("text", { x: x(p), y: H - 22, "text-anchor": p === 0 ? "start" : p === 100 ? "end" : "middle" }, `${p} %`));
+      axis.append(sv("text", { x: m.l + iw / 2, y: H - 6, "text-anchor": "middle" }, "Anteil der Spieler darunter"));
+      const clip = sv("clipPath", { id: "lapse-pct-clip" }, "");
+      clip.append(sv("rect", { x: m.l, y: m.t, width: iw, height: ih }));
+      svg.append(axis, clip);
+      const line = (v) => v.map((val, p) => `${p ? "L" : "M"}${x(p).toFixed(1)},${y(val).toFixed(1)}`).join("");
+      const border = sv("line", { x1: m.l, x2: W - m.r, class: "mark ref" });
+      svg.append(border);
+      const paths = groups.map((g, i) => {
+        svg.append(sv("path", { d: line(g.pct[0]), fill: "none", stroke: colorOf(g, i), "stroke-width": 1.4, opacity: 0.3, "stroke-dasharray": "3 3", "clip-path": "url(#lapse-pct-clip)" }));
+        const path = sv("path", { fill: "none", stroke: colorOf(g, i), "stroke-width": i ? 2.2 : 2.8, "stroke-dasharray": i ? "" : "6 4", "stroke-linejoin": "round", "clip-path": "url(#lapse-pct-clip)" });
+        svg.append(path);
+        return path;
+      });
+      pctDraw = () => {
+        groups.forEach((g, i) => paths[i].setAttribute("d", line(mix(g.pct, f))));
+        const b = one(d.border, f);
+        border.setAttribute("y1", y(b)); border.setAttribute("y2", y(b));
+        border.style.display = b >= lo && b <= hi ? "" : "none";
+      };
+    }
+    {  // share of the players per gear score
+      const { W, svg, iw, ih } = frame(histBox, H, m), ymax = niceTicks(0, Math.max(...groups.flatMap((g) => g.hist.flat())), 4).pop();
+      const end = d.lo + nb * d.bin, x = (v) => m.l + (v - d.lo) / (end - d.lo) * iw, y = (c) => m.t + (1 - c / ymax) * ih;
+      const axis = sv("g", { class: "axis" });
+      for (const v of niceTicks(0, ymax, 4)) axis.append(sv("line", { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), class: "gridline" }), sv("text", { x: m.l - 6, y: y(v) + 4, "text-anchor": "end" }, `${fmtDec(v, v % 1 ? 1 : 0)} %`));
+      for (const v of niceTicks(d.lo, end, Math.max(2, Math.floor(iw / 70))).filter((t) => t >= d.lo && t <= end)) axis.append(sv("text", { x: x(v), y: H - 22, "text-anchor": "middle" }, fmtInt(v)));
+      axis.append(sv("text", { x: m.l + iw / 2, y: H - 6, "text-anchor": "middle" }, "Ausrüstungswert (Spieler je Wert, in Prozent)"));
+      svg.append(axis);
+      const line = (v) => v.map((c, k) => `${k ? "L" : "M"}${x(d.lo + (k + 0.5) * d.bin).toFixed(1)},${y(c).toFixed(1)}`).join("");
+      const border = sv("line", { y1: m.t, y2: H - m.b + 4, class: "mark ref" });
+      svg.append(border);
+      const paths = groups.map((g, i) => {
+        svg.append(sv("path", { d: line(g.hist[0]), fill: "none", stroke: colorOf(g, i), "stroke-width": 1.4, opacity: 0.3, "stroke-dasharray": "3 3" }));
+        const path = sv("path", { fill: "none", stroke: colorOf(g, i), "stroke-width": i ? 2.2 : 2.8, "stroke-dasharray": i ? "" : "6 4", "stroke-linejoin": "round" });
+        svg.append(path);
+        return path;
+      });
+      histDraw = () => {
+        groups.forEach((g, i) => paths[i].setAttribute("d", line(mix(g.hist, f))));
+        const b = one(d.border, f);
+        border.setAttribute("x1", x(b)); border.setAttribute("x2", x(b));
+      };
+    }
+    draw();
+  };
+  requestAnimationFrame(() => {
+    build();
+    let w = pctBox.clientWidth;
+    new ResizeObserver(() => { if (pctBox.isConnected && Math.abs(pctBox.clientWidth - w) > 4) { w = pctBox.clientWidth; build(); } }).observe(pctBox);
+  });
+  return [el("section", { class: "grid" }, head,
+    card("", el("div", { class: "lapse-ctl" }, play, slider, when, seg([["1", "1×"], ["2", "2×"], ["4", "4×"]], "1", (k) => { speed = +k; })), legend),
+    card("Wert je Perzentil", pctBox, el("p", { class: "note" }, "Welchen Ausrüstungswert ein Spieler am jeweiligen Anteil hat (50 % = Median, rechts die Besten), alle sechs Stunden. Gestrichelt und blass: der Anfang.")),
+    card("Spieler je Wert", histBox, el("p", { class: "note" }, "Anteil der aktiven Spieler je Ausrüstungswert (in Stufen von 20). Anteile statt Anzahlen, weil die Profile der Spieler außerhalb der Top 100 erst nach und nach gelesen wurden. Der Zeitraffer beginnt dort, wo von mindestens 80 % der heutigen aktiven Spieler ein Wert vorliegt.")))];
+}
+
 // ---- routing ----
 // Each section has sub pages (one per ranking, guild or fight table), shown as a second tab row.
 const SECTIONS = {
   start: { subs: () => [], render: viewStart },
   rangliste: { subs: () => [["ausruestungswert", "Ausrüstungswert"], ["kampfkraft", "Kampfkraft"], ["aufsteiger", "Aufsteiger"]],
                render: viewRanks },
-  gilden: { subs: (s) => [["vergleich", "Vergleich"], ...s.guilds.map((g) => [g.login, g.name || g.login])], render: viewGuild,
+  gilden: { subs: (s) => [["vergleich", "Vergleich"], ["zeitraffer", "Zeitraffer"], ...s.guilds.map((g) => [g.login, g.name || g.login])], render: viewGuild,
             dropdown: true },
   spiel: { subs: () => [["regeln", "Regeln"], ["aenderungen", "Changelog"], ["formen", "Formen"], ["spezial", "Spezialitems"]],
            render: viewGame },

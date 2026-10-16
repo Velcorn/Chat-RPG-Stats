@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.50.0 (16.10.2026)
+
+**Neu**
+- Spezialitems: Die Karte "Änderungen" nennt, was sich an den Werten der Stücke geändert hat (Datum, Stück, Stufe und ATK/DEF/SUP vorher und jetzt). Geänderte Stücke tragen in der Tabelle den Hinweis "geändert" mit dem Datum.
+
 ## 0.49.4 (16.10.2026)
 
 **Behoben**

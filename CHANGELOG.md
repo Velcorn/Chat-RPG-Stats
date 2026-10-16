@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.47.1 (16.10.2026)
+
+**Neu**
+- Zeitraffer unter Gilden: Zoom in beiden Diagrammen. Über einen Bereich ziehen vergrößert ihn (zum Beispiel nur die besten 20 % oder nur die Werte ab 400), Doppelklick oder "Alles zeigen" geht zurück. Die Achsen passen sich an.
+
 ## 0.47.0 (16.10.2026)
 
 **Neu**

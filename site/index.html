@@ -2102,20 +2102,54 @@ async function viewLapse() {
     box.append(svg);
     return { W, svg, iw: W - m.l - m.r, ih: H - m.t - m.b };
   };
+  // Zoom: drag across a chart to look at that stretch (the percentiles, or the gear scores), double-click for all.
+  const endV = d.lo + nb * d.bin;
+  let pctView = [0, 100], histView = [d.lo, endV];
+  const reset = el("button", { class: "lapse-reset", hidden: "" }, "Alles zeigen");
+  const zoomed = () => pctView[0] !== 0 || pctView[1] !== 100 || histView[0] !== d.lo || histView[1] !== endV;
+  reset.addEventListener("click", () => { pctView = [0, 100]; histView = [d.lo, endV]; build(); });
+  // The drag layer over a plot: calls onZoom(from, to) in the units of the x axis.
+  const dragZoom = (svg, m, W, H, view, onZoom, onAll) => {
+    const [v0, v1] = view, sel = sv("rect", { y: m.t, height: H - m.t - m.b, class: "sel", style: "display:none" });
+    const catcher = sv("rect", { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: "transparent", style: "touch-action: pan-y" });
+    const xOf = (ev) => {
+      const r = svg.getBoundingClientRect();
+      return Math.max(v0, Math.min(v1, v0 + ((ev.clientX - r.left) * W / r.width - m.l) / (W - m.l - m.r) * (v1 - v0)));
+    };
+    const px = (v) => m.l + (v - v0) / (v1 - v0) * (W - m.l - m.r);
+    let from = null;
+    catcher.addEventListener("pointerdown", (ev) => { from = xOf(ev); catcher.setPointerCapture(ev.pointerId); });
+    catcher.addEventListener("pointermove", (ev) => {
+      if (from == null) return;
+      const [u, w] = [Math.min(from, xOf(ev)), Math.max(from, xOf(ev))];
+      sel.setAttribute("x", px(u)); sel.setAttribute("width", px(w) - px(u)); sel.style.display = "";
+    });
+    catcher.addEventListener("pointerup", (ev) => {
+      const to = xOf(ev), a = from;
+      from = null; sel.style.display = "none";
+      if (a != null && Math.abs(to - a) >= (v1 - v0) * 0.03) onZoom(Math.min(a, to), Math.max(a, to));
+    });
+    catcher.addEventListener("dblclick", onAll);
+    svg.append(sel, catcher);
+  };
   const build = () => {
     const H = 260, m = { l: 44, r: 12, t: 14, b: 40 };
+    reset.hidden = !zoomed();
     {  // gear score at each percentile
-      const { W, svg, iw, ih } = frame(pctBox, H, m), all = groups.flatMap((g) => g.pct.flat()).sort((u, w) => u - w);
-      const ys = niceTicks(all[Math.floor(all.length * 0.03)], all[all.length - 1], 5), lo = ys[0], hi = ys[ys.length - 1];
-      const x = (p) => m.l + p / 100 * iw, y = (v) => m.t + (hi - v) / (hi - lo) * ih;
+      const [p0, p1] = pctView, i0 = Math.max(0, Math.floor(p0)), i1 = Math.min(100, Math.ceil(p1));
+      const { W, svg, iw, ih } = frame(pctBox, H, m);
+      const seen = groups.flatMap((g) => g.pct.flatMap((r) => r.slice(i0, i1 + 1))).sort((u, w) => u - w);
+      const ys = niceTicks(p0 === 0 ? seen[Math.floor(seen.length * 0.03)] : seen[0], seen[seen.length - 1], 5), lo = ys[0], hi = ys[ys.length - 1];
+      const x = (p) => m.l + (p - p0) / (p1 - p0) * iw, y = (v) => m.t + (hi - v) / (hi - lo) * ih;
       const axis = sv("g", { class: "axis" });
       for (const v of ys) axis.append(sv("line", { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), class: "gridline" }), sv("text", { x: m.l - 6, y: y(v) + 4, "text-anchor": "end" }, fmtInt(v)));
-      for (const p of [0, 25, 50, 75, 100]) axis.append(sv("text", { x: x(p), y: H - 22, "text-anchor": p === 0 ? "start" : p === 100 ? "end" : "middle" }, `${p} %`));
+      const xt = niceTicks(p0, p1, Math.max(2, Math.floor(iw / 80))).filter((v) => v >= p0 && v <= p1);
+      xt.forEach((p, k) => axis.append(sv("text", { x: x(p), y: H - 22, "text-anchor": k === 0 && p === p0 ? "start" : "middle" }, `${fmtDec(p, p1 - p0 < 20 ? 1 : 0)} %`)));
       axis.append(sv("text", { x: m.l + iw / 2, y: H - 6, "text-anchor": "middle" }, "Anteil der Spieler darunter"));
       const clip = sv("clipPath", { id: "lapse-pct-clip" }, "");
       clip.append(sv("rect", { x: m.l, y: m.t, width: iw, height: ih }));
       svg.append(axis, clip);
-      const line = (v) => v.map((val, p) => `${p ? "L" : "M"}${x(p).toFixed(1)},${y(val).toFixed(1)}`).join("");
+      const line = (v) => { let out = ""; for (let p = i0; p <= i1; p++) out += `${p > i0 ? "L" : "M"}${x(p).toFixed(1)},${y(v[p]).toFixed(1)}`; return out; };
       const border = sv("line", { x1: m.l, x2: W - m.r, class: "mark ref" });
       svg.append(border);
       const paths = groups.map((g, i) => {
@@ -2130,21 +2164,26 @@ async function viewLapse() {
         border.setAttribute("y1", y(b)); border.setAttribute("y2", y(b));
         border.style.display = b >= lo && b <= hi ? "" : "none";
       };
+      dragZoom(svg, m, W, H, pctView, (a, b) => { pctView = [a, b]; build(); }, () => { pctView = [0, 100]; build(); });
     }
     {  // share of the players per gear score
-      const { W, svg, iw, ih } = frame(histBox, H, m), ymax = niceTicks(0, Math.max(...groups.flatMap((g) => g.hist.flat())), 4).pop();
-      const end = d.lo + nb * d.bin, x = (v) => m.l + (v - d.lo) / (end - d.lo) * iw, y = (c) => m.t + (1 - c / ymax) * ih;
+      const [v0, v1] = histView, k0 = Math.max(0, Math.floor((v0 - d.lo) / d.bin)), k1 = Math.min(nb - 1, Math.ceil((v1 - d.lo) / d.bin));
+      const { W, svg, iw, ih } = frame(histBox, H, m);
+      const ymax = niceTicks(0, Math.max(...groups.flatMap((g) => g.hist.flatMap((r) => r.slice(k0, k1 + 1)))), 4).pop();
+      const x = (v) => m.l + (v - v0) / (v1 - v0) * iw, y = (c) => m.t + (1 - c / ymax) * ih;
       const axis = sv("g", { class: "axis" });
       for (const v of niceTicks(0, ymax, 4)) axis.append(sv("line", { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), class: "gridline" }), sv("text", { x: m.l - 6, y: y(v) + 4, "text-anchor": "end" }, `${fmtDec(v, v % 1 ? 1 : 0)} %`));
-      for (const v of niceTicks(d.lo, end, Math.max(2, Math.floor(iw / 70))).filter((t) => t >= d.lo && t <= end)) axis.append(sv("text", { x: x(v), y: H - 22, "text-anchor": "middle" }, fmtInt(v)));
+      for (const v of niceTicks(v0, v1, Math.max(2, Math.floor(iw / 70))).filter((t) => t >= v0 && t <= v1)) axis.append(sv("text", { x: x(v), y: H - 22, "text-anchor": "middle" }, fmtInt(v)));
       axis.append(sv("text", { x: m.l + iw / 2, y: H - 6, "text-anchor": "middle" }, "Ausrüstungswert (Spieler je Wert, in Prozent)"));
-      svg.append(axis);
-      const line = (v) => v.map((c, k) => `${k ? "L" : "M"}${x(d.lo + (k + 0.5) * d.bin).toFixed(1)},${y(c).toFixed(1)}`).join("");
+      const clip = sv("clipPath", { id: "lapse-hist-clip" }, "");
+      clip.append(sv("rect", { x: m.l, y: m.t, width: iw, height: ih + 4 }));
+      svg.append(axis, clip);
+      const line = (v) => { let out = ""; for (let k = k0; k <= k1; k++) out += `${k > k0 ? "L" : "M"}${x(d.lo + (k + 0.5) * d.bin).toFixed(1)},${y(v[k]).toFixed(1)}`; return out; };
       const border = sv("line", { y1: m.t, y2: H - m.b + 4, class: "mark ref" });
       svg.append(border);
       const paths = groups.map((g, i) => {
-        svg.append(sv("path", { d: line(g.hist[0]), fill: "none", stroke: colorOf(g, i), "stroke-width": 1.4, opacity: 0.3, "stroke-dasharray": "3 3" }));
-        const path = sv("path", { fill: "none", stroke: colorOf(g, i), "stroke-width": i ? 2.2 : 2.8, "stroke-dasharray": i ? "" : "6 4", "stroke-linejoin": "round" });
+        svg.append(sv("path", { d: line(g.hist[0]), fill: "none", stroke: colorOf(g, i), "stroke-width": 1.4, opacity: 0.3, "stroke-dasharray": "3 3", "clip-path": "url(#lapse-hist-clip)" }));
+        const path = sv("path", { fill: "none", stroke: colorOf(g, i), "stroke-width": i ? 2.2 : 2.8, "stroke-dasharray": i ? "" : "6 4", "stroke-linejoin": "round", "clip-path": "url(#lapse-hist-clip)" });
         svg.append(path);
         return path;
       });
@@ -2152,7 +2191,9 @@ async function viewLapse() {
         groups.forEach((g, i) => paths[i].setAttribute("d", line(mix(g.hist, f))));
         const b = one(d.border, f);
         border.setAttribute("x1", x(b)); border.setAttribute("x2", x(b));
+        border.style.display = b >= v0 && b <= v1 ? "" : "none";
       };
+      dragZoom(svg, m, W, H, histView, (a, b) => { histView = [a, b]; build(); }, () => { histView = [d.lo, endV]; build(); });
     }
     draw();
   };
@@ -2162,9 +2203,9 @@ async function viewLapse() {
     new ResizeObserver(() => { if (pctBox.isConnected && Math.abs(pctBox.clientWidth - w) > 4) { w = pctBox.clientWidth; build(); } }).observe(pctBox);
   });
   return [el("section", { class: "grid" }, head,
-    card("", el("div", { class: "lapse-ctl" }, play, slider, when, seg([["1", "1×"], ["2", "2×"], ["4", "4×"]], "1", (k) => { speed = +k; })), legend),
-    card("Wert je Perzentil", pctBox, el("p", { class: "note" }, "Welchen Ausrüstungswert ein Spieler am jeweiligen Anteil hat (50 % = Median, rechts die Besten), alle sechs Stunden. Gestrichelt und blass: der Anfang.")),
-    card("Spieler je Wert", histBox, el("p", { class: "note" }, "Anteil der aktiven Spieler je Ausrüstungswert (in Stufen von 20). Anteile statt Anzahlen, weil die Profile der Spieler außerhalb der Top 100 erst nach und nach gelesen wurden. Der Zeitraffer beginnt dort, wo von mindestens 80 % der heutigen aktiven Spieler ein Wert vorliegt.")))];
+    card("", el("div", { class: "lapse-ctl" }, play, slider, when, seg([["1", "1×"], ["2", "2×"], ["4", "4×"]], "1", (k) => { speed = +k; }), reset), legend),
+    card("Wert je Perzentil", pctBox, el("p", { class: "note" }, "Welchen Ausrüstungswert ein Spieler am jeweiligen Anteil hat (50 % = Median, rechts die Besten), alle sechs Stunden. Gestrichelt und blass: der Anfang. Zum Vergrößern über einen Bereich ziehen, Doppelklick für alles.")),
+    card("Spieler je Wert", histBox, el("p", { class: "note" }, "Anteil der aktiven Spieler je Ausrüstungswert (in Stufen von 20). Anteile statt Anzahlen, weil die Profile der Spieler außerhalb der Top 100 erst nach und nach gelesen wurden. Der Zeitraffer beginnt dort, wo von mindestens 80 % der heutigen aktiven Spieler ein Wert vorliegt. Zum Vergrößern über einen Bereich ziehen, Doppelklick für alles.")))];
 }
 
 // ---- top 100 time lapse ----

@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.49.2 (16.10.2026)
+
+**Behoben**
+- Formen: Der Turmschild der Stufe 1 hat 1/7/0 (nicht 0/8/0).
+
 ## 0.49.1 (16.10.2026)
 
 **Neu**

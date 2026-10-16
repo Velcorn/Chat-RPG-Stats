@@ -3,6 +3,12 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.49.3 (16.10.2026)
+
+**Behoben**
+- Spezialitems: Der Zwangsvollstrecker hat 45/5/0 (nicht 45/0/0), so steht es in der Tabelle der Community.
+- Formen: Der Turmschild der Stufe 1 ist wieder 0/8/0. Es gibt zwei Turmschilde der Stufe 1 (0/8/0 und 1/7/0), die Seite zeigt den ersten.
+
 ## 0.49.2 (16.10.2026)
 
 **Behoben**

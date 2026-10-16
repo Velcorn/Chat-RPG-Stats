@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.51.1 (17.10.2026)
+
+**Verbessert**
+- Spiel, Verbessern: Die Tabelle der Rollen je Versuch ist einer Zeile gewichen (aufgerundet Stufe durch drei), und die Chancen sind vorerst raus: Einzelbeobachtungen sagen nichts, sie sollen später gemeinsam gesammelt werden.
+
 ## 0.51.0 (16.10.2026)
 
 **Neu**

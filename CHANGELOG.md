@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.47.2 (16.10.2026)
+
+**Verbessert**
+- Zeitraffer Top 100: langsamer (jeder Schritt ruht kurz, gleitet und ruht wieder), kräftigere Farben mit Farbverlauf in den Balken und Leuchten beim Ersten. Die Balken beginnen unter dem niedrigsten Wert, damit man den Abstand sieht. Top 50 und Top 100 stehen in mehreren Spalten nebeneinander und passen auf einen Bildschirm, auf dem Handy gibt es nur Top 10 und Top 25.
+
 ## 0.47.1 (16.10.2026)
 
 **Neu**

@@ -3,6 +3,12 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.47.4 (16.10.2026)
+
+**Verbessert**
+- Beide Zeitraffer laufen langsamer: 1x ist jetzt etwa halb so schnell wie vorher, 2x und 4x entsprechend (Gilden: 32 Sekunden für alles bei 1x, Top 100: gut zwei Minuten).
+- Zeitraffer unter Gilden: Die Durchschnitte über den Diagrammen zeigen immer eine Nachkommastelle (auch ",0") und feste Ziffernbreite, damit die Zeile beim Abspielen nicht wackelt.
+
 ## 0.47.3 (16.10.2026)
 
 **Verbessert**

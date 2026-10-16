@@ -205,6 +205,7 @@
              font-weight: 600; color: hsl(var(--h) 80% 76%); }
   .tl-score { position: relative; font-variant-numeric: tabular-nums; color: var(--text-secondary); }
   .lapse-play { min-width: 92px; }
+  .lapse-ctl + .legend, .lapse-ctl ~ .legend { font-variant-numeric: tabular-nums; }
   .lapse-when { min-width: 7.5em; font-variant-numeric: tabular-nums; }
   .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
   .legend i.ln { width: 16px; height: 0; border-radius: 0; border-top: 2px solid var(--series-2); background: none; }
@@ -2078,7 +2079,7 @@ async function viewLapse() {
   const pctBox = el("div", { class: "chart" }), histBox = el("div", { class: "chart" });
   let pctDraw = () => {}, histDraw = () => {};
   const setLegend = () => legend.replaceChildren(...groups.map((g, i) => el("span", {}, el("i", { style: `background:${colorOf(g, i)}` }),
-    `${g.name}: Ø ${fmtDec(one(g.mean, f), 1)}`)), el("span", {}, el("i", { class: "ln ref" }), "Platz 100"));
+    `${g.name}: Ø ${one(g.mean, f).toLocaleString("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`)), el("span", {}, el("i", { class: "ln ref" }), "Platz 100"));
   const draw = () => {
     when.textContent = fmtTime(d.frames[Math.round(f)]);
     slider.value = String(f);
@@ -2087,7 +2088,7 @@ async function viewLapse() {
   };
   const tick = (now) => {
     if (!playing || !pctBox.isConnected) { playing = false; draw(); return; }
-    f = Math.min(N - 1, f + (now - last) / 1000 * 2 * speed);
+    f = Math.min(N - 1, f + (now - last) / 1000 * 1 * speed);
     last = now; draw();
     if (f >= N - 1) { playing = false; draw(); return; }
     requestAnimationFrame(tick);
@@ -2287,7 +2288,7 @@ async function viewTopLapse() {
   };
   const tick = (now) => {
     if (!playing || !box.isConnected) { playing = false; draw(); return; }
-    f = Math.min(F - 1, f + (now - last) / 1000 * 2.5 * speed);
+    f = Math.min(F - 1, f + (now - last) / 1000 * 1.2 * speed);
     last = now; draw();
     if (f >= F - 1) { playing = false; draw(); return; }
     requestAnimationFrame(tick);

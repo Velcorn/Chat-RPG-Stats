@@ -204,6 +204,9 @@
   .tl-name { position: relative; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
              font-weight: 600; color: hsl(var(--h) 80% 76%); }
   .tl-score { position: relative; font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+  .speed { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+  .speed input { width: 90px; accent-color: var(--accent); }
+  .speed-val { min-width: 3em; font-variant-numeric: tabular-nums; color: var(--text-primary); }
   .lapse-play { min-width: 92px; }
   .lapse-ctl + .legend, .lapse-ctl ~ .legend { font-variant-numeric: tabular-nums; }
   .lapse-when { min-width: 7.5em; font-variant-numeric: tabular-nums; }
@@ -2056,6 +2059,18 @@ async function viewGame(s, sub) {
   if (sub === "aenderungen") return viewChanges(s);
 }
 
+// The speed of a time lapse: a slider from a quarter to four times (a log scale, so 1x sits in the middle).
+function speedControl(onChange) {
+  const out = el("span", { class: "speed-val" }, "1,00×");
+  const input = el("input", { type: "range", min: "-2", max: "2", step: "0.05", value: "0", "aria-label": "Geschwindigkeit" });
+  input.addEventListener("input", () => {
+    const v = 2 ** +input.value;
+    out.textContent = `${v.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}×`;
+    onChange(v);
+  });
+  input.addEventListener("dblclick", () => { input.value = "0"; input.dispatchEvent(new Event("input")); });
+  return el("label", { class: "speed" }, "Tempo", input, out);
+}
 // ---- time lapse (Zeitraffer) ----
 // The gear scores of the active players every six hours (timelapse.json): the score at each percentile and the share
 // of players per score, for everyone and each guild, played as a time lapse. The curves glide between two frames;
@@ -2206,7 +2221,7 @@ async function viewLapse() {
     new ResizeObserver(() => { if (pctBox.isConnected && Math.abs(pctBox.clientWidth - w) > 4) { w = pctBox.clientWidth; build(); } }).observe(pctBox);
   });
   return [el("section", { class: "grid" }, head,
-    card("", el("div", { class: "lapse-ctl" }, play, slider, when, seg([["1", "1×"], ["2", "2×"], ["4", "4×"]], "1", (k) => { speed = +k; }), reset), legend),
+    card("", el("div", { class: "lapse-ctl" }, play, slider, when, speedControl((v) => { speed = v; }), reset), legend),
     card("Wert je Perzentil", pctBox, el("p", { class: "note" }, "Welchen Ausrüstungswert ein Spieler am jeweiligen Anteil hat (50 % = Median, rechts die Besten), alle sechs Stunden. Gestrichelt und blass: der Anfang. Zum Vergrößern über einen Bereich ziehen, Doppelklick für alles.")),
     card("Spieler je Wert", histBox, el("p", { class: "note" }, "Anteil der aktiven Spieler je Ausrüstungswert (in Stufen von 20). Anteile statt Anzahlen, weil die Profile der Spieler außerhalb der Top 100 erst nach und nach gelesen wurden. Der Zeitraffer beginnt dort, wo von mindestens 80 % der heutigen aktiven Spieler ein Wert vorliegt. Zum Vergrößern über einen Bereich ziehen, Doppelklick für alles.")))];
 }
@@ -2306,7 +2321,7 @@ async function viewTopLapse() {
   });
   return [el("section", { class: "grid" }, head,
     card("", el("div", { class: "lapse-ctl" }, play, slider, when,
-        seg([["1", "1×"], ["2", "2×"], ["4", "4×"]], "1", (k) => { speed = +k; })),
+        speedControl((v) => { speed = v; })),
       el("div", { class: "lapse-ctl" }, seg([["10", "Top 10"], ["25", "Top 25"], ...(window.innerWidth >= 560 ? [["50", "Top 50"], ["100", "Top 100"]] : [])], "25", (k) => { N = +k; rebuild(); }), era), lead),
     card("", box, el("p", { class: "note" }, "Die Rangliste des Spiels alle zwei Stunden. Jeder Spieler hat seine eigene Farbe, ein Klick auf den Namen öffnet seine Seite. Spieler, die aus der Anzeige fallen oder nachrücken, gleiten von unten ein und aus.")))];
 }

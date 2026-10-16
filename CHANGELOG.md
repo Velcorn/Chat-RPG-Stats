@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.48.0 (16.10.2026)
+
+**Neu**
+- Beide Zeitraffer: ein Regler für das Tempo (von 0,25x bis 4x, in der Mitte 1x, Doppelklick setzt auf 1x) statt der Knöpfe 1x, 2x und 4x.
+
 ## 0.47.5 (16.10.2026)
 
 **Verbessert**

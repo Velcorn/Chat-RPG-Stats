@@ -13,9 +13,9 @@ n4yd
 # --- Top 100 (automatisch, bitte hier nichts eintragen) ---
 fluriio
 gigaemerald
+twice_tft
 gwentpleb
 guido0x0
-twice_tft
 bluelemon1
 fanderdell
 legolasnorris
@@ -82,8 +82,8 @@ v4nitas93
 b4b4_52
 komrk13
 besoffendemango
-simonsee
 geronimorino
+simonsee
 sephiroth1411
 robben271
 07philipp12

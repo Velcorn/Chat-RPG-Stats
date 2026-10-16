@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.50.3 (16.10.2026)
+
+**Neu**
+- Spezialitems: Die Robe des Nekromanten ist als Altstück markiert ("fällt nicht mehr"): Sie fehlt in der Beuteliste des Spiels. Der Eintrag bleibt, weil Spieler sie noch tragen, und steht auch im Verlauf unter "Änderungen".
+
 ## 0.50.2 (16.10.2026)
 
 **Verbessert**

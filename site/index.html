@@ -1997,6 +1997,7 @@ const SPECIAL = [["Schmelzofen","Notwehr des Prinzen",6,"1H-Waffe","Kämpfer",29
 // What changed on the special pieces, newest first: [date, name, before, now, note]; before/now are [tier, atk, def, sup] or
 // null (not known / new). Add a line whenever a value is measured differently or the game changes a piece.
 const SPECIAL_LOG = [
+  ["16.10.2026", "Robe des Nekromanten", [9, 0, 11, 41], [9, 0, 11, 41], "nicht mehr in der Beuteliste des Spiels, fällt nicht mehr (Altstück)"],
   ["16.10.2026", "Lek'Mhirs Oberschenkelknochen", [13, 88, 18, 6], [13, 112, 18, 6], "an den Trägern in den Profilen nachgemessen"],
   ["16.10.2026", "Der Zwangsvollstrecker", [9, 45, 0, 0], [9, 45, 5, 0], "laut Tabelle der Community"],
   ["16.10.2026", "Höllenfeuerhandschuhe", [10, 35, 14, 9], [13, 45, 14, 9], "Marktangebot und Profile"],
@@ -2004,6 +2005,8 @@ const SPECIAL_LOG = [
   ["15.10.2026", "Lek'Mhirs Oberschenkelknochen", [10, 78, 18, 6], [13, 88, 18, 6], "Marktangebot: jetzt Stufe 13"],
   ["15.10.2026", "Mel'Khmals Nasenring", [8, 7, 21, 1], [8, 7, 28, 1], "nachgemessen"],
 ];
+// Pieces that no longer drop (gone from the game's own boss loot list), still worn by some players.
+const LEGACY = new Set(["Robe des Nekromanten"]);
 const CHANGED = Object.fromEntries(SPECIAL_LOG.slice().reverse().map((r) => [r[1], r[0]]));
 // The lowest loot tier of each boss (the game's compendium), the reference for its special pieces besides their own tier.
 const LOOT_TIER = { "Lek'Mhir": 6, "Finanzamt": 7, "Loserqueue": 9, "Mel'Khmal": 11, "Ostmauer": 13 };
@@ -2017,7 +2020,8 @@ function viewSpecial() {
     };
     const loot = LOOT_TIER[r[0]];
     const both = loot && loot !== r[2];
-    return el("tr", {}, el("td", {}, r[1], CHANGED[r[1]] ? el("span", { class: "soon", title: "Werte geändert, siehe Änderungen unten" }, `geändert ${CHANGED[r[1]].slice(0, 6)}`) : null,
+    return el("tr", {}, el("td", {}, r[1], LEGACY.has(r[1]) ? el("span", { class: "soon", title: "Das Spiel führt dieses Stück nicht mehr in seiner Beuteliste, es fällt nicht mehr" }, "Altstück, fällt nicht mehr") : null,
+        CHANGED[r[1]] ? el("span", { class: "soon", title: "Werte geändert, siehe Änderungen unten" }, `geändert ${CHANGED[r[1]].slice(0, 6)}`) : null,
         el("div", { class: "special-sub" }, sub),
         el("div", { class: "special-sub" }, vs(r[2], loot ? ` (T${r[2]})` : ""), both ? " | " : null, both ? vs(loot, ` (Loot T${loot})`) : null)),
       ...[0, 1, 2].map((i) => el("td", { class: i === main ? "num special-main" : "num" }, String(r[5 + i]))),

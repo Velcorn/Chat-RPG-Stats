@@ -252,7 +252,7 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
                         "before": fightstats.fight_stats(h.fights, h.fightx, now, hi=fightstats.UPDATE,
                                                          boss_rec=boss_rec)},
                "guild_fights": fightstats.guild_fights(h.fights, h.fightx, now),
-               "stat_curves": fightstats.stat_curves(h.fights, h.fightx, now),
+               "stat_curves": fightstats.stat_curves(h.fights, h.fightx, now, boss_rec=boss_rec),
                "win_odds": fightstats.win_odds(h.fights, h.fightx, now, boss_rec=boss_rec),
                "first_kills": state.get("first_kills", []),
                "channels": state.get("channels", {}),

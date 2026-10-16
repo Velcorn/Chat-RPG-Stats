@@ -208,10 +208,12 @@ def guild_fights(fights: list[dict], extra: dict[int, dict], now: float, days: i
     return sorted(rows.values(), key=lambda r: (-(r["raids"] + r["bosses"]), r["guild"]))
 
 
-def stat_curves(fights: list[dict], extra: dict[int, dict], now: float, days: int = 30, step: int = 10) -> list[dict]:
+def stat_curves(fights: list[dict], extra: dict[int, dict], now: float, days: int = 30, step: int = 10,
+                boss_rec: dict | None = None) -> list[dict]:
     """Per boss (won fights of the last `days`, since 0.27.0 counted by the collector): for each role and stat the
     fighters per `step` of the stat, with the share that fell and the mean of what they did (`sx` of the digests).
-    [{boss, fights, roles: {role: {stat: [[from, n, fallen %, mean done], ...]}}}], most fights first."""
+    [{boss, fights, roles: {role: {stat: [[from, n, fallen %, mean done], ...]}}}], the strongest boss first (by its
+    recommendation in `boss_rec`, bosses it doesn't know last), then most fights."""
     bosses: dict[str, dict] = {}
     for f in fights:
         sx = extra.get(f["id"], {}).get("sx")
@@ -234,7 +236,7 @@ def stat_curves(fights: list[dict], extra: dict[int, dict], now: float, days: in
                                for k, (n, fell, done) in sorted(rows.items())]
                         for stat, rows in stats.items()} for role, stats in b["sums"].items()}
         out.append({"boss": b["boss"], "fights": b["fights"], "roles": roles})
-    return sorted(out, key=lambda r: -r["fights"])
+    return sorted(out, key=lambda r: (-(boss_rec or {}).get(r["boss"], 0), -r["fights"]))
 
 
 def logistic_fit(xs: list[float], ys: list[int], ridge: float = 0.001, steps: int = 50) -> tuple[float, float]:

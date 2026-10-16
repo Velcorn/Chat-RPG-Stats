@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.50.1 (16.10.2026)
+
+**Verbessert**
+- Werte und Überleben in Bosssiegen: Die Reiter stehen vom stärksten Boss abwärts (Ostmauer, Mel'Khmal, Loserqueue, ...), und der stärkste ist vorgewählt.
+
 ## 0.50.0 (16.10.2026)
 
 **Neu**

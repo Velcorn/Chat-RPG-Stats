@@ -310,3 +310,13 @@ class StatCurveTests(unittest.TestCase):
         self.assertEqual(len(curves), 1)
         self.assertEqual(curves[0]["fights"], 2)  # the lost one doesn't count
         self.assertEqual(curves[0]["roles"]["TANK"]["def"], [[200, 8, 50.0, 112]])
+
+    def test_curves_list_the_strongest_boss_first(self):
+        sx = {"TANK": {"def": {"200": [3, 1, 300]}}}
+        names = ["Loserqueue", "Ostmauer", "Finanzamt", "Neuer"]
+        fights = [{**fight(i, kind="BOSS", name=n), "endedAt": "2026-10-05T10:00:00Z"} for i, n in enumerate(names, 1)]
+        fights += [{**fight(9, kind="BOSS", name="Finanzamt"), "endedAt": "2026-10-05T11:00:00Z"}]
+        extra = {f["id"]: {"sx": sx} for f in fights}
+        rec = {"Loserqueue": 400, "Ostmauer": 600, "Finanzamt": 270}
+        order = [c["boss"] for c in fightstats.stat_curves(fights, extra, NOW, boss_rec=rec)]
+        self.assertEqual(order, ["Ostmauer", "Loserqueue", "Finanzamt", "Neuer"])  # unknown boss last

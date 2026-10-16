@@ -193,6 +193,11 @@
 ]
 },
 "shield": {
+"Kampfschild": [
+13,
+40,
+0
+],
 "Turmschild": [
 3,
 50,
@@ -1606,6 +1611,11 @@
 18,
 12,
 3
+],
+"des Erzmagiers": [
+8,
+5,
+20
 ],
 "des Hospitaliters": [
 3,

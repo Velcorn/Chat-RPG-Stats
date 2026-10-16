@@ -2007,7 +2007,6 @@ const SPECIAL_LOG = [
 const CHANGED = Object.fromEntries(SPECIAL_LOG.slice().reverse().map((r) => [r[1], r[0]]));
 // The lowest loot tier of each boss (the game's compendium), the reference for its special pieces besides their own tier.
 const LOOT_TIER = { "Lek'Mhir": 6, "Finanzamt": 7, "Loserqueue": 9, "Mel'Khmal": 11, "Ostmauer": 13 };
-const SOON = new Set(["Mel'Khmal", "Ostmauer"]);  // bosses whose items will probably change again soon
 function viewSpecial() {
   const row = (r, sub) => {
     const top = Math.max(r[5], r[6], r[7]), main = [0, 1, 2].find((i) => r[5 + i] === top);
@@ -2031,7 +2030,7 @@ function viewSpecial() {
   const isWeapon = (r) => ["Schmelzofen", "unbekannt", "Siegel"].includes(r[0]);
   const bosses = [...new Set(SPECIAL.filter((r) => !isWeapon(r)).map((r) => r[0]))];
   const bossRows = bosses.flatMap((b) => [
-    el("tr", { class: "special-group" }, el("td", { colspan: "5" }, b, SOON.has(b) ? el("span", { class: "soon" }, "Werte ändern sich vermutlich bald") : null)),
+    el("tr", { class: "special-group" }, el("td", { colspan: "5" }, b)),
     ...SPECIAL.filter((r) => r[0] === b).map((r) => row(r, `Stufe ${r[2]} | ${r[3]} | ${r[4]}`))]);
   return [el("section", { class: "grid" },
     el("div", { class: "head" }, el("h1", {}, "Spezialitems")),

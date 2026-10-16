@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.50.2 (16.10.2026)
+
+**Verbessert**
+- Spezialitems: Der Hinweis "Werte ändern sich vermutlich bald" bei Mel'Khmal und Ostmauer entfällt, Änderungen stehen jetzt in der Karte "Änderungen".
+
 ## 0.50.1 (16.10.2026)
 
 **Verbessert**

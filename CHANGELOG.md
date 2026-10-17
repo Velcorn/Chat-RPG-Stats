@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.51.2 (17.10.2026)
+
+### Oberfläche
+- Schrift: Inter, mit der Seite ausgeliefert (kein Laden von fremden Servern).
+
 ## 0.51.1 (17.10.2026)
 
 **Verbessert**

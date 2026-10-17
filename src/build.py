@@ -485,6 +485,7 @@ def main() -> None:
     args = ap.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
     shutil.copy(Path(__file__).parent.parent / "site" / "index.html", args.out / "index.html")
+    shutil.copytree(Path(__file__).parent.parent / "site" / "fonts", args.out / "fonts", dirs_exist_ok=True)
     summary = build(args.data, args.out)
     print(f"{summary['players']} Spieler, {summary['runs']} Läufe, {summary['fights']['total']} Kämpfe")
 

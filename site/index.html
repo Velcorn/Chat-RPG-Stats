@@ -2067,9 +2067,10 @@ function viewUpgrade(s) {
         { label: "Art", get: (r) => r.kind },
         ...[0, 1, 2, 3].map((i) => ({ label: `auf +${i + 1}`, num: true, get: (r) => `+${r.g[i] - (i ? r.g[i - 1] : 0)}` })),
         { label: "Summe bei +4", num: true, get: (r) => `+${r.total}` },
-        { label: "ein Stufen-Schritt", num: true, title: "Punkte, die ein Stück der nächsten Stufe mehr hat", get: (r) => `+${oneTier(r.kind)}` }], gainRows, { cards: true })),
+        { label: "Punkte der nächsten Stufe", num: true, title: "Punkte, die ein Stück der nächsten Stufe mehr hat als eines dieser Stufe", get: (r) => `+${oneTier(r.kind)}` }], gainRows, { cards: true })),
       el("p", { class: "note" }, "Ein Stück auf +4 hat mehr Punkte als eines der nächsten Stufe (Einhandwaffe +6 gegen +5), kostet aber Rollen und Versuche. Die Summe der Basiswerte bleibt gleich, die Punkte kommen in den Wert, den du beim Verbessern wählst (anteilig oder alles in einen).")),
-    card("Kosten", el("p", { class: "note" }, `Ein Versuch kostet ${count(per3, "Rolle", "Rollen")} je angefangene drei Stufen des Stücks, also aufgerundet Stufe geteilt durch drei mal ${per3} (Stufe 13: ${fmtInt(per3 * Math.ceil(13 / 3))}).`)))];
+    card("Kosten", el("p", { class: "note" }, `Ein Versuch kostet ${count(per3, "Rolle", "Rollen")} je angefangene drei Stufen des Stücks` +
+      (per3 === 1 ? "" : ` (aufgerundet Stufe geteilt durch drei, mal ${per3})`) + ` (Stufe 13: ${count(per3 * Math.ceil(13 / 3), "Rolle", "Rollen")}).`)))];
 }
 
 async function viewGame(s, sub) {

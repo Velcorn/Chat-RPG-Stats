@@ -3,6 +3,11 @@
 Nur Änderungen, die Besucher der Seite betreffen. Versionen nach [SemVer](https://semver.org/lang/de/). Solange die
 Version mit 0 beginnt, ist das Projekt noch in Entwicklung.
 
+## 0.51.3 (17.10.2026)
+
+### Oberfläche
+- Verbessern: Spalte "Punkte der nächsten Stufe" statt "ein Stufen-Schritt"; der Kostensatz nennt das "mal N" nur, wenn der Regelwert nicht 1 ist.
+
 ## 0.51.2 (17.10.2026)
 
 ### Oberfläche

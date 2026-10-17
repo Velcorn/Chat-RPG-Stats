@@ -14,8 +14,8 @@ tolkinsberaterderechte
 # --- Top 100 (automatisch, bitte hier nichts eintragen) ---
 fluriio
 vatom__
-gwentpleb
 gigaemerald
+gwentpleb
 guido0x0
 bioticzilean
 h0usi
@@ -30,6 +30,7 @@ koerdiskushi
 luemlig
 steamboat_itchy
 windor91
+austrian37
 thegreenlord
 holicone
 lymotheus
@@ -37,7 +38,6 @@ sakul553
 masuri_sora
 just_jem
 kaeys
-austrian37
 drdiehard
 bluelemon1
 torgallus
@@ -106,8 +106,8 @@ dhraconis
 anonymenichtraucher
 petrosp
 maximee_24
-moatal
 tuxedoamv
+moatal
 changoconmili
 weirdo_o5
-kiste22
+karlender

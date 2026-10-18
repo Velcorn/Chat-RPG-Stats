@@ -353,6 +353,10 @@
   .log .rule { font-size: 13px; color: var(--text-secondary); padding: 3px 0; }
   ul.note { padding-left: 18px; }
   ul.note li { margin-top: 6px; }
+  .site-changelog { display: grid; gap: 12px; min-width: 0; overflow-wrap: anywhere; }
+  .site-changelog ul { padding-left: 20px; }
+  .site-changelog li + li { margin-top: 6px; }
+  main:has(.site-changelog) { padding-left: 16px; padding-right: 16px; }
   footer { color: var(--text-muted); font-size: 12px; padding: 8px 0 20px; }
   footer a { color: var(--text-secondary); }
 </style>
@@ -2390,9 +2394,29 @@ async function viewTopLapse() {
     card("", box, el("p", { class: "note" }, "Die Rangliste des Spiels alle zwei Stunden. Jeder Spieler hat seine eigene Farbe, ein Klick auf den Namen öffnet seine Seite. Spieler, die aus der Anzeige fallen oder nachrücken, gleiten von unten ein und aus.")))];
 }
 
+// The site's own releases are separate from the measured game rule changes.
+async function viewSiteChanges(s) {
+  const intro = card("Änderungen der Seite",
+    el("p", {}, "Hier stehen die Änderungen dieser Statistikseite. Änderungen der Spielregeln findest du unter ",
+      el("a", { href: "#/spiel/aenderungen" }, "Spiel, Changelog"), "."),
+    el("p", { class: "value" }, `Aktuelle Version: ${s.version || "unbekannt"}`));
+  try {
+    const entries = await load("changelog.json");
+    intro.append(el("p", { class: "note" }, `Stand: ${entries[0]?.date || "unbekannt"}`));
+    return [el("section", { class: "site-changelog" }, intro, ...entries.map((entry) =>
+      card(`${entry.date} | Version ${entry.version}`, ...entry.groups.flatMap((group) => [
+        ...(group.title ? [el("h3", {}, group.title)] : []),
+        el("ul", {}, ...group.items.map((item) => el("li", {}, item))),
+      ]))))];
+  } catch {
+    return [intro, card("Keine Daten", el("p", { class: "note" }, "Die Änderungen konnten nicht geladen werden."))];
+  }
+}
+
 // ---- routing ----
 // Each section has sub pages (one per ranking, guild or fight table), shown as a second tab row.
 const SECTIONS = {
+  changelog: { subs: () => [], render: viewSiteChanges },
   start: { subs: () => [], render: viewStart },
   rangliste: { subs: () => [["ausruestungswert", "Ausrüstungswert"], ["kampfkraft", "Kampfkraft"], ["aufsteiger", "Aufsteiger"], ["zeitraffer", "Zeitraffer"]],
                render: viewRanks },
@@ -2444,7 +2468,8 @@ async function route() {
   $("footer").replaceChildren(`Stand ${fmtTime(s.generated)}${s.since ? `, Daten seit ${fmtSince(s.since)}` : ""}. Liest nur öffentliche Daten von `,
     el("a", { href: "https://rpg.sola.rip" }, "rpg.sola.rip"),
     ` (etwa alle 5 Minuten, von 1 bis 9 Uhr alle 15, ohne Anmeldung${requests}). Kein offizielles Angebot des Spiels. Fast komplett vibe-coded (von einer KI geschrieben, nur stichprobenartig geprüft), die Zahlen sind Schätzungen. `,
-    el("a", { href: `https://github.com/${REPO}` }, "Quellcode und Beobachtungsliste"), ". Im Spiel: ",
+    el("a", { href: `https://github.com/${REPO}` }, "Quellcode und Beobachtungsliste"), ". ",
+    el("a", { href: "#/changelog" }, "Änderungen der Seite"), ". Im Spiel: ",
     gameLink("/kampf", "Kämpfe"), ", ", gameLink("/bestenliste", "Bestenliste"), ", ", gameLink("/gilden", "Gilden"), ", ",
     gameLink("/markt", "Markt"), ", ", gameLink("/kanaele", "Kanäle"), ".");
   window.scrollTo(0, 0);

@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import bisect
 import json
+import re
 import shutil
 import statistics
 import time
@@ -266,6 +267,8 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
         shutil.rmtree(target)
     (target / "p").mkdir(parents=True)
     write(target / "summary.json", summary)
+    write(target / "changelog.json", parse_changelog(
+        (Path(__file__).resolve().parent.parent / "CHANGELOG.md").read_text("utf-8")))
     write(target / "players.json", sorted(
         ([login, p.get("name") or login, p["gs"], p.get("guild"), bool(p.get("active"))]
          for login, p in players.items() if p.get("gs") is not None), key=lambda r: -r[2]))
@@ -371,6 +374,28 @@ def gear_series(series: list, share: float = DIP_SHARE, within: float = 3600) ->
         out.append([t, v])
         i += 1
     return out
+
+
+def parse_changelog(text: str) -> list[dict]:
+    """Read dated releases with heading or bold-label groups; preserve item text."""
+    entries = []
+    group = None
+    for line in text.splitlines():
+        if match := re.fullmatch(r"## (\d{4}\.\d{2}\.\d{2}) \((\d{2}\.\d{2}\.\d{4})\)", line):
+            entries.append({"version": match[1], "date": match[2], "groups": []})
+            group = None
+        elif entries:
+            if match := re.fullmatch(r"(?:### (.+)|\*\*(.+)\*\*)", line):
+                group = {"title": match[1] or match[2], "items": []}
+                entries[-1]["groups"].append(group)
+            elif line.startswith("- "):
+                if group is None:
+                    group = {"title": "", "items": []}
+                    entries[-1]["groups"].append(group)
+                group["items"].append(line[2:])
+            elif line[:1].isspace() and line.strip() and group and group["items"]:
+                group["items"][-1] += " " + line.strip()
+    return sorted(entries, key=lambda entry: entry["version"], reverse=True)
 
 
 def project_version() -> str | None:

@@ -39,9 +39,12 @@ keep it.
    table, schedule, setup and commands must be true today), docs/funktionsweise.md (data flow and every calculation)
    and this file's map and facts. Grep them for every number, name and behaviour the change touches, removed things
    included. Operator details (timers, workflow plumbing) belong in docs/funktionsweise.md and this file, not the README.
-3. If visitors of the page notice it: bump the version in `pyproject.toml`, `uv lock`, add a German `CHANGELOG.md` entry.
-   The changelog lists only what affects users (page, data, addresses); no CI, tests, docs, badges, refactors or
-   infrastructure. Changes nobody sees get no entry and no version bump. No git tags.
+3. If visitors notice a change, use CalVer YYYY.MM.DD, exactly one version per calendar day, without suffixes.
+   The first change of a day sets today's version in `pyproject.toml`, runs `uv lock`, and starts that day's
+   `CHANGELOG.md` entry (`## YYYY.MM.DD (DD.MM.YYYY)`). Further changes that day keep the version and append
+   bullets to the same entry. Keep groups in this order: Neu, Verbessert, Oberfläche, Behoben, Inkompatibel,
+   Geändert, Entfernt, Hinweis, then any additional groups. The changelog lists only visitor-facing changes.
+   Historical references through 0.51.3 are old SemVer numbers and need no rewrite. No git tags.
 4. Commit, push: `SSH_AUTH_SOCK=$XDG_RUNTIME_DIR/ssh-agent.socket git push`.
 
 ## Project map
@@ -52,9 +55,9 @@ Python modules live in `src/` (flat, no package; tests and tools need `PYTHONPAT
   Writes `data/days/YYYY-MM-DD.jsonl` (one line per run) and `data/state.json` on the `data` branch.
 - `src/fightstats.py`: fight statistics for `summary.json` -> `stats` (death share in won fights and per fight (`fallen`), roles, power vs recommendation, hours, channels); only sums per fight, never per player.
 - `src/build.py`: replays the day files (`History`, incl. rules log and live share per channel), computes pace, forecasts, peers, guild standing, fight odds; writes
-  `_site/data/summary.json`, `players.json` (search index), `builds.json` (every known split without names, for the build map), `timelapse.json` (`src/timelapse.py`: percentile curves and histogram shares every six hours, for everyone and each guild), `toplapse.json` (the top-100 board every two hours, `History.board_at`) and `p/<login>.json`.
+  `_site/data/changelog.json` (the site changelog parsed from `CHANGELOG.md`), `_site/data/summary.json`, `players.json` (search index), `builds.json` (every known split without names, for the build map), `timelapse.json` (`src/timelapse.py`: percentile curves and histogram shares every six hours, for everyone and each guild), `toplapse.json` (the top-100 board every two hours, `History.board_at`) and `p/<login>.json`.
 - `site/index.html`: the whole dashboard (no build step; hash routes `#/<section>/<sub>` with sections `start` (default), `rangliste` (subs incl. `zeitraffer`), `gilden` (subs `vergleich`, `zeitraffer` + one per guild), `spiel` (subs `regeln`, `aenderungen` (measured rule changes only), `formen` (static `FORMS` table); `RULE_LABELS` holds the German rule names), `kaempfe` (subs `uebersicht`, `kraft`, `letzte`; see `SECTIONS`: each sub
-  page is a tab in the second row) and `#/spieler/<login>`).
+  page is a tab in the second row) and `#/changelog` (site changes, linked in the footer), `#/spieler/<login>`).
 - `src/watchlist.py` + `watchlist.txt`: the list (channel owners by default, others opt-in), changed by the issue form via `.github/workflows/watchlist.yml`; below the marker line `collect.AUTO_MARK` the board's top 100, rewritten by `watchlist.sync` (`--sync`, a step of `collect.yml`) whenever they change. Only the part above the marker is read in every run.
 - `collect.stat_digest`/`player_stats` (0.27.0): per fight the fighters counted by role and stat in steps of 10 (`sx`, no names), `fightstats.stat_curves` sums the won boss fights per boss for the Kampfkraft page.
 - `fightstats.UPDATE` (04.10.2026, the story update) splits `eras.after`/`eras.before` for the fight pages.

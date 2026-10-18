@@ -80,7 +80,9 @@ class CollectTests(unittest.TestCase):
         text = (Path(build.__file__).resolve().parent.parent / "pyproject.toml").read_text("utf-8")
         pipe = Pipeline()
         pipe.run(snap({"karni": [member("a", 100)]}), T0)
-        summary, _ = pipe.build(T0)
+        summary, data = pipe.build(T0)
+        entries = json.loads((data / "changelog.json").read_text("utf-8"))
+        self.assertEqual(entries[0]["version"], summary["version"])
         self.assertEqual(summary["version"], re.search(r'^version = "([^"]+)"', text, re.M)[1])
         with mock.patch.object(build.Path, "read_text", side_effect=OSError):
             self.assertIsNone(build.project_version())

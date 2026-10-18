@@ -132,3 +132,7 @@ Eine Startseite und vier Bereiche mit einer zweiten Tab-Zeile, damit keine Seite
 
 Alle Werte sind Schätzungen aus dem, was seit Beginn der Aufzeichnung gesammelt wurde. Am Anfang und bei neuen
 Spielern fehlen Tempo und Prognose.
+
+Versionsregel: CalVer JJJJ.MM.TT, genau eine Version pro Kalendertag ohne Suffix. Die erste Änderung eines Tages setzt die Version in `pyproject.toml`, führt `uv lock` aus und beginnt den Tagesabschnitt in `CHANGELOG.md`. Weitere Änderungen desselben Tages behalten die Version und ergänzen denselben Eintrag. Keine Git-Tags. Ältere Angaben wie "seit 0.45.0" sind historische SemVer-Nummern und bleiben erhalten.
+
+**Änderungen der Seite** (`#/changelog`, Link im Fuß): `src/build.py` liest `CHANGELOG.md` beim Bau und schreibt `data/changelog.json` mit Version, Datum und Gruppen von Stichpunkten. Die Seite lädt diese Datei erst beim Öffnen, zeigt die aktuelle Version sowie den Stand des neuesten Eintrags und listet die Tage absteigend. Die gemessenen Regeländerungen unter Spiel bleiben eine eigene Ansicht.

@@ -76,7 +76,7 @@ Eigene Kopie (Fork): unter Settings -> Pages als Quelle "GitHub Actions" wählen
 einmal von Hand starten. Danach läuft sie nach Zeitplan.
 
 Die Action `CI` prüft jeden Push und jeden Pull Request (dieselben Hooks wie lokal, dazu die Testabdeckung, aus der das
-Badge oben entsteht). Neue Fassungen der Actions und Abhängigkeiten schlägt Dependabot vor.
+Badge oben entsteht). Neue Fassungen der Actions und Abhängigkeiten werden als Änderungsvorschläge geprüft.
 
 ## Wenn der Betreiber des Spiels das nicht möchte
 
@@ -85,3 +85,5 @@ Dann wird der Sammler sofort abgestellt. Ein Issue oder eine Nachricht genügt.
 ## Lizenz
 
 [MIT](LICENSE)
+
+Versionsregel: CalVer JJJJ.MM.TT, genau eine Version pro Kalendertag ohne Suffix. Die erste Änderung eines Tages setzt die Version in `pyproject.toml`, führt `uv lock` aus und beginnt den Tagesabschnitt in `CHANGELOG.md`. Weitere Änderungen desselben Tages behalten die Version und ergänzen denselben Eintrag. Keine Git-Tags. Ältere Angaben wie "seit 0.45.0" sind historische SemVer-Nummern und bleiben erhalten.

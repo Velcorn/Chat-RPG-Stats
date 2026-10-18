@@ -473,6 +473,11 @@
 },
 "12": {
 "armor": {
+"der Festung": [
+9,
+54,
+0
+],
 "des Berserkers": [
 41,
 22,
@@ -1844,6 +1849,11 @@
 53,
 7,
 6
+],
+"des Sturms": [
+16,
+3,
+47
 ],
 "des Zerstörers": [
 63,

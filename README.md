@@ -10,7 +10,7 @@ dein Ausrüstungswert, wann erreichst du den nächsten Rang oder die Top 100, wi
 Werte, wo stehst du in deiner Gilde, welche Kämpfe gewinnt man meistens und wann sind die Gildenschlüssel fertig. Die Seite hat vier Bereiche mit
 Unterseiten: Ranglisten (Ausrüstungswert, Kampfkraft, Aufsteiger), Gilden (Vergleich mit den ersten Siegen über die Bosse und eine Seite pro Gilde),
 Kämpfe (Übersicht, Kampfkraft, letzte Kämpfe) und Spiel (Regeln, Changelog, Ausrüstungsformen, Spezialitems), dazu eine Seite pro Spieler
-mit Teilen-Knopf. Die Startseite zeigt Kennzahlen, den Fortschritt im Schlüsselfinale, die Spielersuche, die Top 5, die Gilden und die Streamer mit Live-Status, Kämpfen, Link zum Stream und Gildenstand.
+mit Teilen-Knopf. Die Startseite zeigt Kennzahlen, den Fortschritt im Schlüsselfinale, die Spielersuche, die Top 5, die Gilden und die Streamer mit Live-Status, Kämpfen, Link zum Stream und Gildenstand. Die Saisonauswahl oben rechts öffnet den laufenden Saisonbericht und später unveränderliche Archive früherer Saisons mit Abschlusskarten, Rangreise und Vergleich.
 
 **Zur Seite: <https://velcorn.github.io/Chat-RPG-Stats/>**
 
@@ -67,6 +67,7 @@ HTML-Datei ohne Build-Schritt.
 ```
 uv run python src/collect.py --data data    # ein Lauf
 uv run python src/build.py --data data --out _site   # die Dateien für die Seite
+PYTHONPATH=src uv run python src/archive.py --data data --id beta-2026 --label "Beta 2026"  # Saisonende
 uv run python -m http.server -d _site            # ansehen unter http://localhost:8000
 PYTHONPATH=src uv run python -m unittest discover tests
 uv run ruff check

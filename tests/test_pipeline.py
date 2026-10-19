@@ -9,6 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from unittest import mock
 
+import archive as season_archive
 import build
 import collect
 
@@ -392,6 +393,7 @@ class BuildEdgeTests(unittest.TestCase):
             build.main()
         self.assertTrue((out / "index.html").exists())
         self.assertTrue((out / "data" / "p" / "a.json").exists())
+        self.assertEqual(json.loads((out / "data" / "seasons.json").read_text())["archives"], [])
         self.assertIn("1 Spieler", printed.getvalue())
 
     def test_rebuild_replaces_old_player_files(self):
@@ -409,6 +411,33 @@ class BuildEdgeTests(unittest.TestCase):
         _, out = pipe.build(T0)
         ranks = {lo: json.loads((out / "p" / f"{lo}.json").read_text())["forecast"]["rank"] for lo in "abc"}
         self.assertEqual(ranks, {"a": 1, "b": 1, "c": 3})
+
+
+class ArchiveTests(unittest.TestCase):
+    def test_archive_freezes_generated_data_and_the_next_build_publishes_it(self):
+        pipe = Pipeline()
+        pipe.run(snap({"karni": [member("a", 100)]}, board=[("a", 100, 80, 10, 10)]), T0)
+        pipe.run(snap({"karni": [member("a", 140)]}, board=[("a", 140, 120, 10, 10)]), T0 + DAY)
+
+        season = season_archive.archive(pipe.data, "beta-2026", "Beta 2026")
+
+        self.assertEqual(season, {"id": "beta-2026", "label": "Beta 2026", "start": T0,
+                                  "end": T0 + DAY, "archived": True})
+        manifest = json.loads((pipe.data / "seasons.json").read_text())
+        self.assertEqual(manifest["archives"], [season])
+        archived = json.loads((pipe.data / "seasons" / "beta-2026" / "summary.json").read_text())
+        self.assertEqual((archived["season"], archived["board"][0]["gear"]), (season, 140))
+        self.assertFalse((pipe.data / "seasons" / "beta-2026" / "seasons").exists())
+
+        out = Path(tempfile.mkdtemp())
+        build.build(pipe.data, out, T0 + DAY)
+        self.assertTrue((out / "data" / "seasons" / "beta-2026" / "p" / "a.json").exists())
+        with self.assertRaises(FileExistsError):
+            season_archive.archive(pipe.data, "beta-2026", "Beta 2026")
+        with self.assertRaises(ValueError):
+            season_archive.archive(pipe.data, "../bad", "Bad")
+        with self.assertRaises(ValueError):
+            season_archive.archive(pipe.data, "next", "  ")
 
 
 class HelperTests(unittest.TestCase):

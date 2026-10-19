@@ -46,6 +46,7 @@ Die letzten 30 bisherigen Versionen sind diesen Tagesversionen zugeordnet:
 
 ### Neu
 - Die Startseite zeigt den Schlüsselfortschritt aller Gilden und schätzt aus dem Nettofortschritt der letzten 24 Stunden, wann der letzte Schlüssel fertig wird.
+- Die Saisonauswahl oben rechts öffnet den laufenden Saisonbericht und später unveränderliche Archive früherer Saisons. Der Bericht zeigt Abschlusskarten, Rangreise, Meilensteine, Top 10 und den Vergleich mit einer anderen Saison; alle normalen Seiten bleiben auch im Archiv erreichbar.
 
 ### Verbessert
 - Die Oberfläche hebt Kennzahlen deutlicher hervor, trennt Bereiche klarer und bietet auf großen wie kleinen Bildschirmen mehr Luft und größere Bedienflächen.

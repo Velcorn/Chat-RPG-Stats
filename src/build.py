@@ -196,10 +196,30 @@ def key_progress(history: History, state: dict, guilds: dict, now: float) -> dic
             "finish": finish}
 
 
-def build(data: Path, out: Path, now: float | None = None) -> dict:
+def season_manifest(data: Path) -> dict:
+    """Published season index. It stays useful before the first season has been archived."""
+    try:
+        manifest = json.loads((data / "seasons.json").read_text("utf-8"))
+        if not isinstance(manifest.get("archives"), list):
+            raise ValueError
+        return manifest
+    except (OSError, ValueError, TypeError):
+        return {"current": {"id": "current", "label": "Aktuelle Saison"}, "archives": []}
+
+
+def publish_archives(data: Path, target: Path, manifest: dict) -> None:
+    """Copy immutable generated season data from the data branch into the Pages artifact."""
+    write(target / "seasons.json", manifest)
+    source = data / "seasons"
+    if source.exists():
+        shutil.copytree(source, target / "seasons", dirs_exist_ok=True)
+
+
+def build(data: Path, out: Path, now: float | None = None, include_archives: bool = True) -> dict:
     h = History(replay(data / "days"))
     state = json.loads((data / "state.json").read_text("utf-8"))
     now = now or h.last or time.time()
+    manifest = season_manifest(data)
     players, details, guilds = state["players"], state["details"], state["guilds"]
     gear = {login: p["gs"] for login, p in players.items() if p.get("gs") is not None}
     order = sorted(gear.values(), reverse=True)
@@ -273,6 +293,7 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
     boss_rec = state.get("boss_rec", {})
     summary_stats = fightstats.fight_stats(h.fights, h.fightx, now, boss_rec=boss_rec)
     summary = {"generated": int(now), "version": project_version(), "since": h.first, "runs": h.runs,
+               "season": {**manifest.get("current", {}), "start": h.first, "end": None, "archived": False},
                "load": {"per_run": h.requests,
                         "runs_per_day": collect.RUNS_PER_DAY},
                "players": len(players),
@@ -325,6 +346,8 @@ def build(data: Path, out: Path, now: float | None = None) -> dict:
         write(target / "p" / f"{login}.json", player_page(login, h, state, now, rank, paces, with_split,
                                                           top100_gear, top100_pace, guild_members,
                                                           gear_sorted))
+    if include_archives:
+        publish_archives(data, target, manifest)
     return summary
 
 

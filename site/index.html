@@ -38,6 +38,8 @@
   header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding-bottom: 16px;
            border-bottom: 1px solid var(--border); }
   header .tabs { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+  .season-pick { max-width: 190px; padding: 8px 10px; color: var(--text-primary); background: var(--surface-2);
+                 border: 1px solid var(--border); border-radius: 8px; }
   .tabs a { color: var(--text-secondary); text-decoration: none; padding: 8px 14px; border-radius: 8px;
             border: 1px solid var(--border); background: var(--surface-2); }
   .tabs a:hover { border-color: var(--text-muted); }
@@ -379,6 +381,30 @@
   .site-changelog ul { padding-left: 20px; }
   .site-changelog li + li { margin-top: 6px; }
   main:has(.site-changelog) { padding-left: 16px; padding-right: 16px; }
+  .season-hero { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(260px, .7fr); gap: 16px; }
+  .season-hero .card:first-child { background: linear-gradient(135deg, #1c2c3a, #191d1e 62%); }
+  .season-badge { display: inline-flex; padding: 3px 9px; border: 1px solid #76642f; border-radius: 99px;
+                  color: #f0d27b; background: #332c19; font-size: 12px; }
+  .season-title { margin: 14px 0 6px; font-size: clamp(26px, 4vw, 42px); line-height: 1.08; }
+  .season-days { margin: 8px 0 0; font-size: 38px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .season-share { grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); }
+  .season-card { position: relative; min-height: 170px; overflow: hidden;
+                 background: linear-gradient(145deg, #23384b, #171d24); border-color: #436078; }
+  .season-card::after { content: ""; position: absolute; width: 150px; height: 150px; right: -72px; bottom: -92px;
+                        border: 28px solid #ffffff0a; border-radius: 50%; }
+  .season-card .value { margin: 18px 0 2px; font-size: 32px; font-weight: 650; }
+  .season-compare { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .compare-value { font-size: 28px; font-weight: 650; margin: 8px 0; }
+  .compare-track { height: 7px; border-radius: 9px; background: #0e1112; overflow: hidden; }
+  .compare-track span { display: block; height: 100%; border-radius: inherit; background: var(--series-1); }
+  .milestones { display: grid; gap: 12px; }
+  .milestone { display: grid; grid-template-columns: 92px 1fr; gap: 12px; padding-bottom: 10px;
+               border-bottom: 1px solid var(--grid); }
+  @media (max-width: 760px) {
+    .season-hero, .season-share, .season-compare { grid-template-columns: 1fr; }
+    .season-pick { order: 2; margin-left: auto; max-width: 165px; }
+    .season-card { min-height: 135px; }
+  }
   footer { color: var(--text-muted); font-size: 12px; padding: 8px 0 20px; }
   footer a { color: var(--text-secondary); }
 </style>
@@ -398,6 +424,7 @@
       <a href="#/kaempfe" data-view="kaempfe">Kämpfe</a>
       <a href="#/spiel" data-view="spiel">Spiel</a>
     </nav>
+    <select id="season" class="season-pick" aria-label="Saison"></select>
   </header>
   <nav id="subtabs" class="tabs sub" aria-label="Bereich" hidden></nav>
   <div id="view" class="grid"></div>
@@ -458,13 +485,26 @@ const REPO = location.hostname.endsWith(".github.io")
   ? `${location.hostname.split(".")[0]}/${location.pathname.split("/")[1]}` : "Velcorn/Chat-RPG-Stats";
 const WATCH_FORM = `https://github.com/${REPO}/issues/new?template=watchlist.yml`;
 
+const requestedSeason = new URLSearchParams(location.search).get("s") || "";
+const SEASON_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(requestedSeason) ? requestedSeason : "";
+const DATA_ROOT = SEASON_ID ? `seasons/${SEASON_ID}/` : "";
+let SEASONS = { current: { id: "current", label: "Aktuelle Saison" }, archives: [] };
 const cache = {};
 function load(path) {
-  if (!cache[path]) {
-    cache[path] = fetch("data/" + path).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); });
-    cache[path].catch(() => delete cache[path]);
+  const key = DATA_ROOT + path;
+  if (!cache[key]) {
+    cache[key] = fetch("data/" + key).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); });
+    cache[key].catch(() => delete cache[key]);
   }
-  return cache[path];
+  return cache[key];
+}
+function loadBase(path) {
+  const key = `/${path}`;
+  if (!cache[key]) {
+    cache[key] = fetch("data/" + path).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); });
+    cache[key].catch(() => delete cache[key]);
+  }
+  return cache[key];
 }
 
 function tile(label, value, sub, power) {
@@ -2471,10 +2511,110 @@ async function viewSiteChanges(s) {
   }
 }
 
+function seasonShareCard(label, value, sub, text) {
+  const share = el("button", { class: "pill", type: "button", style: "cursor:pointer;background:none" }, "Teilen");
+  share.addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(text); share.textContent = "Kopiert"; }
+    catch { window.prompt("Zum Teilen kopieren:", text); }
+    setTimeout(() => { share.textContent = "Teilen"; }, 2000);
+  });
+  return el("section", { class: "card season-card" }, el("h2", {}, label),
+    el("div", { class: "value" }, value), el("p", { class: "note" }, sub), share);
+}
+
+function comparisonCard(label, mine, other, fmt = fmtInt) {
+  const high = Math.max(mine || 0, other || 0, 1), width = 100 * (mine || 0) / high;
+  return el("section", { class: "card" }, el("h2", {}, label), el("div", { class: "compare-value" }, fmt(mine)),
+    el("div", { class: "compare-track" }, el("span", { style: `width:${width}%` })),
+    el("p", { class: "note" }, `Vergleich: ${fmt(other)}`));
+}
+
+async function comparisonSummary() {
+  try {
+    if (SEASON_ID) return { label: SEASONS.current?.label || "Aktuelle Saison", data: await loadBase("summary.json") };
+    const previous = SEASONS.archives[0];
+    return previous ? { label: previous.label, data: await loadBase(`seasons/${previous.id}/summary.json`) } : null;
+  } catch { return null; }
+}
+
+async function viewSeason(s) {
+  const season = s.season || {}, archived = !!season.archived;
+  const label = season.label || (archived ? "Archiv" : "Aktuelle Saison");
+  const days = s.since ? Math.max(1, Math.ceil((s.generated - s.since) / DAY_S)) : null;
+  const leader = s.board[0], strongest = [...s.guilds].sort((a, b) => (b.avg_gear || 0) - (a.avg_gear || 0))[0];
+  const total = s.stats.total;
+  const badge = archived ? "Saison abgeschlossen" : "Saison läuft";
+  const end = archived && season.end ? fmtSince(season.end) : `Stand ${fmtTime(s.generated)}`;
+  const intro = el("div", { class: "season-hero" },
+    card(null, el("span", { class: "season-badge" }, badge), el("h1", { class: "season-title" }, `${label}: Der Rückblick`),
+      el("p", { class: "secondary" }, archived
+        ? "Der unveränderliche Abschluss mit Rangreise, Meilensteinen und den wichtigsten Zahlen."
+        : "Der Zwischenstand wird mit jedem Sammellauf aktualisiert und beim Saisonende unveränderlich archiviert.")),
+    card(label, el("div", { class: "season-days" }, days == null ? "-" : count(days, "Tag", "Tage")),
+      el("p", { class: "note" }, s.since ? `${fmtSince(s.since)} bis ${end}` : end)));
+
+  const headline = el("div", { class: "grid tiles" },
+    tile(archived ? "Platz 1" : "Aktuell Platz 1", leader ? leader.name : "-", leader ? `${fmtInt(leader.gear)} Ausrüstungswert` : ""),
+    tile("Höchster Ausrüstungswert", leader ? fmtInt(leader.gear) : "-", leader ? leader.name : ""),
+    tile("Kämpfe", fmtInt(total.n), `${fmtInt(total.wins)} gewonnen (${pct(total.wins, total.n)})`),
+    tile("Aktive Spieler", fmtInt(s.active), `${fmtInt(s.players)} insgesamt erfasst`));
+
+  const cards = el("div", { class: "grid season-share" },
+    seasonShareCard("Ranglistenkarte", leader ? `${leader.name} · #1` : "Noch offen",
+      leader ? `${fmtInt(leader.gear)} Ausrüstungswert` : "Noch keine Rangliste",
+      leader ? `${label}: ${leader.name} ${archived ? "beendet die Saison" : "steht aktuell"} auf Rang 1 mit ${fmtInt(leader.gear)} Ausrüstungswert.` : label),
+    seasonShareCard("Bossjäger", count(total.wins, "Sieg", "Siege"), `${pct(total.wins, total.n)} der Kämpfe gewonnen`,
+      `${label}: ${fmtInt(total.wins)} von ${fmtInt(total.n)} Kämpfen gewonnen.`),
+    seasonShareCard("Stärkste Gilde", strongest ? strongest.name : "-",
+      strongest ? `Ø ${fmtDec(strongest.avg_gear, 1)} Ausrüstungswert` : "Noch keine Gilde",
+      strongest ? `${label}: ${strongest.name} führt mit Ø ${fmtDec(strongest.avg_gear, 1)} Ausrüstungswert.` : label));
+
+  const chosen = getMe() || leader?.login;
+  let journey = null;
+  if (chosen) {
+    try {
+      const p = await load(`p/${encodeURIComponent(chosen)}.json`);
+      journey = el("div", { class: "grid two" },
+        chartCard(`Ausrüstungswert von ${p.name}`, p.series.gear, { until: s.generated }),
+        chartCard(`Rang von ${p.name}`, p.series.rank, { invert: true, until: s.generated, empty: "noch nicht in den Top 100" }));
+      if (getMe()) cards.prepend(seasonShareCard("Dein Abschluss", `${p.name} · #${fmtInt(p.forecast.rank)}`,
+        `${fmtInt(p.gear)} Ausrüstungswert${p.guild ? ` · ${p.guild.name}` : ""}`,
+        `${label}: ${p.name}, Rang ${fmtInt(p.forecast.rank)}, ${fmtInt(p.gear)} Ausrüstungswert.`));
+    } catch { /* a player without an archived page: the global report still works */ }
+  }
+
+  const first = new Map();
+  for (const row of [...(s.first_kills || [])].sort((a, b) => (a[4] || "").localeCompare(b[4] || ""))) {
+    if (!first.has(row[0])) first.set(row[0], row);
+  }
+  const milestones = [...first.values()].slice(-8).reverse();
+  const moments = milestones.length ? card("Saisonmomente", el("div", { class: "milestones" }, ...milestones.map((r) =>
+    el("div", { class: "milestone" }, el("span", { class: "muted" }, r[4] ? fmtSince(iso(r[4])) : "-"),
+      el("div", {}, el("strong", {}, `${r[3] || r[2]} besiegt ${r[0]} zuerst`),
+        el("div", { class: "note" }, "Erster Gildensieg laut Spiel")))))) : null;
+
+  const other = await comparisonSummary();
+  const compare = other ? [el("div", { class: "head" }, el("h1", {}, `${label} im Vergleich mit ${other.label}`)),
+    el("div", { class: "grid season-compare" },
+      comparisonCard("Höchster Ausrüstungswert", leader?.gear, other.data.board[0]?.gear),
+      comparisonCard("Aktive Spieler", s.active, other.data.active),
+      comparisonCard("Gewonnene Kämpfe", total.wins, other.data.stats.total.wins))] : [];
+
+  return [el("section", { class: "grid" }, intro, headline, cards, journey, moments,
+    ...compare,
+    card(archived ? "Finale Rangliste" : "Aktuelle Top 10", table([
+      { label: "#", num: true, get: (r) => fmtInt(r.rank) },
+      { label: "Spieler", get: playerLink },
+      { label: "Ausrüstungswert", short: "AW", num: true, get: (r) => fmtInt(r.gear) },
+      { label: "Gilde", sm: false, get: (r) => r.guild || "-" },
+    ], s.board.slice(0, 10))))];
+}
+
 // ---- routing ----
 // Each section has sub pages (one per ranking, guild or fight table), shown as a second tab row.
 const SECTIONS = {
   changelog: { subs: () => [], render: viewSiteChanges },
+  saison: { subs: () => [], render: viewSeason },
   start: { subs: () => [], render: viewStart },
   rangliste: { subs: () => [["ausruestungswert", "Ausrüstungswert"], ["kampfkraft", "Kampfkraft"], ["aufsteiger", "Aufsteiger"], ["zeitraffer", "Zeitraffer"]],
                render: viewRanks },
@@ -2485,10 +2625,26 @@ const SECTIONS = {
   kaempfe: { subs: () => [["uebersicht", "Übersicht"], ["kraft", "Kampfkraft"], ["letzte", "Letzte Kämpfe"]],
              render: viewFights },
 };
+async function initSeasons() {
+  try { SEASONS = await loadBase("seasons.json"); } catch { /* first build before the season index exists */ }
+  const pick = $("season");
+  pick.replaceChildren(el("option", { value: "live" }, SEASONS.current?.label || "Aktuelle Saison"),
+    el("option", { value: "report" }, "Aktueller Saisonbericht"),
+    ...SEASONS.archives.map((s) => el("option", { value: `archive:${s.id}` }, s.label)));
+  pick.addEventListener("change", () => {
+    if (pick.value.startsWith("archive:")) {
+      location.href = `${location.pathname}?s=${encodeURIComponent(pick.value.slice(8))}#/saison`;
+    } else {
+      location.href = `${location.pathname}${pick.value === "report" ? "#/saison" : "#/start"}`;
+    }
+  });
+}
+
 async function route() {
   $("suggest").hidden = true; $("q").value = "";
   const [, name, arg] = location.hash.split("/");
   const view = name === "spieler" ? "player" : SECTIONS[name] ? name : "start";
+  $("season").value = SEASON_ID ? `archive:${SEASON_ID}` : view === "saison" ? "report" : "live";
   for (const a of document.querySelectorAll("header .tabs a")) a.toggleAttribute("aria-current", a.dataset.view === view);
   let s;
   try { s = await load("summary.json"); }
@@ -2520,10 +2676,11 @@ async function route() {
   if (view === "start") $("hero-search").replaceWith(search);
   $("repo-link").href = `https://github.com/${REPO}`;
   $("ver").textContent = [s.version ? `v${s.version}` : "", `Stand ${fmtTime(s.generated)}`].filter(Boolean).join(" | ");
-  document.title = view === "player" ? `${login} | Chat-RPG Statistik` : "Chat-RPG Statistik";
+  document.title = view === "player" ? `${login} | Chat-RPG Statistik`
+    : view === "saison" ? `${s.season?.label || "Saisonbericht"} | Chat-RPG Statistik` : "Chat-RPG Statistik";
   const ld = s.load;
   const requests = ld && ld.per_run ? `, zusammen etwa ${fmtInt(ld.per_run * ld.runs_per_day)} Anfragen am Tag: ${fmtInt(ld.per_run)} pro Lauf, ${fmtInt(ld.runs_per_day)} Läufe` : "";
-  $("footer").replaceChildren(`Stand ${fmtTime(s.generated)}${s.since ? `, Daten seit ${fmtSince(s.since)}` : ""}. Liest nur öffentliche Daten von `,
+  $("footer").replaceChildren(`${s.season?.archived ? "Archivstand" : "Stand"} ${fmtTime(s.generated)}${s.since ? `, Daten seit ${fmtSince(s.since)}` : ""}. Liest nur öffentliche Daten von `,
     el("a", { href: "https://rpg.sola.rip" }, "rpg.sola.rip"),
     ` (etwa alle 5 Minuten, von 1 bis 9 Uhr alle 15, ohne Anmeldung${requests}). Kein offizielles Angebot des Spiels. Fast komplett vibe-coded (von einer KI geschrieben, nur stichprobenartig geprüft), die Zahlen sind Schätzungen. `,
     el("a", { href: `https://github.com/${REPO}` }, "Quellcode und Beobachtungsliste"), ". ",
@@ -2533,7 +2690,7 @@ async function route() {
   window.scrollTo(0, 0);
 }
 window.addEventListener("hashchange", route);
-route();
+initSeasons().then(route);
 </script>
 <div id="tapTip" hidden></div>
 </body>

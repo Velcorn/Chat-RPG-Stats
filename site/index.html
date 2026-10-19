@@ -85,6 +85,21 @@
   .stream .head { margin-bottom: 4px; }
   .stream .lines { display: grid; gap: 2px; margin: 8px 0; }
   .stream .lines div { display: flex; justify-content: space-between; gap: 8px; }
+  .key-card { background: linear-gradient(135deg, #211f2b, #18252d); border-color: #4e4962; }
+  .key-card > .head { align-items: flex-start; }
+  .key-finish { text-align: right; color: var(--text-secondary); }
+  .key-finish strong { display: block; color: #fff; font-size: 17px; }
+  .keys { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+  .key-row { padding: 14px; border: 1px solid #3b4550; border-radius: 10px; background: #11161980; }
+  .key-row .head { flex-wrap: nowrap; }
+  .key-row .name { color: var(--text-primary); font-weight: 650; text-decoration: none; overflow: hidden;
+                   white-space: nowrap; text-overflow: ellipsis; }
+  .key-numbers { margin: 8px 0 6px; font-size: 20px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .key-track { height: 7px; overflow: hidden; border-radius: 99px; background: #0c1012; }
+  .key-track span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #6574db, #3db6c6); }
+  .key-meta { display: flex; justify-content: space-between; gap: 8px; margin-top: 8px; color: var(--text-secondary);
+              font-size: 12px; font-variant-numeric: tabular-nums; }
+  @media (max-width: 760px) { .keys { grid-template-columns: 1fr; } .key-finish { text-align: left; } }
   h3 { font-size: 13px; margin: 14px 0 0; font-weight: 600; }
   .era { margin-bottom: 4px; }
   h2.section { font-size: 15px; margin: 10px 0 0; color: var(--text-secondary); }
@@ -421,6 +436,12 @@ const iso = (s) => s ? Date.parse(s) / 1000 : null;
 const pct = (a, b) => b ? `${fmtDec(100 * a / b, 0)} %` : "-";
 // "in weniger als einem Tag" / "in etwa 3 Tagen"
 const inDays = (d) => d < 1 ? "in weniger als einem Tag" : `in etwa ${count(Math.ceil(d), "Tag", "Tagen")}`;
+const remaining = (seconds) => {
+  const hours = Math.max(0, Math.ceil(seconds / 3600));
+  if (hours < 24) return count(hours, "Stunde", "Stunden");
+  const days = Math.floor(hours / 24), rest = hours % 24;
+  return `${count(days, "Tag", "Tagen")}${rest ? ` ${count(rest, "Stunde", "Stunden")}` : ""}`;
+};
 const KINDS = { BOSS: "Boss", ADVENTURE: "Abenteuer", RAID: "Überfall" };
 // Every story adventure since 04.10.2026 arrives with difficulty 3 (a placeholder, not a measure) and since 11.10.2026
 // drops at most each fighter's own tier: an adventure shows its name only. An Überfall shows its difficulty after the
@@ -1614,6 +1635,35 @@ function channelLines(c) {
     c.death != null ? el("div", {}, el("span", { class: "muted" }, "Gefallen in Siegen"), pctv(c.death)) : null);
 }
 
+function keyCard(s) {
+  const keys = s.keys?.guilds || [];
+  if (!keys.length) return null;
+  const finish = s.keys.finish;
+  const summary = finish == null
+    ? [el("strong", {}, "Prognose sammelt Verlauf"), "nach 3 Stunden Nettofortschritt"]
+    : finish <= s.generated
+      ? [el("strong", {}, "Alle Schlüssel bereit"), "der letzte Boss kann folgen"]
+      : [el("strong", {}, `Noch ${remaining(finish - s.generated)}`), `letzter Schlüssel etwa ${fmtTime(finish)}`];
+  const box = card(null, el("div", { class: "key-card-inner" },
+    el("div", { class: "head" },
+      el("div", {}, el("h2", {}, "Schlüsselfinale"), el("p", { class: "note" }, "Fragmente und Nettofortschritt der letzten 24 Stunden")),
+      el("div", { class: "key-finish" }, ...summary)),
+    el("div", { class: "keys" }, ...keys.map((k) => {
+      const status = k.forged ? "geschmiedet" : k.ready ? "bereit" : k.eta == null ? "Prognose folgt" : `etwa ${fmtTime(k.eta)}`;
+      const rate = k.forged || k.ready ? (k.forged ? "Geschmiedet" : "Fragmente komplett")
+        : k.net_rate == null ? "Noch kein 3-Stunden-Verlauf" : `${signed(k.net_rate, 1)} netto / Std.`;
+      return el("div", { class: "key-row" },
+        el("div", { class: "head" }, el("a", { class: "name", href: `#/gilden/${k.login}` }, k.name),
+          el("span", { class: k.ready || k.forged ? "pill on" : "pill" }, `${fmtDec(k.percent, 1)} %`)),
+        el("div", { class: "key-numbers" }, `${fmtInt(k.fragments)} / ${fmtInt(k.required)}`),
+        el("div", { class: "key-track", title: `${fmtDec(k.percent, 1)} %` },
+          el("span", { style: `width:${Math.max(0, Math.min(100, k.percent))}%` })),
+        el("div", { class: "key-meta" }, el("span", {}, rate), el("span", {}, status)));
+    }))));
+  box.classList.add("key-card");
+  return box;
+}
+
 function viewStart(s) {
   const streams = Object.entries(s.channels).map(([login, live]) => ({ login, live, guild: s.guilds.find((g) => g.login === login) }))
     .sort((a, b) => (b.live - a.live) || ((b.guild?.avg_gear || 0) - (a.guild?.avg_gear || 0)));
@@ -1634,6 +1684,7 @@ function viewStart(s) {
       tile("Höchster Ausrüstungswert", top[0] ? fmtInt(top[0].gear) : "-", top[0] ? playerLink(top[0]) : ""),
       tile("Kämpfe", fmtInt(t.n), t.n ? `${fmtInt(t.wins)} gewonnen, letzte ${fmtInt(s.stats.days)} Tage` : ""),
       tile("Gilden", fmtInt(s.guilds.length), `${fmtInt(s.guilds.reduce((n, g) => n + g.members, 0))} Mitglieder`)),
+    keyCard(s),
     card("Spieler suchen", el("div", { id: "hero-search" }), el("p", { class: "note" }, "Erfasst sind alle aktiven Gildenmitglieder und die Top 100.")),
     el("div", { class: "grid two" },
       card("Top 5 nach Ausrüstungswert", top.length ? [table([

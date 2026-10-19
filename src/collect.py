@@ -1,7 +1,7 @@
 """Collector: one snapshot of the game's public data, stored as the changes since the last one.
 
 Runs every 15 minutes in GitHub Actions during the game's play window. Reads only public endpoints (no login,
-no cookies) and never sends anything but GETs. One run is about fourteen requests plus one per new fight and a
+no cookies) and never sends anything but GETs. One run is about seventeen requests plus one per new fight and a
 slice of the active players' profiles (about 55, so every active player is read about once a day), two seconds
 apart; once a day come the first kills (one).
 """
@@ -97,13 +97,24 @@ def snapshot(site: Site, watchlist: list[str], detail_after: int = 0, daily: dic
     (`top_day` is today's date then), so every one of them is as old as the same morning.
     `part` splits a run in two so the page can be published after the quick first one: "core" asks everything but the
     profiles, "profiles" only the profiles (who is due comes from the last state `prev`), "all" is both."""
-    snap: dict = {"guilds": {}, "watch": {}, "details": {}, "sweep": {}, "listed": list(watchlist)}
+    snap: dict = {"guilds": {}, "keys": {}, "watch": {}, "details": {}, "sweep": {},
+                  "listed": list(watchlist)}
     if part == "profiles":
         snap |= {"fights": [], "boards": {}}
         return read_profiles(site, snap, watchlist, sweep_after, top_day, prev or {})
     for g in site.get("/api/guilds"):
         if g.get("members"):
-            snap["guilds"][g["login"]] = site.get(f"/api/guilds/{quote(g['login'])}")
+            login = g["login"]
+            snap["guilds"][login] = site.get(f"/api/guilds/{quote(login)}")
+            try:
+                key = site.get(f"/api/guilds/{quote(login)}/schluessel")
+                snap["keys"][login] = {"fragments": key.get("fragments"), "required": key.get("required"),
+                                        "ready": bool(key.get("ready")), "forged": bool(key.get("forged")),
+                                        "seen": round(time.time())}
+            except urllib.error.HTTPError as exc:  # an extra: one unavailable key must not cost the whole run
+                exc.close()
+            except (urllib.error.URLError, TimeoutError, ValueError):
+                pass
     snap["boards"] = {b: site.get(f"/api/leaderboard?by={b}&limit=100") for b in BOARD_FIELDS}
     snap["fights"] = site.get("/api/combat/history")
     for f in sorted(snap["fights"], key=lambda f: f.get("id", 0)):
@@ -317,7 +328,7 @@ def state_from(snap: dict, prev: dict) -> dict:
         if login not in players:
             players[login] = {**old, "guild": None, "active": None}
     return {"players": players, "details": {**prev.get("details", {}), **details}, "boards": boards,
-            "guilds": guilds, "watch": watch,
+            "guilds": guilds, "keys": {**prev.get("keys", {}), **snap.get("keys", {})}, "watch": watch,
             "channels": {c["login"]: bool(c.get("live")) for c in snap["channels"] if c.get("enabled")},
             "rules": {k: v for k, v in (snap.get("rules") or {}).items() if k != "playWindowOpenNow"},
             "first_kills": (first_kills_state(snap["first_kills"]) if "first_kills" in snap
@@ -425,7 +436,7 @@ def stat_digest(d: dict, stats: dict[str, dict]) -> dict | None:
 def record(snap: dict, prev: dict, cur: dict, t: int) -> dict:
     """One line of history: only what changed since `prev`, plus new fights."""
     rec: dict = {"t": t}
-    for key in ("players", "details", "guilds", "channels", "rules", "watch"):
+    for key in ("players", "details", "guilds", "keys", "channels", "rules", "watch"):
         if diff := changed(prev.get(key, {}), cur[key]):
             rec[key] = diff
     if boards := changed(prev.get("boards", {}), cur["boards"]):

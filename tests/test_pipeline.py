@@ -30,6 +30,7 @@ def snap(members: dict, board=None, fights=(), watch=None, treasury=1000, sweep=
     rows = [{"login": lo, "displayName": lo, "gearScore": g, "attack": a, "defense": d, "support": s, "silver": 100,
              "quests": 10, "achievements": 5} for lo, g, a, d, s in board or []]
     return {"guilds": guilds, "boards": {b: rows for b in collect.BOARD_FIELDS}, "fights": list(fights),
+            "keys": {},
             "channels": [{"login": "sola", "live": True,
                                                                           "enabled": True}],
             "watch": watch or {},
@@ -92,6 +93,21 @@ class CollectTests(unittest.TestCase):
         pipe.run(snap({"karni": [member("a", 100)]}), T0)
         summary, _ = pipe.build(T0)
         self.assertEqual(summary["load"], {"per_run": 15, "runs_per_day": 224})
+
+    def test_key_forecast_uses_net_progress_over_the_moving_requirement(self):
+        pipe = Pipeline()
+        first = snap({"karni": [member("a", 100)]})
+        first["keys"] = {"karni": {"fragments": 100, "required": 200, "ready": False, "forged": False,
+                                    "seen": T0}}
+        pipe.run(first, T0)
+        last = snap({"karni": [member("a", 100)]})
+        last["keys"] = {"karni": {"fragments": 140, "required": 220, "ready": False, "forged": False,
+                                   "seen": T0 + 4 * 3600}}
+        pipe.run(last, T0 + 4 * 3600)
+        summary, _ = pipe.build(T0 + 4 * 3600)
+        key = summary["keys"]["guilds"][0]
+        self.assertEqual((key["rate"], key["required_rate"], key["net_rate"]), (10.0, 5.0, 5.0))
+        self.assertEqual((key["eta"], summary["keys"]["finish"]), (T0 + 20 * 3600, T0 + 20 * 3600))
 
     def test_player_leaving_every_guild_keeps_the_last_gear(self):
         pipe = Pipeline()

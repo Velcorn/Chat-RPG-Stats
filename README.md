@@ -7,10 +7,10 @@
 
 Ranglisten, Verlauf und Prognosen für das Twitch-Chat-RPG [rpg.sola.rip](https://rpg.sola.rip): Wie schnell wächst
 dein Ausrüstungswert, wann erreichst du den nächsten Rang oder die Top 100, wie verteilen ähnlich starke Spieler ihre
-Werte, wo stehst du in deiner Gilde, welche Kämpfe gewinnt man meistens. Die Seite hat vier Bereiche mit
+Werte, wo stehst du in deiner Gilde, welche Kämpfe gewinnt man meistens und wann sind die Gildenschlüssel fertig. Die Seite hat vier Bereiche mit
 Unterseiten: Ranglisten (Ausrüstungswert, Kampfkraft, Aufsteiger), Gilden (Vergleich mit den ersten Siegen über die Bosse und eine Seite pro Gilde),
 Kämpfe (Übersicht, Kampfkraft, letzte Kämpfe) und Spiel (Regeln, Changelog, Ausrüstungsformen, Spezialitems), dazu eine Seite pro Spieler
-mit Teilen-Knopf. Die Startseite zeigt Kennzahlen, die Spielersuche, die Top 5, die Gilden und die Streamer mit Live-Status, Kämpfen, Link zum Stream und Gildenstand.
+mit Teilen-Knopf. Die Startseite zeigt Kennzahlen, den Fortschritt im Schlüsselfinale, die Spielersuche, die Top 5, die Gilden und die Streamer mit Live-Status, Kämpfen, Link zum Stream und Gildenstand.
 
 **Zur Seite: <https://velcorn.github.io/Chat-RPG-Stats/>**
 
@@ -29,6 +29,7 @@ zeigt:
 | Daten | Quelle | Anfragen pro Lauf |
 |---|---|---|
 | Kampfkraft, Spenden und Aktivität aller Gildenmitglieder | Gildenliste und Gildenseiten | 1 + 1 pro Gilde |
+| Schlüsselfragmente und geschmiedete Schlüssel | Schlüsselseite jeder Gilde | 1 pro Gilde |
 | Ausrüstungswert (Angriff + Verteidigung + Unterstützung) der aktiven Mitglieder außerhalb der Top 100, jeder etwa einmal am Tag | Spielerseite | rund 55 |
 | Top 100 nach Ausrüstungswert (mit ATK/DEF/SUP) | Rangliste | 1 |
 | Die letzten 20 Kämpfe aller Kanäle | Kampfarchiv | 1 |
@@ -40,7 +41,7 @@ zeigt:
 | Spieler auf der Beobachtungsliste | Spielerseite | 1 pro Spieler |
 | Top 100 der Rangliste (ohne Liste) | Spielerseite | 100 einmal am Tag im ersten Lauf, sonst nur, wessen Ausrüstungswert sich seit dem letzten Profil geändert hat (etwa 6 je Lauf) |
 
-Ein Lauf macht also etwa 73 Anfragen (rund 14 für Ranglisten, Gilden, Kämpfe und Kanäle, die zuerst auf die Seite kommen, den Rest für Profile danach) und eine pro neuem Kampf, im Abstand von 2 Sekunden. Bei 12 Läufen pro Stunde (von 1 bis 9 Uhr 4)
+Ein Lauf macht also etwa 76 Anfragen (rund 17 für Ranglisten, Gilden, Schlüssel, Kämpfe und Kanäle, die zuerst auf die Seite kommen, den Rest für Profile danach) und eine pro neuem Kampf, im Abstand von 2 Sekunden. Bei 12 Läufen pro Stunde (von 1 bis 9 Uhr 4)
 (224 am Tag) kommt über den Tag eine entsprechend große Zahl zusammen, egal wie viele Leute die Seite ansehen: Besucher lesen nur fertige Dateien. Die Seite nennt diese Zahl
 im Fuß (gemessen am letzten Lauf, mal 224 Läufe am Tag). Jede Anfrage nennt
 das Projekt im User-Agent. Ist die Seite nicht erreichbar, fällt der Lauf aus. Gespeichert wird nur, was sich geändert hat.

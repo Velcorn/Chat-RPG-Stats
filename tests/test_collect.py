@@ -36,6 +36,7 @@ def answers(**extra):
     board = [{"login": "a", "gearScore": 100, "quests": 3, "silver": 500, "achievements": 7}]
     return {"/api/guilds": [{"login": "karni", "members": 2}, {"login": "leer", "members": 0}],
             "/api/guilds/karni": {"guild": {"name": "Karni"}, "members": [member("a", 100)]},
+            "/api/guilds/karni/schluessel": {"fragments": 80, "required": 100, "ready": False, "forged": False},
             **{f"/api/leaderboard?by={b}&limit=100": board for b in collect.BOARD_FIELDS},
             "/api/combat/history": [], "/api/combat?kompakt=true": [], "/api/channels": [],
             "/api/rules": {"questCooldownMinutes": 45}, "/api/players/a": {"displayName": "A"}, **extra}
@@ -50,12 +51,19 @@ class SnapshotTests(unittest.TestCase):
         site = FakeSite(answers())
         s = collect.snapshot(site, [], prev=KEPT)
         self.assertEqual(list(s["guilds"]), ["karni"])  # a guild without members costs no request
-        self.assertEqual((site.requests, s["watch"], "days" in s), (7, {}, False))  # the top is not due
+        self.assertEqual((site.requests, s["watch"], "days" in s), (8, {}, False))  # the top is not due
+        self.assertEqual(s["keys"]["karni"]["fragments"], 80)
+
+    def test_an_unavailable_key_does_not_cost_the_rest_of_the_run(self):
+        site = FakeSite(answers(**{"/api/guilds/karni/schluessel": 503}))
+        s = collect.snapshot(site, [], prev=KEPT)
+        self.assertEqual(s["keys"], {})
+        self.assertIn("/api/rules", site.paths)
 
     def test_the_top_100_is_read_in_full_on_the_day_s_first_run(self):
         site = FakeSite(answers())
         s = collect.snapshot(site, [], top_day="2026-10-09")
-        self.assertEqual(site.requests, 8)  # the board's one player included
+        self.assertEqual(site.requests, 9)  # the key and the board's one player included
         self.assertEqual((list(s["watch"]), s["days"]), (["a"], {"top": "2026-10-09"}))  # read like the watchlist
 
     def test_a_core_part_keeps_the_watchlist_profiles_it_does_not_read(self):
@@ -75,7 +83,7 @@ class SnapshotTests(unittest.TestCase):
         day = {"first_kills": "2026-10-04"}
         s = collect.snapshot(site, [], daily=day, prev=KEPT)
         self.assertEqual((s["first_kills"], s["days"]), ([{"level": 1}], day))
-        self.assertEqual(site.requests, 7 + 1)
+        self.assertEqual(site.requests, 8 + 1)
         for name in day:
             self.assertNotIn(name, collect.snapshot(FakeSite(answers()), [], prev=KEPT))
         broken = collect.snapshot(FakeSite(answers(**{"/api/guilds/first-kills": 503})), [], daily=day, prev=KEPT)
@@ -85,12 +93,12 @@ class SnapshotTests(unittest.TestCase):
         site = FakeSite(answers(**{"/api/players/sola": {"displayName": "Sola"}, "/api/players/weg": 404}))
         s = collect.snapshot(site, ["sola", "weg"], prev=KEPT)
         self.assertEqual(list(s["watch"]), ["sola"])
-        self.assertEqual(site.requests, 9)
+        self.assertEqual(site.requests, 10)
 
     def test_a_core_part_asks_no_profile_and_a_profiles_part_only_those(self):
         core = FakeSite(answers(**{"/api/players/sola": {"displayName": "Sola"}}))
         s = collect.snapshot(core, ["sola"], part="core", top_day="2026-10-09")
-        self.assertEqual((core.requests, s["watch"], s["sweep"], s["top"]), (7, {}, {}, ["a"]))
+        self.assertEqual((core.requests, s["watch"], s["sweep"], s["top"]), (8, {}, {}, ["a"]))
         prev = collect.state_from(s, {})
         later = FakeSite(answers(**{"/api/players/sola": {"displayName": "Sola"}}))
         p = collect.snapshot(later, ["sola"], part="profiles", prev=prev, top_day="2026-10-09")

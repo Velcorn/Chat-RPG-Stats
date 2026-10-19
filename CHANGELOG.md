@@ -44,6 +44,9 @@ Die letzten 30 bisherigen Versionen sind diesen Tagesversionen zugeordnet:
 
 ## 2026.10.19 (19.10.2026)
 
+### Neu
+- Die Startseite zeigt den Schlüsselfortschritt aller Gilden und schätzt aus dem Nettofortschritt der letzten 24 Stunden, wann der letzte Schlüssel fertig wird.
+
 ### Verbessert
 - Die Oberfläche hebt Kennzahlen deutlicher hervor, trennt Bereiche klarer und bietet auf großen wie kleinen Bildschirmen mehr Luft und größere Bedienflächen.
 - Lange Kennzahlenüberschriften passen auch auf 320 Pixel breite Bildschirme. Ranglisten und andere Tabellen zeigen wieder mehr Zeilen auf einmal.

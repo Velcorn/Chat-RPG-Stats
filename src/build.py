@@ -184,7 +184,7 @@ def key_progress(history: History, state: dict, guilds: dict, now: float) -> dic
                if net_rate is not None and net_rate > 0 and seen and now - seen <= 3600 else None)
         rows.append({"login": login, "name": guilds.get(login, {}).get("name") or login,
                      "fragments": fragments, "required": required,
-                     "percent": rounded(100 * fragments / required, 1) if required else 0,
+                     "percent": rounded(min(100, 100 * fragments / required), 1) if required else 0,
                      "ready": bool(current.get("ready")), "forged": bool(current.get("forged")),
                      "rate": rounded(rate, 1), "required_rate": rounded(required_rate, 1),
                      "net_rate": rounded(net_rate, 1), "eta": round(eta) if eta is not None else None,

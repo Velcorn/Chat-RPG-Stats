@@ -192,7 +192,7 @@ def key_progress(history: History, state: dict, guilds: dict, now: float) -> dic
     pending = [r for r in rows if not r["ready"] and not r["forged"]]
     finish = (max(r["eta"] for r in pending) if pending and all(r["eta"] is not None for r in pending)
               else round(now) if rows and not pending else None)
-    return {"guilds": sorted(rows, key=lambda r: (r["forged"], r["ready"], -r["percent"])),
+    return {"guilds": sorted(rows, key=lambda r: (-r["forged"], -r["ready"], -r["percent"], r["name"].casefold())),
             "finish": finish}
 
 

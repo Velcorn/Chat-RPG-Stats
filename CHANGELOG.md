@@ -51,6 +51,7 @@ Die letzten 30 bisherigen Versionen sind diesen Tagesversionen zugeordnet:
 ### Verbessert
 - Die Oberfläche hebt Kennzahlen deutlicher hervor, trennt Bereiche klarer und bietet auf großen wie kleinen Bildschirmen mehr Luft und größere Bedienflächen.
 - Lange Kennzahlenüberschriften passen auch auf 320 Pixel breite Bildschirme. Ranglisten und andere Tabellen zeigen wieder mehr Zeilen auf einmal.
+- Das Schlüsselfinale ordnet die Gilden jetzt klar nach ihrem Fortschritt: geschmiedet, bereit, dann absteigend nach Prozent.
 
 ## 2026.10.18 (18.10.2026)
 

@@ -110,6 +110,18 @@ class CollectTests(unittest.TestCase):
         self.assertEqual((key["rate"], key["required_rate"], key["net_rate"]), (10.0, 5.0, 5.0))
         self.assertEqual((key["eta"], summary["keys"]["finish"]), (T0 + 20 * 3600, T0 + 20 * 3600))
 
+    def test_key_progress_orders_forged_ready_then_percent(self):
+        state = {"keys": {
+            "low": {"fragments": 20, "required": 100},
+            "forged": {"fragments": 0, "required": 100, "forged": True},
+            "ready": {"fragments": 100, "required": 100, "ready": True},
+            "high": {"fragments": 80, "required": 100},
+        }}
+
+        progress = build.key_progress(build.History([]), state, {}, T0)
+
+        self.assertEqual([row["login"] for row in progress["guilds"]], ["forged", "ready", "high", "low"])
+
     def test_player_leaving_every_guild_keeps_the_last_gear(self):
         pipe = Pipeline()
         pipe.run(snap({"karni": [member("a", 100), member("b", 90)]}), T0)

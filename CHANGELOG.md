@@ -45,8 +45,12 @@ Die letzten 30 bisherigen Versionen sind diesen Tagesversionen zugeordnet:
 ## 2026.10.21 (21.10.2026)
 
 ### Verbessert
+- Gilden, Zeitraffer: "Wert je Perzentil" und "Spieler je Wert" sind getrennte Animationen mit eigenem Abspielen, Regler, Tempo, Zoom und eigener Legende.
 - Höchstwerte: Die Zeile "Mit Spezialitems" ist entfallen, denn kein Spezialitem ist insgesamt besser als die normalen Stücke.
 - "Wo ein neues Stück am meisten bringt": "Voll ausgebaut" rechnet jetzt das neue Stück mit Schriftrollen und Stein gegen das getragene, wie es ist (vorher wurden beide ausgebaut, dadurch stand dort fast dasselbe wie bei "Jetzt", bei Ringen immer +3).
+
+### Oberfläche
+- Spiel hat nur noch drei Unterseiten: Regeln (mit dem Changelog der Regeln darunter), Ausrüstung (Höchstwerte, Formen und Spezialitems untereinander) und Verbessern. Alte Links wie #/spiel/formen führen dorthin.
 
 ## 2026.10.20 (20.10.2026)
 

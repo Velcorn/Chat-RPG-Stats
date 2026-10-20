@@ -1711,7 +1711,7 @@ function viewStart(s) {
       "Jeder Balken zählt die aktiven Spieler mit diesem Ausrüstungswert; der Strich ist die Grenze zur Top 100 (aller Spieler). Alle Reiter haben dieselbe Achse der Ausrüstungswerte.", s.guilds),
     card("Zuletzt", el("dl", { class: "facts" },
         el("dt", {}, "Changelog"), el("dd", {}, lastRule
-          ? el("a", { href: "#/spiel/aenderungen" }, `${ruleName(lastRule[1])}: ${ruleText(lastRule[1], lastRule[2])} -> ${ruleText(lastRule[1], lastRule[3])} (${fmtTime(lastRule[0])})`)
+          ? el("a", { href: "#/spiel/regeln" }, `${ruleName(lastRule[1])}: ${ruleText(lastRule[1], lastRule[2])} -> ${ruleText(lastRule[1], lastRule[3])} (${fmtTime(lastRule[0])})`)
           : "keine seit Beginn der Aufzeichnung"),
         el("dt", {}, "Kampf"), el("dd", {}, s.fights.recent[0]
           ? el("a", { href: "#/kaempfe/letzte" }, `${fightLabel(s.fights.recent[0])} in #${s.fights.recent[0].channel}, ${fmtTime(iso(s.fights.recent[0].endedAt))}`)
@@ -2199,40 +2199,35 @@ function viewUpgrade(s) {
 }
 
 async function viewGame(s, sub) {
-  if (sub === "formen") {
+  if (sub === "ausruestung") {
     try { OBSERVED = await load("observed.json"); } catch { /* the table then shows the sheet only */ }
-    return viewForms();
+    return [...viewMax(), ...viewForms(), ...viewSpecial()];
   }
-  if (sub === "maximum") {
-    try { OBSERVED = await load("observed.json"); } catch { /* the table then shows the sheet only */ }
-    return viewMax();
-  }
-  if (sub === "spezial") return viewSpecial();
   if (sub === "verbessern") return viewUpgrade(s);
-  if (sub === "regeln") {
-    const now = s.rules.now;
-    if (!Object.keys(now).length) return [card("Regeln des Spiels", el("p", { class: "note" }, "Die Regeln werden gerade erst gesammelt."))];
-    const known = new Set(RULE_GROUPS.flatMap(([, rows]) => rows.map((r) => r[0])));
-    const groups = RULE_GROUPS.map(([title, rows]) => [title, rows.map((r) => r[0]).filter((k) => k in now)]).filter(([, keys]) => keys.length);
-    const other = Object.keys(now).filter((k) => !known.has(k));
-    if (other.length) groups.push(["Sonstiges", other]);
-    const last = {};  // rule -> time of its newest measured change (the log is newest first)
-    for (const r of s.rules.log) if (!(r[1] in last)) last[r[1]] = r[0];
-    const changed = s.rules.log.length
-      ? `Zuletzt geändert: ${fmtTime(s.rules.log[0][0])} Uhr (${ruleName(s.rules.log[0][1])}).`
-      : `Seit Beginn der Aufzeichnung (${fmtSince(s.rules.since)}) hat sich keine Regel geändert.`;
-    return [card("Die Regeln des Spiels", el("p", { class: "note" },
-        "Die Zahlen, mit denen das Spiel gerade rechnet. Was sich wann geändert hat, steht unter ",
-        el("a", { href: "#/spiel/aenderungen" }, "Changelog"), "."),
-      el("p", {}, el("b", {}, changed))),
-      el("div", { class: "grid two" }, groups.map(([title, keys]) => card(title, el("dl", { class: "rules" },
-        keys.filter((k) => k in now).flatMap((k) => [
-          el("dt", {}, ruleName(k)),
-          el("dd", {}, el("b", {}, ruleText(k, now[k])), (RULE_INFO[k] || {}).help ? el("span", { class: "muted" }, (RULE_INFO[k] || {}).help) : null,
-            k in last ? el("span", { class: "muted" }, `Zuletzt geändert: ${fmtTime(last[k])} Uhr.`) : null)])))))];
-  }
-  if (sub === "aenderungen") return viewChanges(s);
+  if (sub === "regeln") return [...viewRules(s), ...await viewChanges(s)];
 }
+function viewRules(s) {
+  const now = s.rules.now;
+  if (!Object.keys(now).length) return [card("Regeln des Spiels", el("p", { class: "note" }, "Die Regeln werden gerade erst gesammelt."))];
+  const known = new Set(RULE_GROUPS.flatMap(([, rows]) => rows.map((r) => r[0])));
+  const groups = RULE_GROUPS.map(([title, rows]) => [title, rows.map((r) => r[0]).filter((k) => k in now)]).filter(([, keys]) => keys.length);
+  const other = Object.keys(now).filter((k) => !known.has(k));
+  if (other.length) groups.push(["Sonstiges", other]);
+  const last = {};  // rule -> time of its newest measured change (the log is newest first)
+  for (const r of s.rules.log) if (!(r[1] in last)) last[r[1]] = r[0];
+  const changed = s.rules.log.length
+    ? `Zuletzt geändert: ${fmtTime(s.rules.log[0][0])} Uhr (${ruleName(s.rules.log[0][1])}).`
+    : `Seit Beginn der Aufzeichnung (${fmtSince(s.rules.since)}) hat sich keine Regel geändert.`;
+  return [card("Die Regeln des Spiels", el("p", { class: "note" },
+      "Die Zahlen, mit denen das Spiel gerade rechnet. Was sich wann geändert hat, steht darunter im Changelog."),
+    el("p", {}, el("b", {}, changed))),
+    el("div", { class: "grid two" }, groups.map(([title, keys]) => card(title, el("dl", { class: "rules" },
+      keys.filter((k) => k in now).flatMap((k) => [
+        el("dt", {}, ruleName(k)),
+        el("dd", {}, el("b", {}, ruleText(k, now[k])), (RULE_INFO[k] || {}).help ? el("span", { class: "muted" }, (RULE_INFO[k] || {}).help) : null,
+          k in last ? el("span", { class: "muted" }, `Zuletzt geändert: ${fmtTime(last[k])} Uhr.`) : null)])))))];
+}
+
 
 // The speed of a time lapse: a slider from a quarter to four times (a log scale, so 1x sits in the middle).
 function speedControl(onChange) {
@@ -2255,6 +2250,11 @@ async function viewLapse() {
   try { d = await load("timelapse.json"); } catch { /* none yet */ }
   const head = el("div", { class: "head" }, el("h1", {}, "Zeitraffer"));
   if (!d || d.frames.length < 2) return [el("section", { class: "grid" }, head, el("p", { class: "note" }, "Noch nicht genug Daten für einen Zeitraffer."))];
+  return [el("section", { class: "grid" }, head, lapseCard(d, "pct"), lapseCard(d, "hist"))];
+}
+// One animation of the guild time lapse with its own play button, slider, speed, zoom and legend: `kind` "pct" (gear score
+// at each percentile) or "hist" (share of the players per gear score).
+function lapseCard(d, kind) {
   const N = d.frames.length, groups = d.groups, nb = groups[0].hist[0].length;
   const colorOf = (g, i) => pctColor({ name: g.login || g.name }, i);
   const mix = (rows, f) => {
@@ -2266,7 +2266,7 @@ async function viewLapse() {
   const when = el("strong", { class: "lapse-when" }), legend = el("div", { class: "legend" });
   const play = el("button", { class: "lapse-play" }, "Abspielen");
   const slider = el("input", { type: "range", min: "0", max: String(N - 1), step: "0.01", value: "0", "aria-label": "Zeitpunkt" });
-  const pctBox = el("div", { class: "chart" }), histBox = el("div", { class: "chart" });
+  const pctBox = el("div", { class: "chart" }), histBox = el("div", { class: "chart" }), box = kind === "pct" ? pctBox : histBox;
   let pctDraw = () => {}, histDraw = () => {};
   const setLegend = () => legend.replaceChildren(...groups.map((g, i) => el("span", {}, el("i", { style: `background:${colorOf(g, i)}` }),
     `${g.name}: Ø ${one(g.mean, f).toLocaleString("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`)), el("span", {}, el("i", { class: "ln ref" }), "Platz 100"));
@@ -2277,7 +2277,7 @@ async function viewLapse() {
     pctDraw(); histDraw(); setLegend();
   };
   const tick = (now) => {
-    if (!playing || !pctBox.isConnected) { playing = false; draw(); return; }
+    if (!playing || !box.isConnected) { playing = false; draw(); return; }
     f = Math.min(N - 1, f + (now - last) / 1000 * 1 * speed);
     last = now; draw();
     if (f >= N - 1) { playing = false; draw(); return; }
@@ -2328,7 +2328,7 @@ async function viewLapse() {
   const build = () => {
     const H = 260, m = { l: 44, r: 12, t: 14, b: 40 };
     reset.hidden = !zoomed();
-    {  // gear score at each percentile
+    if (kind === "pct") {  // gear score at each percentile
       const [p0, p1] = pctView, i0 = Math.max(0, Math.floor(p0)), i1 = Math.min(100, Math.ceil(p1));
       const { W, svg, iw, ih } = frame(pctBox, H, m);
       const seen = groups.flatMap((g) => g.pct.flatMap((r) => r.slice(i0, i1 + 1))).sort((u, w) => u - w);
@@ -2359,7 +2359,7 @@ async function viewLapse() {
       };
       dragZoom(svg, m, W, H, pctView, (a, b) => { pctView = [a, b]; build(); }, () => { pctView = [0, 100]; build(); });
     }
-    {  // share of the players per gear score
+    if (kind === "hist") {  // share of the players per gear score
       const [v0, v1] = histView, k0 = Math.max(0, Math.floor((v0 - d.lo) / d.bin)), k1 = Math.min(nb - 1, Math.ceil((v1 - d.lo) / d.bin));
       const { W, svg, iw, ih } = frame(histBox, H, m);
       const ymax = niceTicks(0, Math.max(...groups.flatMap((g) => g.hist.flatMap((r) => r.slice(k0, k1 + 1)))), 4).pop();
@@ -2392,13 +2392,12 @@ async function viewLapse() {
   };
   requestAnimationFrame(() => {
     build();
-    let w = pctBox.clientWidth;
-    new ResizeObserver(() => { if (pctBox.isConnected && Math.abs(pctBox.clientWidth - w) > 4) { w = pctBox.clientWidth; build(); } }).observe(pctBox);
+    let w = box.clientWidth;
+    new ResizeObserver(() => { if (box.isConnected && Math.abs(box.clientWidth - w) > 4) { w = box.clientWidth; build(); } }).observe(pctBox);
   });
-  return [el("section", { class: "grid" }, head,
-    card("", el("div", { class: "lapse-ctl" }, play, slider, when, speedControl((v) => { speed = v; }), reset), legend),
-    card("Wert je Perzentil", pctBox, el("p", { class: "note" }, "Welchen Ausrüstungswert ein Spieler am jeweiligen Anteil hat (50 % = Median, rechts die Besten), alle sechs Stunden. Gestrichelt und blass: der Anfang. Zum Vergrößern über einen Bereich ziehen, Doppelklick für alles.")),
-    card("Spieler je Wert", histBox, el("p", { class: "note" }, "Anteil der aktiven Spieler je Ausrüstungswert (in Stufen von 20). Anteile statt Anzahlen, weil die Profile der Spieler außerhalb der Top 100 erst nach und nach gelesen wurden. Der Zeitraffer beginnt dort, wo von mindestens 80 % der heutigen aktiven Spieler ein Wert vorliegt. Zum Vergrößern über einen Bereich ziehen, Doppelklick für alles.")))];
+  const ctl = el("div", { class: "lapse-ctl" }, play, slider, when, speedControl((v) => { speed = v; }), reset);
+  if (kind === "pct") return card("Wert je Perzentil", ctl, legend, pctBox, el("p", { class: "note" }, "Welchen Ausrüstungswert ein Spieler am jeweiligen Anteil hat (50 % = Median, rechts die Besten), alle sechs Stunden. Gestrichelt und blass: der Anfang. Zum Vergrößern über einen Bereich ziehen, Doppelklick für alles."));
+  return card("Spieler je Wert", ctl, legend, histBox, el("p", { class: "note" }, "Anteil der aktiven Spieler je Ausrüstungswert (in Stufen von 20). Anteile statt Anzahlen, weil die Profile der Spieler außerhalb der Top 100 erst nach und nach gelesen wurden. Der Zeitraffer beginnt dort, wo von mindestens 80 % der heutigen aktiven Spieler ein Wert vorliegt. Zum Vergrößern über einen Bereich ziehen, Doppelklick für alles."));
 }
 
 // ---- top 100 time lapse ----
@@ -2523,7 +2522,7 @@ async function viewTopLapse() {
 async function viewSiteChanges(s) {
   const intro = card("Änderungen der Seite",
     el("p", {}, "Hier stehen die Änderungen dieser Statistikseite. Änderungen der Spielregeln findest du unter ",
-      el("a", { href: "#/spiel/aenderungen" }, "Spiel, Changelog"), "."),
+      el("a", { href: "#/spiel/regeln" }, "Spiel, Regeln"), "."),
     el("p", { class: "value" }, `Aktuelle Version: ${s.version || "unbekannt"}`));
   try {
     const entries = await load("changelog.json");
@@ -2647,8 +2646,8 @@ const SECTIONS = {
                render: viewRanks },
   gilden: { subs: (s) => [["vergleich", "Vergleich"], ["zeitraffer", "Zeitraffer"], ...s.guilds.map((g) => [g.login, g.name || g.login])], render: viewGuild,
             dropdown: true },
-  spiel: { subs: () => [["regeln", "Regeln"], ["aenderungen", "Changelog"], ["formen", "Formen"], ["maximum", "Höchstwerte"], ["spezial", "Spezialitems"], ["verbessern", "Verbessern"]],
-           render: viewGame },
+  spiel: { subs: () => [["regeln", "Regeln"], ["ausruestung", "Ausrüstung"], ["verbessern", "Verbessern"]],
+           alias: { aenderungen: "regeln", formen: "ausruestung", maximum: "ausruestung", spezial: "ausruestung" }, render: viewGame },
   kaempfe: { subs: () => [["uebersicht", "Übersicht"], ["kraft", "Kampfkraft"], ["letzte", "Letzte Kämpfe"]],
              render: viewFights },
 };
@@ -2683,7 +2682,7 @@ async function route() {
     parts = await viewPlayer(s, login);
   } else {
     const subs = SECTIONS[view].subs(s);
-    const sub = (subs.find(([key]) => key === login) || subs[0] || [])[0];
+    const sub = (subs.find(([key]) => key === (SECTIONS[view].alias || {})[login] || key === login) || subs[0] || [])[0];
     if (SECTIONS[view].dropdown) {  // many entries (the guilds, more to come): one dropdown instead of a row of tabs
       const pick = el("select", { class: "cmp pick", "aria-label": "Auswahl" },
         ...subs.map(([key, label]) => el("option", { value: key, ...(key === sub ? { selected: "" } : {}) }, label)));

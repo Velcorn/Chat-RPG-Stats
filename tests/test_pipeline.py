@@ -31,7 +31,6 @@ def snap(members: dict, board=None, fights=(), watch=None, treasury=1000, sweep=
     rows = [{"login": lo, "displayName": lo, "gearScore": g, "attack": a, "defense": d, "support": s, "silver": 100,
              "quests": 10, "achievements": 5} for lo, g, a, d, s in board or []]
     return {"guilds": guilds, "boards": {b: rows for b in collect.BOARD_FIELDS}, "fights": list(fights),
-            "keys": {},
             "channels": [{"login": "sola", "live": True,
                                                                           "enabled": True}],
             "watch": watch or {},
@@ -94,29 +93,6 @@ class CollectTests(unittest.TestCase):
         pipe.run(snap({"karni": [member("a", 100)]}), T0)
         summary, _ = pipe.build(T0)
         self.assertEqual(summary["load"], {"per_run": 15, "runs_per_day": 224})
-
-    def test_key_progress_contains_only_current_progress_and_final_boss_time(self):
-        state = {"keys": {"karni": {"fragments": 140, "required": 220, "ready": False, "forged": False,
-                                     "seen": T0}}}
-
-        progress = build.key_progress(state, {"karni": {"name": "Karni"}})
-
-        self.assertEqual(progress, {"boss_at": "2026-10-28T18:00:00+01:00", "guilds": [{
-            "login": "karni", "name": "Karni", "fragments": 140, "required": 220, "percent": 63.6,
-            "ready": False, "forged": False,
-        }]})
-
-    def test_key_progress_orders_forged_ready_then_percent(self):
-        state = {"keys": {
-            "low": {"fragments": 20, "required": 100},
-            "forged": {"fragments": 0, "required": 100, "forged": True},
-            "ready": {"fragments": 100, "required": 100, "ready": True},
-            "high": {"fragments": 80, "required": 100},
-        }}
-
-        progress = build.key_progress(state, {})
-
-        self.assertEqual([row["login"] for row in progress["guilds"]], ["forged", "ready", "high", "low"])
 
     def test_player_leaving_every_guild_keeps_the_last_gear(self):
         pipe = Pipeline()

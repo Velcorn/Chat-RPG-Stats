@@ -1659,7 +1659,7 @@ function channelLines(c) {
 }
 
 function keyCard(s) {
-  const at = new Date(s.keys.boss_at);
+  const at = new Date(s.final_boss_at);
   const label = at.toLocaleDateString("de-DE", { timeZone: TZ, weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" });
   const time = at.toLocaleTimeString("de-DE", { timeZone: TZ, hour: "2-digit", minute: "2-digit" });
   const hours = Math.floor((at - Date.now()) / 3600000);

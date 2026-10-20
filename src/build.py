@@ -161,19 +161,6 @@ def rounded(x, n=2):
     return None if x is None else round(x, n)
 
 
-def key_progress(state: dict, guilds: dict) -> dict:
-    """Current key progress and the announced time of the final boss."""
-    rows = []
-    for login, current in state.get("keys", {}).items():
-        fragments, required = current.get("fragments") or 0, current.get("required") or 0
-        rows.append({"login": login, "name": guilds.get(login, {}).get("name") or login,
-                     "fragments": fragments, "required": required,
-                     "percent": rounded(min(100, 100 * fragments / required), 1) if required else 0,
-                     "ready": bool(current.get("ready")), "forged": bool(current.get("forged"))})
-    return {"guilds": sorted(rows, key=lambda r: (-r["forged"], -r["ready"], -r["percent"], r["name"].casefold())),
-            "boss_at": FINAL_BOSS_AT}
-
-
 def season_manifest(data: Path) -> dict:
     """Published season index. It stays useful before the first season has been archived."""
     try:
@@ -282,7 +269,7 @@ def build(data: Path, out: Path, now: float | None = None, include_archives: boo
                "top100": {"gear": top100_gear, "pace": rounded(top100_pace), "series": h.border,
                           "roles": top_roles},
                "guilds": sorted(guild_rows, key=lambda g: -(g.get("gear") or 0)),
-               "keys": key_progress(state, guilds),
+               "final_boss_at": FINAL_BOSS_AT,
                "fights": {"recent": recent_fights(h),
                           "total": len(h.fights)},
                "stats": summary_stats,

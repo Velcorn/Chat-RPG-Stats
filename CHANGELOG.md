@@ -56,6 +56,7 @@ Die letzten 30 bisherigen Versionen sind diesen Tagesversionen zugeordnet:
 
 ### Entfernt
 - Die überholte Prognose für den letzten Gildenschlüssel samt Nettofortschritt und geschätzter Fertigstellungszeit ist entfallen. Fragmente, Bedarf, Prozent und Status jeder Gilde bleiben sichtbar.
+- Der Schlüsselfortschritt der Gilden wird nicht mehr gesammelt (eine Anfrage weniger je Gilde und Lauf), alle Schlüssel sind bereit.
 
 ## 2026.10.19 (19.10.2026)
 

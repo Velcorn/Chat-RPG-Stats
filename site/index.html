@@ -2036,6 +2036,75 @@ function formsCard(title, groups, slot, tier, note) {
       el("th", { class: "num" }, "DEF"), el("th", { class: "num" }, "SUP"), el("th", { class: "num seen-col" }, tier ? "Quelle" : "Gesehen"))),
     el("tbody", {}, rows))), note ? el("p", { class: "note" }, note) : null);
 }
+// The best build per class at the top known tier: per slot the piece with the most of the class's main stat (ties: the
+// higher sum); a fully built piece (+4 scrolls and a stone) adds its points to that stat. `extra`: "" = normal pieces
+// only, "weapons" = plus the special weapons, "all" = plus all special items (boss loot).
+const CLASSES = [["Kämpfer", 0], ["Schildträger", 1], ["Unterstützer", 2]];
+const BUILD_ROOM = { armor: 10, w1: 10, shield: 10, ring: 8, w2: 19 };
+const SPECIAL_SLOT = { "1H-Waffe": "w1", "2H-Waffe": "w2", Helm: "helmet", Brustpanzer: "chest", Handschuhe: "gloves", Hose: "legs", Schild: "shield", Ring: "ring" };
+const ARMOR_SLOTS = [["helmet", "Helm"], ["chest", "Brustpanzer"], ["gloves", "Handschuhe"], ["legs", "Beinschutz"], ["boots", "Stiefel"]];
+function bestBuild(main, built, extra) {
+  const tier = Math.max(...Object.keys(TIER_FORMS).map(Number));
+  const forms = (kind) => Object.entries(TIER_FORMS[tier][kind] || {}).map(([name, v]) => ({
+    name: name.replace(/ \(ID \d+\)$/, ""), stats: ((OBSERVED[tier] || {})[kind] || {})[name] || v.slice(0, 3), special: false }));
+  const pool = { ring: forms("ring"), w1: forms("w1"), w2: forms("w2"), shield: forms("shield") };
+  for (const [slot] of ARMOR_SLOTS) pool[slot] = forms("armor");
+  const weapon = (r) => ["Schmelzofen", "unbekannt", "Siegel"].includes(r[0]);
+  for (const r of SPECIAL) {
+    if (!extra || LEGACY.has(r[1]) || (extra === "weapons" && !weapon(r)) || !SPECIAL_SLOT[r[3]]) continue;
+    pool[SPECIAL_SLOT[r[3]]].push({ name: r[1], stats: r.slice(5, 8), special: true });
+  }
+  const rank = (kind, c) => {
+    const st = c.stats.slice(0, 3);
+    st[main] += built ? BUILD_ROOM[kind] : 0;
+    return { ...c, stats: st, key: st[main] * 1000 + st[0] + st[1] + st[2] };
+  };
+  const best = (kind, slot, n = 1) => pool[slot].map((c) => rank(kind, c)).sort((a, b) => b.key - a.key).slice(0, n);
+  const pieces = ARMOR_SLOTS.map(([slot, label]) => [label, best("armor", slot)[0]]);
+  pieces.push(...best("ring", "ring", 2).map((c) => ["Ring", c]));
+  // one-handers: two of them are possible too (a normal form may be worn twice, a special item once)
+  const ones = best("w1", "w1", 8).flatMap((c) => c.special ? [c] : [c, c]).slice(0, 2);
+  const [shield] = best("shield", "shield"), [two] = best("w2", "w2");
+  const sumOf = (c) => c.stats[0] + c.stats[1] + c.stats[2];
+  const options = [[[two], "Zweihandwaffe"], [[ones[0], shield], "Einhandwaffe + Schild"], [ones, "Zwei Einhandwaffen"]]
+    .map(([list, label]) => ({ list, label, key: list.reduce((a, c) => a + c.stats[main], 0) * 1000 + list.reduce((a, c) => a + sumOf(c), 0) }))
+    .sort((a, b) => b.key - a.key);
+  pieces.push(...options[0].list.map((c) => [options[0].list.length === 1 ? "Zweihandwaffe" : c === shield ? "Schild" : "Einhandwaffe", c]));
+  return { tier, pieces, sum: [0, 1, 2].map((i) => pieces.reduce((a, [, c]) => a + c.stats[i], 0)) };
+}
+function viewMax() {
+  const variants = [["Normale Stücke", ""], ["Mit Spezialitems", "all"]];
+  const tier = bestBuild(0, false, "").tier;
+  let built = false;
+  const pick = el("select", { class: "cmp", "aria-label": "Ausbau" }, el("option", { value: "0" }, "Ohne Verbesserungen"), el("option", { value: "1" }, "Voll ausgebaut (+4, Stein)"));
+  const table = el("div", { class: "wide-table" });
+  const fill = () => {
+    const rows = CLASSES.flatMap(([name, main]) => [
+      el("tr", { class: `group ${["atk", "def", "sup"][main]}` }, el("td", { colspan: "5" }, `${name} (Hauptwert ${["ATK", "DEF", "SUP"][main]})`)),
+      ...variants.map(([label, extra]) => {
+        const b = bestBuild(main, built, extra);
+        return el("tr", {}, el("td", {}, label), ...b.sum.map((x, i) => el("td", { class: i === main ? "num main" : "num" }, fmtInt(x))),
+          el("td", { class: "num" }, fmtInt(b.sum[0] + b.sum[1] + b.sum[2])));
+      })]);
+    table.replaceChildren(el("table", { class: "forms" }, el("thead", {}, el("tr", {}, el("th", {}, "Ausrüstung"),
+      ...["ATK", "DEF", "SUP", "Summe"].map((t) => el("th", { class: "num" }, t)))), el("tbody", {}, rows)));
+  };
+  pick.addEventListener("change", () => { built = pick.value === "1"; fill(); });
+  fill();
+  const parts = CLASSES.map(([name, main]) => {
+    const a = bestBuild(main, false, ""), b = bestBuild(main, false, "all"), n = Math.max(a.pieces.length, b.pieces.length);
+    const text = (x) => x ? `${x[1].name} (${x[1].stats.map(fmtInt).join("/")})` : "-";
+    return el("details", { class: "fold" }, el("summary", {}, `${name}: Zusammensetzung`),
+      el("div", { class: "wide-table" }, el("table", { class: "forms" },
+        el("thead", {}, el("tr", {}, el("th", {}, "Platz"), el("th", {}, "Normal"), el("th", {}, "Mit Spezialitems"))),
+        el("tbody", {}, ...Array.from({ length: n }, (_, i) => el("tr", {}, el("td", {}, (b.pieces[i] || a.pieces[i])[0]),
+          el("td", {}, text(a.pieces[i])), el("td", {}, text(b.pieces[i]), b.pieces[i] && b.pieces[i][1].special ? el("span", { class: "seen" }, "Spezial") : null)))))));
+  });
+  return [el("section", { class: "grid" }, el("div", { class: "head" }, el("h1", {}, "Höchstwerte je Klasse"), pick),
+    card("", table),
+    el("p", { class: "note" }, `Das Beste, was ein Spieler tragen kann: je Platz das Stück der Stufe ${tier} (oder ein Spezialitem), das den Hauptwert der Klasse am höchsten hat (Kämpfer ATK, Schildträger DEF, Unterstützer SUP); was dabei für die anderen Werte übrig bleibt, und die Summe stehen daneben. Acht Plätze: fünf Rüstungsteile, zwei Ringe und eine Waffenwahl (Zweihandwaffe, Einhandwaffe mit Schild oder zwei Einhandwaffen, je nach Hauptwert). Voll ausgebaut bringt ein Stück +10 im Hauptwert (Ring +8, Zweihandwaffe +19). Spezialitems haben feste Werte (ohne Altstücke); gleiche Zeilen heißen: Kein Spezialitem schlägt die normalen Stücke. Die Werte der Stufe ${tier} sind teils geschätzt. Die Aufschlüsselung der Stücke steht unten, ohne Ausbau.`),
+    ...parts)];
+}
 function viewForms() {
   let tier = 0;
   // A form's row shows the highest tier measured so far.
@@ -2147,6 +2216,10 @@ async function viewGame(s, sub) {
   if (sub === "formen") {
     try { OBSERVED = await load("observed.json"); } catch { /* the table then shows the sheet only */ }
     return viewForms();
+  }
+  if (sub === "maximum") {
+    try { OBSERVED = await load("observed.json"); } catch { /* the table then shows the sheet only */ }
+    return viewMax();
   }
   if (sub === "spezial") return viewSpecial();
   if (sub === "verbessern") return viewUpgrade(s);
@@ -2588,7 +2661,7 @@ const SECTIONS = {
                render: viewRanks },
   gilden: { subs: (s) => [["vergleich", "Vergleich"], ["zeitraffer", "Zeitraffer"], ...s.guilds.map((g) => [g.login, g.name || g.login])], render: viewGuild,
             dropdown: true },
-  spiel: { subs: () => [["regeln", "Regeln"], ["aenderungen", "Changelog"], ["formen", "Formen"], ["spezial", "Spezialitems"], ["verbessern", "Verbessern"]],
+  spiel: { subs: () => [["regeln", "Regeln"], ["aenderungen", "Changelog"], ["formen", "Formen"], ["maximum", "Höchstwerte"], ["spezial", "Spezialitems"], ["verbessern", "Verbessern"]],
            render: viewGame },
   kaempfe: { subs: () => [["uebersicht", "Übersicht"], ["kraft", "Kampfkraft"], ["letzte", "Letzte Kämpfe"]],
              render: viewFights },

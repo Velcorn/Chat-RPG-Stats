@@ -26,6 +26,7 @@ BOARD_GRID = 2 * 3600  # the top-100 time lapse has a frame every two hours
 PEERS_MIN = 8
 PEERS_CLASS_MIN = 20  # class peers for the stat bars: within 10 % of the gear score, else this many nearest
 PEERS_BAND = 4  # class peers from which on the stat bars show the band (10 % to 90 %)
+FINAL_BOSS_DATE = "2026-10-28"
 
 
 def replay(days: Path):
@@ -46,7 +47,6 @@ class History:
         self.rank: dict[str, list] = defaultdict(list)       # login -> [[t, rank on the gear board or None], ...]
         self.border: list[list] = []                         # [[t, gear score of place 100], ...] (only changes)
         self.guilds: dict[str, list] = defaultdict(list)     # guild -> [[t, treasury, members, active, gear], ...]
-        self.keys: dict[str, list] = defaultdict(list)       # guild -> [[t, fragments, required, ready, forged, seen]]
         self.fights: list[dict] = []
         self.fightx: dict[int, dict] = defaultdict(dict)  # fight id -> detail and live digests (since 0.9.0)
         self.rules_log: list[list] = []                      # [[t, rule, old, new], ...] (since 0.10.0)
@@ -59,7 +59,6 @@ class History:
         board_scores: list = []
         next_grid = None
         guild_now: dict[str, dict] = {}
-        key_now: dict[str, dict] = {}
         rules_now: dict = {}
         live_now: dict[str, bool] = {}
         for rec in records:
@@ -95,10 +94,6 @@ class History:
             for g, v in rec.get("guilds", {}).items():
                 full = guild_now[g] = {**guild_now.get(g, {}), **v}
                 self.guilds[g].append([t, *(full.get(k) for k in ("treasury", "members", "active", "gear"))])
-            for g, v in rec.get("keys", {}).items():
-                full = key_now[g] = {**key_now.get(g, {}), **v}
-                self.keys[g].append([t, *(full.get(k) for k in
-                                          ("fragments", "required", "ready", "forged", "seen"))])
             for rule, v in rec.get("rules", {}).items():
                 if rule in rules_now and rules_now[rule] != v:
                     self.rules_log.append([t, rule, rules_now[rule], v])
@@ -164,36 +159,17 @@ def rounded(x, n=2):
     return None if x is None else round(x, n)
 
 
-def key_progress(history: History, state: dict, guilds: dict, now: float) -> dict:
-    """Current key race and a forecast from the net progress of the last 24 hours."""
+def key_progress(state: dict, guilds: dict) -> dict:
+    """Current key progress and the announced date of the final boss."""
     rows = []
     for login, current in state.get("keys", {}).items():
         fragments, required = current.get("fragments") or 0, current.get("required") or 0
-        series = history.keys.get(login, [])
-        recent = [r for r in series if r[0] >= now - DAY]
-        first = recent[0] if recent else (series[-1] if series else None)
-        seen = current.get("seen") or (series[-1][5] if series else None)
-        span = ((seen - first[5]) / 3600) if first and first[5] and seen else 0
-        gain = fragments - (first[1] or 0) if first else 0
-        required_gain = required - (first[2] or 0) if first else 0
-        valid = span >= 3 and gain >= 0 and required > 0 and (first[2] or 0) > 0
-        rate = gain / span if valid else None
-        required_rate = required_gain / span if valid else None
-        net_rate = rate - required_rate if valid else None
-        eta = (seen + max(0, required - fragments) / net_rate * 3600
-               if net_rate is not None and net_rate > 0 and seen and now - seen <= 3600 else None)
         rows.append({"login": login, "name": guilds.get(login, {}).get("name") or login,
                      "fragments": fragments, "required": required,
                      "percent": rounded(min(100, 100 * fragments / required), 1) if required else 0,
-                     "ready": bool(current.get("ready")), "forged": bool(current.get("forged")),
-                     "rate": rounded(rate, 1), "required_rate": rounded(required_rate, 1),
-                     "net_rate": rounded(net_rate, 1), "eta": round(eta) if eta is not None else None,
-                     "seen": seen})
-    pending = [r for r in rows if not r["ready"] and not r["forged"]]
-    finish = (max(r["eta"] for r in pending) if pending and all(r["eta"] is not None for r in pending)
-              else round(now) if rows and not pending else None)
+                     "ready": bool(current.get("ready")), "forged": bool(current.get("forged"))})
     return {"guilds": sorted(rows, key=lambda r: (-r["forged"], -r["ready"], -r["percent"], r["name"].casefold())),
-            "finish": finish}
+            "boss_date": FINAL_BOSS_DATE}
 
 
 def season_manifest(data: Path) -> dict:
@@ -304,7 +280,7 @@ def build(data: Path, out: Path, now: float | None = None, include_archives: boo
                "top100": {"gear": top100_gear, "pace": rounded(top100_pace), "series": h.border,
                           "roles": top_roles},
                "guilds": sorted(guild_rows, key=lambda g: -(g.get("gear") or 0)),
-               "keys": key_progress(h, state, guilds, now),
+               "keys": key_progress(state, guilds),
                "fights": {"recent": recent_fights(h),
                           "total": len(h.fights)},
                "stats": summary_stats,

@@ -95,20 +95,16 @@ class CollectTests(unittest.TestCase):
         summary, _ = pipe.build(T0)
         self.assertEqual(summary["load"], {"per_run": 15, "runs_per_day": 224})
 
-    def test_key_forecast_uses_net_progress_over_the_moving_requirement(self):
-        pipe = Pipeline()
-        first = snap({"karni": [member("a", 100)]})
-        first["keys"] = {"karni": {"fragments": 100, "required": 200, "ready": False, "forged": False,
-                                    "seen": T0}}
-        pipe.run(first, T0)
-        last = snap({"karni": [member("a", 100)]})
-        last["keys"] = {"karni": {"fragments": 140, "required": 220, "ready": False, "forged": False,
-                                   "seen": T0 + 4 * 3600}}
-        pipe.run(last, T0 + 4 * 3600)
-        summary, _ = pipe.build(T0 + 4 * 3600)
-        key = summary["keys"]["guilds"][0]
-        self.assertEqual((key["rate"], key["required_rate"], key["net_rate"]), (10.0, 5.0, 5.0))
-        self.assertEqual((key["eta"], summary["keys"]["finish"]), (T0 + 20 * 3600, T0 + 20 * 3600))
+    def test_key_progress_contains_only_current_progress_and_final_boss_date(self):
+        state = {"keys": {"karni": {"fragments": 140, "required": 220, "ready": False, "forged": False,
+                                     "seen": T0}}}
+
+        progress = build.key_progress(state, {"karni": {"name": "Karni"}})
+
+        self.assertEqual(progress, {"boss_date": "2026-10-28", "guilds": [{
+            "login": "karni", "name": "Karni", "fragments": 140, "required": 220, "percent": 63.6,
+            "ready": False, "forged": False,
+        }]})
 
     def test_key_progress_orders_forged_ready_then_percent(self):
         state = {"keys": {
@@ -118,7 +114,7 @@ class CollectTests(unittest.TestCase):
             "high": {"fragments": 80, "required": 100},
         }}
 
-        progress = build.key_progress(build.History([]), state, {}, T0)
+        progress = build.key_progress(state, {})
 
         self.assertEqual([row["login"] for row in progress["guilds"]], ["forged", "ready", "high", "low"])
 

@@ -463,12 +463,6 @@ const iso = (s) => s ? Date.parse(s) / 1000 : null;
 const pct = (a, b) => b ? `${fmtDec(100 * a / b, 0)} %` : "-";
 // "in weniger als einem Tag" / "in etwa 3 Tagen"
 const inDays = (d) => d < 1 ? "in weniger als einem Tag" : `in etwa ${count(Math.ceil(d), "Tag", "Tagen")}`;
-const remaining = (seconds) => {
-  const hours = Math.max(0, Math.ceil(seconds / 3600));
-  if (hours < 24) return count(hours, "Stunde", "Stunden");
-  const days = Math.floor(hours / 24), rest = hours % 24;
-  return `${count(days, "Tag", "Tagen")}${rest ? ` ${count(rest, "Stunde", "Stunden")}` : ""}`;
-};
 const KINDS = { BOSS: "Boss", ADVENTURE: "Abenteuer", RAID: "Überfall" };
 // Every story adventure since 04.10.2026 arrives with difficulty 3 (a placeholder, not a measure) and since 11.10.2026
 // drops at most each fighter's own tier: an adventure shows its name only. An Überfall shows its difficulty after the
@@ -1677,29 +1671,28 @@ function channelLines(c) {
 
 function keyCard(s) {
   const keys = s.keys?.guilds || [];
-  if (!keys.length) return null;
-  const finish = s.keys.finish;
-  const summary = finish == null
-    ? [el("strong", {}, "Prognose sammelt Verlauf"), "nach 3 Stunden Nettofortschritt"]
-    : finish <= s.generated
-      ? [el("strong", {}, "Alle Schlüssel bereit"), "der letzte Boss kann folgen"]
-      : [el("strong", {}, `Noch ${remaining(finish - s.generated)}`), `letzter Schlüssel etwa ${fmtTime(finish)}`];
+  const bossDate = s.keys.boss_date;
+  const bossDay = new Date(`${bossDate}T12:00:00Z`);
+  const label = bossDay.toLocaleDateString("de-DE", { timeZone: TZ, weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" });
+  const today = Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" })
+    .formatToParts(new Date(s.generated * 1000)).filter((p) => p.type !== "literal").map((p) => [p.type, Number(p.value)]));
+  const [year, month, day] = bossDate.split("-").map(Number);
+  const days = Math.round((Date.UTC(year, month - 1, day) - Date.UTC(today.year, today.month - 1, today.day)) / 86400000);
+  const countdown = days > 0 ? `noch ${count(days, "Tag", "Tage")}` : days === 0 ? "heute" : "vorbei";
   const box = card(null, el("div", { class: "key-card-inner" },
     el("div", { class: "head" },
-      el("div", {}, el("h2", {}, "Schlüsselfinale"), el("p", { class: "note" }, "Fragmente und Nettofortschritt der letzten 24 Stunden")),
-      el("div", { class: "key-finish" }, ...summary)),
-    el("div", { class: "keys" }, ...keys.map((k) => {
-      const status = k.forged ? "geschmiedet" : k.ready ? "bereit" : k.eta == null ? "Prognose folgt" : `etwa ${fmtTime(k.eta)}`;
-      const rate = k.forged || k.ready ? (k.forged ? "Geschmiedet" : "Fragmente komplett")
-        : k.net_rate == null ? "Noch kein 3-Stunden-Verlauf" : `${signed(k.net_rate, 1)} netto / Std.`;
+      el("div", {}, el("h2", {}, "Schlüsselfinale"), el("p", { class: "note" }, "Fragmente bis zum letzten Boss")),
+      el("div", { class: "key-finish" }, el("strong", {}, `Letzter Boss: ${label}`), countdown)),
+    keys.length ? el("div", { class: "keys" }, ...keys.map((k) => {
+      const status = k.forged ? "geschmiedet" : k.ready ? "bereit" : "wird gesammelt";
       return el("div", { class: "key-row" },
         el("div", { class: "head" }, el("a", { class: "name", href: `#/gilden/${k.login}` }, k.name),
           el("span", { class: k.ready || k.forged ? "pill on" : "pill" }, `${fmtDec(k.percent, 1)} %`)),
         el("div", { class: "key-numbers" }, `${fmtInt(k.fragments)} / ${fmtInt(k.required)}`),
         el("div", { class: "key-track", title: `${fmtDec(k.percent, 1)} %` },
           el("span", { style: `width:${Math.max(0, Math.min(100, k.percent))}%` })),
-        el("div", { class: "key-meta" }, el("span", {}, rate), el("span", {}, status)));
-    }))));
+        el("div", { class: "key-meta" }, el("span", {}, status)));
+    })) : null));
   box.classList.add("key-card");
   return box;
 }

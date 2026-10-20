@@ -42,6 +42,11 @@ Die letzten 30 bisherigen Versionen sind diesen Tagesversionen zugeordnet:
 | 0.45.10 | 2026.10.15 |
 | 0.45.9 | 2026.10.15 |
 
+## 2026.10.20 (20.10.2026)
+
+### Verbessert
+- Formen: Die Tabelle ist mit dem Stand der Community-Tabelle vom 20.10.2026 vollständig für die Stufen 1 bis 14 (alle Formen je Stufe). Gemessen sind jetzt 514 von 562 Werten (vorher viele Näherungen bei Stufe 12 und 14), die Anteile folgen der höchsten gemessenen Stufe. Der Hinweis unter der Tabelle nennt, welche 48 Werte noch Näherungen sind.
+
 ## 2026.10.19 (19.10.2026)
 
 ### Neu

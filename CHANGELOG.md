@@ -51,7 +51,7 @@ Die letzten 30 bisherigen Versionen sind diesen Tagesversionen zugeordnet:
 ## 2026.10.20 (20.10.2026)
 
 ### Neu
-- Neue Seite Spiel > Höchstwerte: das Beste, was Kämpfer (ATK), Schildträger (DEF) und Unterstützer (SUP) tragen können, mit den übrigen Werten und der Summe, ohne Verbesserungen oder voll ausgebaut, mit den normalen Stücken der höchsten Stufe (Spezialitems schlagen sie insgesamt nicht). Zwei Einhandwaffen sind möglich. Darunter steht je Klasse, welches Stück auf welchem Platz sitzt.
+- Neue Seite Spiel > Höchstwerte: das Beste, was Kämpfer (ATK), Schildträger (DEF) und Unterstützer (SUP) tragen können, mit den übrigen Werten und der Summe, ohne Verbesserungen oder voll ausgebaut, mit den normalen Stücken der höchsten Stufe (Spezialitems schlagen sie insgesamt nicht). Zwei Einhandwaffen und zwei gleiche Ringe sind möglich. Darunter steht je Klasse, welches Stück auf welchem Platz sitzt.
 
 ### Verbessert
 - Formen: Die Tabelle ist mit dem Stand der Community-Tabelle vom 20.10.2026 vollständig für die Stufen 1 bis 14 (alle Formen je Stufe). Gemessen sind jetzt 514 von 562 Werten (vorher viele Näherungen bei Stufe 12 und 14), die Anteile folgen der höchsten gemessenen Stufe. Der Hinweis unter der Tabelle nennt, welche 48 Werte noch Näherungen sind.

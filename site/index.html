@@ -2054,7 +2054,8 @@ function bestBuild(main, built) {
   };
   const best = (kind, slot, n = 1) => pool[slot].map((c) => rank(kind, c)).sort((a, b) => b.key - a.key).slice(0, n);
   const pieces = ARMOR_SLOTS.map(([slot, label]) => [label, best("armor", slot)[0]]);
-  pieces.push(...best("ring", "ring", 2).map((c) => ["Ring", c]));
+  const [ring] = best("ring", "ring");
+  pieces.push(["Ring", ring], ["Ring", ring]);  // the same ring may be worn twice
   // one-handers: two of them are possible too (a form may be worn twice)
   const ones = best("w1", "w1", 8).flatMap((c) => [c, c]).slice(0, 2);
   const [shield] = best("shield", "shield"), [two] = best("w2", "w2");

@@ -60,7 +60,7 @@
   .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   @media (max-width: 900px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .two { grid-template-columns: repeat(auto-fit, minmax(min(460px, 100%), 1fr)); }
-  .tile { padding: 18px 20px; background: linear-gradient(130deg, #203345, #1a2028); border-color: #405467; }
+  .tile { container-type: inline-size; padding: 18px 20px; background: linear-gradient(130deg, #203345, #1a2028); border-color: #405467; }
   .tile .label { color: var(--text-secondary); font-size: 12px; text-transform: uppercase; letter-spacing: .06em;
                  overflow-wrap: anywhere; hyphens: auto; }
   .tile.kk { display: grid; grid-template-columns: auto 1fr; column-gap: 12px; align-content: start; }
@@ -68,10 +68,9 @@
   .tile .pwl { text-transform: none; letter-spacing: 0; }
   .tile .sub a { padding: 0; font-size: inherit; }
   .tile .pwv { align-self: start; margin-top: 8px; font-size: 13px; font-weight: 650; line-height: 1.2; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
-  .tile .value { font-size: 40px; font-weight: 650; font-variant-numeric: tabular-nums; margin: 8px 0; white-space: nowrap;
-                 overflow: hidden; text-overflow: ellipsis; }
+  .tile .value { font-size: min(40px, 14cqw); font-weight: 650; font-variant-numeric: tabular-nums; margin: 8px 0; white-space: nowrap; }
   .tile .sub { color: var(--text-muted); font-size: 13px; font-variant-numeric: tabular-nums; }
-  @media (max-width: 600px) { .tile .value { font-size: 32px; white-space: normal; overflow-wrap: anywhere; overflow: visible; } .tile .pwv { font-size: 10px; margin-top: 6px; } .tile.kk { grid-column: 1 / -1; } }
+  @media (max-width: 600px) { .tile .value { font-size: min(32px, 14cqw); } .tile .pwv { font-size: 10px; margin-top: 6px; } .tile.kk { grid-column: 1 / -1; } }
   input, button { font: inherit; color: var(--text-primary); background: var(--surface-2);
                   border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; }
   button { cursor: pointer; } button:hover { border-color: var(--text-muted); }
@@ -448,8 +447,8 @@ function el(tag, props = {}, ...children) {
 const fmtInt = (n) => n == null ? "-" : Math.round(n).toLocaleString("de-DE");
 const fmtDec = (n, d = 1) => n == null ? "-" : n.toLocaleString("de-DE", { maximumFractionDigits: d });
 const count = (n, one, many) => `${fmtInt(n)} ${n == 1 ? one : many}`;  // count(1, "Punkt", "Punkte") -> "1 Punkt"
-// Every amount in silver (never gold), with the German thousands separator: 1234 -> "1.234 Silber".
-const fmtSilver = (s) => s == null ? "-" : `${fmtInt(s)} Silber`;
+// Every amount in silver (never gold), with the German thousands separator: 1234 -> "1.234".
+const fmtSilver = (s) => s == null ? "-" : fmtInt(s);
 const signed = (n, d = 0) => n == null ? "-" : (n > 0 ? "+" : "") + (d ? fmtDec(n, d) : fmtInt(n));
 const TZ = "Europe/Berlin";  // the game runs on Berlin time, whatever device views the page
 const fmtTime = (t) => new Date(t * 1000).toLocaleString("de-DE", { timeZone: TZ, weekday: "short", day: "2-digit",
@@ -1596,7 +1595,7 @@ function viewGuildRace(s) {
     { label: "Mitglieder", num: true, get: (g) => `${fmtInt(g.members)} (${fmtInt(g.active)} aktiv)` },
     { label: "Ø Ausrüstungswert", short: "Ø AW", num: true, title: "Durchschnitt der aktiven Mitglieder", get: (g) => fmtDec(g.avg_gear, 1) },
     { label: "Kasse", num: true, get: (g) => fmtSilver(g.treasury) },
-    { label: "Kasse 7 Tage", num: true, sm: false, get: (g) => g.treasury_week == null ? "-" : el("span", { class: g.treasury_week >= 0 ? "up" : "down" }, signed(g.treasury_week) + " Silber") },
+    { label: "Kasse 7 Tage", num: true, sm: false, get: (g) => g.treasury_week == null ? "-" : el("span", { class: g.treasury_week >= 0 ? "up" : "down" }, signed(g.treasury_week)) },
     { label: "Gespendet", num: true, sm: false, get: (g) => fmtSilver(g.donated) },
     { label: "Bosse", num: true, title: "Siege / Niederlagen", get: (g) => `${fmtInt(g.boss_wins)} / ${fmtInt(g.boss_losses)}` },
   ];

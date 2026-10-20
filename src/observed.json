@@ -124,6 +124,11 @@
 19,
 5
 ],
+"des Erzmagiers": [
+13,
+8,
+32
+],
 "des Hospitaliters": [
 5,
 21,
@@ -591,6 +596,11 @@
 3,
 60,
 0
+],
+"Wappenschild": [
+6,
+47,
+10
 ]
 },
 "w1": {
@@ -879,6 +889,11 @@
 15,
 36,
 95
+],
+"der Morgenröte": [
+102,
+22,
+22
 ],
 "des Kriegsherrn": [
 124,

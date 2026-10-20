@@ -42,6 +42,11 @@ Die letzten 30 bisherigen Versionen sind diesen Tagesversionen zugeordnet:
 | 0.45.10 | 2026.10.15 |
 | 0.45.9 | 2026.10.15 |
 
+## 2026.10.21 (21.10.2026)
+
+### Verbessert
+- "Wo ein neues Stück am meisten bringt": "Voll ausgebaut" rechnet jetzt das neue Stück mit Schriftrollen und Stein gegen das getragene, wie es ist (vorher wurden beide ausgebaut, dadurch stand dort fast dasselbe wie bei "Jetzt", bei Ringen immer +3).
+
 ## 2026.10.20 (20.10.2026)
 
 ### Neu

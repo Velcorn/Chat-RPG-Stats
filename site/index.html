@@ -1312,9 +1312,9 @@ function extras(slot, v) {
   return out;
 }
 // Where a new piece of a tier brings the most, from the worn pieces. Per slot: `now` = a plain piece of the tier minus
-// all points of the worn one (scrolls and stone included), `ceiling` = both fully upgraded (scrolls and a stone).
+// all points of the worn one (scrolls and stone included), `ceiling` = the new piece fully upgraded (scrolls and a stone) against the worn one as it is.
 // A ring gains 3 points per tier (others 5), so its `now` counts 3 less when ranking.
-const RING_PENALTY = 3, ROOM = 6 + 4, RING_ROOM = 4 + 4;
+const RING_PENALTY = 3, ROOM = 6 + 4, RING_ROOM = 4 + 4, TWO_ROOM = 11 + 2 * 4;
 function upgradePlanCard(slots) {
   const base = (slot, tier, two) => /^RING/.test(slot) ? 3 * tier : (5 * tier + 3) * (two ? 2 : 1);
   const pts = (v) => v[3] + v[4] + v[5];
@@ -1329,9 +1329,9 @@ function upgradePlanCard(slots) {
     const tier = Number(picker.value);
     const rows = cand.filter(([, v]) => v[2] < tier).map(([k, v]) => {
       const two = !!v[9] && k === "WEAPON", ring = /^RING/.test(k), have = pts(v);
-      const fresh = base(k, tier, two), room = (ring ? RING_ROOM : ROOM) * (two ? 2 : 1);
+      const fresh = base(k, tier, two), room = two ? TWO_ROOM : ring ? RING_ROOM : ROOM;
       const sunk = Math.max(0, have - base(k, v[2], two));
-      const now = fresh - have, ceiling = fresh + room - (have + Math.max(0, room - sunk));
+      const now = fresh - have, ceiling = fresh + room - have;
       return { k, v, ring, now, ceiling, sunk };
     }).sort((u, w) => (w.now - (w.ring ? RING_PENALTY : 0)) - (u.now - (u.ring ? RING_PENALTY : 0)));
     body.replaceChildren(rows.length ? el("table", {},
@@ -1343,7 +1343,7 @@ function upgradePlanCard(slots) {
   fill();
   return el("details", { class: "card fold" }, el("summary", {}, "Wo ein neues Stück am meisten bringt"),
     el("div", { class: "head" }, el("span", { class: "note" }, "Ein einfaches Stück der Stufe:"), picker), body,
-    el("p", { class: "note" }, "\"Jetzt\": das einfache neue Stück gegen alle Punkte des getragenen (mit Schriftrollen und Stein, die beim Ersetzen verloren gehen). \"Voll ausgebaut\": beide mit vier Schriftrollen-Stufen und Stein. Sortiert nach \"Jetzt\"; Ringe zählen 3 Punkte weniger, weil eine Ringstufe nur 3 Punkte bringt (sonst 5). Bei zwei Ringen zählt der schwächere. Die Form eines neuen Stücks ist Zufall, die Verteilung auf ATK, DEF und SUP kann abweichen."));
+    el("p", { class: "note" }, "\"Jetzt\": das einfache neue Stück gegen alle Punkte des getragenen (mit Schriftrollen und Stein, die beim Ersetzen verloren gehen). \"Voll ausgebaut\": das neue Stück mit vier Schriftrollen-Stufen und Stein (Rüstung, Waffe, Schild +10, Ring +8, Zweihandwaffe +19) gegen das getragene, wie es jetzt ist. Sortiert nach \"Jetzt\"; Ringe zählen 3 Punkte weniger, weil eine Ringstufe nur 3 Punkte bringt (sonst 5). Bei zwei Ringen zählt der schwächere. Die Form eines neuen Stücks ist Zufall, die Verteilung auf ATK, DEF und SUP kann abweichen."));
 }
 function gearCard(slots, power) {
   // An empty shield slot beside a two-hander (index 9; older readings lack it: a staff or two-hander by name) is no gap.

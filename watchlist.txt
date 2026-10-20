@@ -39,6 +39,7 @@ kimodin
 vik155364
 twice_tft
 sephiroth1411
+masuri_sora
 smiiinn
 drfly41
 luemlig
@@ -49,7 +50,6 @@ donmerkuzio
 koerdiskushi
 guido0x0
 playliket4ctix
-masuri_sora
 fluriio
 steamboat_itchy
 simonsee
@@ -87,8 +87,8 @@ xcap3
 luke_2120
 tvcreo
 kopnop
-xnoobprax
 lymotheus
+xnoobprax
 aeueoe
 lorianquin
 delia0s

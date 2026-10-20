@@ -48,6 +48,7 @@ Die letzten 30 bisherigen Versionen sind diesen Tagesversionen zugeordnet:
 - Formen: Die Tabelle ist mit dem Stand der Community-Tabelle vom 20.10.2026 vollständig für die Stufen 1 bis 14 (alle Formen je Stufe). Gemessen sind jetzt 514 von 562 Werten (vorher viele Näherungen bei Stufe 12 und 14), die Anteile folgen der höchsten gemessenen Stufe. Der Hinweis unter der Tabelle nennt, welche 48 Werte noch Näherungen sind.
 
 ### Oberfläche
+- Die Startseite zeigt statt des Schlüsselfinales nur noch den letzten Boss: Mittwoch, 28.10.2026, 18:00 Uhr, mit Countdown in Tagen und Stunden. Der Fortschritt der Schlüssel entfällt, alle sind bereit.
 - Beträge stehen ohne das Wort "Silber" (die Beschriftung nennt die Einheit schon). Die großen Zahlen in den Kacheln passen sich der Kachelbreite an und werden nicht mehr mit "..." abgeschnitten.
 
 ### Geändert

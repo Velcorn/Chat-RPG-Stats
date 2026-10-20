@@ -95,13 +95,13 @@ class CollectTests(unittest.TestCase):
         summary, _ = pipe.build(T0)
         self.assertEqual(summary["load"], {"per_run": 15, "runs_per_day": 224})
 
-    def test_key_progress_contains_only_current_progress_and_final_boss_date(self):
+    def test_key_progress_contains_only_current_progress_and_final_boss_time(self):
         state = {"keys": {"karni": {"fragments": 140, "required": 220, "ready": False, "forged": False,
                                      "seen": T0}}}
 
         progress = build.key_progress(state, {"karni": {"name": "Karni"}})
 
-        self.assertEqual(progress, {"boss_date": "2026-10-28", "guilds": [{
+        self.assertEqual(progress, {"boss_at": "2026-10-28T18:00:00+01:00", "guilds": [{
             "login": "karni", "name": "Karni", "fragments": 140, "required": 220, "percent": 63.6,
             "ready": False, "forged": False,
         }]})

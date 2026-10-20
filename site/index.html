@@ -90,17 +90,7 @@
   .key-card > .head { align-items: flex-start; }
   .key-finish { text-align: right; color: var(--text-secondary); }
   .key-finish strong { display: block; color: #fff; font-size: 17px; }
-  .keys { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
-  .key-row { padding: 14px; border: 1px solid #3b4550; border-radius: 10px; background: #11161980; }
-  .key-row .head { flex-wrap: nowrap; }
-  .key-row .name { color: var(--text-primary); font-weight: 650; text-decoration: none; overflow: hidden;
-                   white-space: nowrap; text-overflow: ellipsis; }
-  .key-numbers { margin: 8px 0 6px; font-size: 20px; font-weight: 650; font-variant-numeric: tabular-nums; }
-  .key-track { height: 7px; overflow: hidden; border-radius: 99px; background: #0c1012; }
-  .key-track span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #6574db, #3db6c6); }
-  .key-meta { display: flex; justify-content: space-between; gap: 8px; margin-top: 8px; color: var(--text-secondary);
-              font-size: 12px; font-variant-numeric: tabular-nums; }
-  @media (max-width: 760px) { .keys { grid-template-columns: 1fr; } .key-finish { text-align: left; } }
+  @media (max-width: 760px) { .key-finish { text-align: left; } }
   h3 { font-size: 13px; margin: 14px 0 0; font-weight: 600; }
   .era { margin-bottom: 4px; }
   h2.section { font-size: 15px; margin: 10px 0 0; color: var(--text-secondary); }
@@ -1669,29 +1659,15 @@ function channelLines(c) {
 }
 
 function keyCard(s) {
-  const keys = s.keys?.guilds || [];
-  const bossDate = s.keys.boss_date;
-  const bossDay = new Date(`${bossDate}T12:00:00Z`);
-  const label = bossDay.toLocaleDateString("de-DE", { timeZone: TZ, weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" });
-  const today = Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" })
-    .formatToParts(new Date(s.generated * 1000)).filter((p) => p.type !== "literal").map((p) => [p.type, Number(p.value)]));
-  const [year, month, day] = bossDate.split("-").map(Number);
-  const days = Math.round((Date.UTC(year, month - 1, day) - Date.UTC(today.year, today.month - 1, today.day)) / 86400000);
-  const countdown = days > 0 ? `noch ${count(days, "Tag", "Tage")}` : days === 0 ? "heute" : "vorbei";
-  const box = card(null, el("div", { class: "key-card-inner" },
-    el("div", { class: "head" },
-      el("div", {}, el("h2", {}, "Schlüsselfinale"), el("p", { class: "note" }, "Fragmente bis zum letzten Boss")),
-      el("div", { class: "key-finish" }, el("strong", {}, `Letzter Boss: ${label}`), countdown)),
-    keys.length ? el("div", { class: "keys" }, ...keys.map((k) => {
-      const status = k.forged ? "geschmiedet" : k.ready ? "bereit" : "wird gesammelt";
-      return el("div", { class: "key-row" },
-        el("div", { class: "head" }, el("a", { class: "name", href: `#/gilden/${k.login}` }, k.name),
-          el("span", { class: k.ready || k.forged ? "pill on" : "pill" }, `${fmtDec(k.percent, 1)} %`)),
-        el("div", { class: "key-numbers" }, `${fmtInt(k.fragments)} / ${fmtInt(k.required)}`),
-        el("div", { class: "key-track", title: `${fmtDec(k.percent, 1)} %` },
-          el("span", { style: `width:${Math.max(0, Math.min(100, k.percent))}%` })),
-        el("div", { class: "key-meta" }, el("span", {}, status)));
-    })) : null));
+  const at = new Date(s.keys.boss_at);
+  const label = at.toLocaleDateString("de-DE", { timeZone: TZ, weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" });
+  const time = at.toLocaleTimeString("de-DE", { timeZone: TZ, hour: "2-digit", minute: "2-digit" });
+  const hours = Math.floor((at - Date.now()) / 3600000);
+  const countdown = hours >= 24 ? `noch ${count(Math.floor(hours / 24), "Tag", "Tage")} ${count(hours % 24, "Stunde", "Stunden")}`
+    : hours >= 0 ? `noch ${count(hours, "Stunde", "Stunden")}` : "vorbei";
+  const box = card(null, el("div", { class: "head" },
+    el("div", {}, el("h2", {}, "Letzter Boss"), el("p", { class: "note" }, `${label}, ${time} Uhr`)),
+    el("div", { class: "key-finish" }, el("strong", {}, countdown))));
   box.classList.add("key-card");
   return box;
 }

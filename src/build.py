@@ -14,7 +14,9 @@ import statistics
 import time
 import tomllib
 from collections import defaultdict
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import collect
 import fightstats
@@ -26,7 +28,7 @@ BOARD_GRID = 2 * 3600  # the top-100 time lapse has a frame every two hours
 PEERS_MIN = 8
 PEERS_CLASS_MIN = 20  # class peers for the stat bars: within 10 % of the gear score, else this many nearest
 PEERS_BAND = 4  # class peers from which on the stat bars show the band (10 % to 90 %)
-FINAL_BOSS_DATE = "2026-10-28"
+FINAL_BOSS_AT = datetime(2026, 10, 28, 18, 0, tzinfo=ZoneInfo("Europe/Berlin")).isoformat()  # announced by the game
 
 
 def replay(days: Path):
@@ -160,7 +162,7 @@ def rounded(x, n=2):
 
 
 def key_progress(state: dict, guilds: dict) -> dict:
-    """Current key progress and the announced date of the final boss."""
+    """Current key progress and the announced time of the final boss."""
     rows = []
     for login, current in state.get("keys", {}).items():
         fragments, required = current.get("fragments") or 0, current.get("required") or 0
@@ -169,7 +171,7 @@ def key_progress(state: dict, guilds: dict) -> dict:
                      "percent": rounded(min(100, 100 * fragments / required), 1) if required else 0,
                      "ready": bool(current.get("ready")), "forged": bool(current.get("forged"))})
     return {"guilds": sorted(rows, key=lambda r: (-r["forged"], -r["ready"], -r["percent"], r["name"].casefold())),
-            "boss_date": FINAL_BOSS_DATE}
+            "boss_at": FINAL_BOSS_AT}
 
 
 def season_manifest(data: Path) -> dict:

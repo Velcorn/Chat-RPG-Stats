@@ -423,6 +423,19 @@ class ArchiveTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             season_archive.archive(pipe.data, "next", "  ")
 
+    def test_command_line_archives_and_prints_the_season(self):
+        pipe = Pipeline()
+        pipe.run(snap({"karni": [member("a", 100)]}, board=[("a", 100, 80, 10, 10)]), T0)
+        argv = ["archive", "--data", str(pipe.data), "--id", "beta-2026", "--label", "Beta 2026"]
+        with mock.patch("sys.argv", argv), redirect_stdout(io.StringIO()) as printed:
+            season_archive.main()
+        self.assertEqual(printed.getvalue(), f"Beta 2026 archiviert: {T0} bis {T0}\n")
+
+    def test_manifest_without_an_archive_list_falls_back_to_the_default(self):
+        data = Path(tempfile.mkdtemp())
+        (data / "seasons.json").write_text('{"archives": "x"}')
+        self.assertEqual(build.season_manifest(data)["archives"], [])
+
 
 class HelperTests(unittest.TestCase):
     def test_value_at_and_pace(self):

@@ -20,8 +20,8 @@ coleio_lol
 # --- Top 100 (automatisch, bitte hier nichts eintragen) ---
 airfighterki
 panzertaubegurr
-bioticzilean
 mcmitsch
+bioticzilean
 vatom__
 laestryy
 nitram272
@@ -35,12 +35,12 @@ twice_tft
 gigaemerald
 ceeuhhbeeahh
 masuri_sora
+simonsee
 donmerkuzio
 maleficusa
 vik155364
 sephiroth1411
 l3x0n
-simonsee
 steamboat_itchy
 basti300
 luemlig
@@ -90,8 +90,8 @@ schara
 kopnop
 tsuk1gure
 cousin_peter
-allowain_
 mortili
+allowain_
 mike_zrk
 fluriio
 ctrlgismo

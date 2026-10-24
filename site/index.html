@@ -2620,7 +2620,7 @@ async function viewSeason(s) {
       chartCard("Höchster Ausrüstungswert der Saison", top.series, { until: s.generated }),
       card("An der Spitze", el("dl", { class: "facts" },
           top.first ? [el("dt", {}, `Als Erster auf ${fmtInt(top.score)}`),
-            el("dd", {}, el("a", { href: `#/spieler/${top.first.login}` }, top.first.name), ` (${fmtSince(top.first.t)})`)] : null,
+            el("dd", {}, el("a", { href: `#/spieler/${top.first.login}` }, top.first.name), el("div", { class: "muted", style: "white-space: nowrap" }, fmtTime(top.first.t)))] : null,
           el("dt", {}, archived ? "Zum Schluss auf dem Höchstwert" : "Aktuell auf dem Höchstwert"),
           el("dd", {}, count(top.now, "Spieler", "Spieler"))),
         el("div", { class: "scroll" }, table([

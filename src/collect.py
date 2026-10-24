@@ -103,7 +103,7 @@ def snapshot(site: Site, watchlist: list[str], detail_after: int = 0, daily: dic
         snap |= {"fights": [], "boards": {}}
         return read_profiles(site, snap, watchlist, sweep_after, top_day, prev or {})
     for g in site.get("/api/guilds"):
-        if g.get("members"):
+        if g.get("members") or g.get("treasurySilver"):  # an empty guild with a treasury still fights bosses
             login = g["login"]
             snap["guilds"][login] = site.get(f"/api/guilds/{quote(login)}")
     snap["boards"] = {b: site.get(f"/api/leaderboard?by={b}&limit=100") for b in BOARD_FIELDS}

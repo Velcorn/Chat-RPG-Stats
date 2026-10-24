@@ -52,6 +52,14 @@ class SnapshotTests(unittest.TestCase):
         self.assertEqual(list(s["guilds"]), ["karni"])  # a guild without members costs no request
         self.assertEqual((site.requests, s["watch"], "days" in s), (7, {}, False))  # the top is not due
 
+    def test_a_guild_without_members_but_with_a_treasury_is_read_for_its_boss_wins(self):
+        site = FakeSite(answers(**{
+            "/api/guilds": [{"login": "karni", "members": 2}, {"login": "solo", "members": 0, "treasurySilver": 5}],
+            "/api/guilds/solo": {"guild": {"name": "Solo"}, "members": [], "boss": {"wins": 7, "losses": 1}}}))
+        s = collect.snapshot(site, [], prev=KEPT)
+        self.assertEqual(list(s["guilds"]), ["karni", "solo"])
+        self.assertEqual(collect.state_from(s, {})["guilds"]["solo"]["boss_wins"], 7)
+
     def test_the_top_100_is_read_in_full_on_the_day_s_first_run(self):
         site = FakeSite(answers())
         s = collect.snapshot(site, [], top_day="2026-10-09")

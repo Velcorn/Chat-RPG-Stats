@@ -478,6 +478,18 @@ class UpgradeTriesTests(unittest.TestCase):
             self.assertTrue(0 <= step["ok"] <= step["tries"])
 
 
+class GuildBossTests(unittest.TestCase):
+    def test_a_guild_without_members_adds_its_boss_wins_but_has_no_page(self):
+        pipe = Pipeline()
+        s = snap({"karni": [member("a", 100)], "solo": []})
+        s["guilds"]["solo"]["boss"] = {"wins": 7, "losses": 1}
+        s["guilds"]["karni"]["boss"] = {"wins": 3, "losses": 1}
+        pipe.run(s, T0)
+        summary, _ = pipe.build(T0 + 60)
+        self.assertEqual([g["login"] for g in summary["guilds"]], ["karni"])
+        self.assertEqual(summary["guild_boss"], {"guilds": 2, "wins": 10, "losses": 2})
+
+
 class FinaleTests(unittest.TestCase):
     def test_the_top_story_and_the_records(self):
         import build

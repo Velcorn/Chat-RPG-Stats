@@ -242,6 +242,8 @@ def build(data: Path, out: Path, now: float | None = None, include_archives: boo
             guild_members[p["guild"]].append(login)
     guild_rows = []
     for g, info in guilds.items():
+        if not info.get("members"):  # a guild without members has no page of its own, only boss wins (`guild_boss`)
+            continue
         members = guild_members.get(g, [])
         active_gear = [players[m]["gs"] for m in members
                        if players[m].get("active") and players[m].get("gs") is not None]
@@ -287,6 +289,8 @@ def build(data: Path, out: Path, now: float | None = None, include_archives: boo
                "channel_stats": channel_stats(h, state, summary_stats["channels"]),
                "rules": {"now": state.get("rules", {}), "log": h.rules_log[::-1][:60],
                          "since": h.first if state.get("rules") else None},
+               "guild_boss": {"guilds": len(guilds), "wins": sum(g.get("boss_wins") or 0 for g in guilds.values()),
+                              "losses": sum(g.get("boss_losses") or 0 for g in guilds.values())},
                "economy": economy(h, now),
                "finale": finale(h, players, BOARD_GRID, GEAR_SINCE + BOARD_LAG)}
 

@@ -28,7 +28,7 @@ zeigt:
 
 | Daten | Quelle | Anfragen pro Lauf |
 |---|---|---|
-| Kampfkraft, Spenden und Aktivität aller Gildenmitglieder | Gildenliste und Gildenseiten | 1 + 1 pro Gilde |
+| Kampfkraft, Spenden und Aktivität aller Gildenmitglieder | Gildenliste und Gildenseiten | 1 + 1 pro Gilde (auch ohne Mitglieder, solange sie eine Kasse hat: ihre Bosssiege zählen mit) |
 | Ausrüstungswert (Angriff + Verteidigung + Unterstützung) der aktiven Mitglieder außerhalb der Top 100, jeder etwa einmal am Tag | Spielerseite | rund 55 |
 | Top 100 nach Ausrüstungswert (mit ATK/DEF/SUP) | Rangliste | 1 |
 | Die letzten 20 Kämpfe aller Kanäle | Kampfarchiv | 1 |

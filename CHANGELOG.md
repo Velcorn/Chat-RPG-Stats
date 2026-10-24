@@ -51,6 +51,7 @@ Die letzten 30 bisherigen Versionen sind diesen Tagesversionen zugeordnet:
 - Gilden im Vergleich: Die Kacheln zählen nur noch Durchschnitte (höchster Ausrüstungswert, Anteil aktiver Mitglieder, Kasse und Spenden je Mitglied) statt Summen, damit nicht einfach die größten Gilden gewinnen. Die Tabelle hat dazu die Spalten "Kasse je Mitglied" und "Gespendet je Mitglied".
 
 ### Behoben
+- Saisonbericht: "Bosssiege der Gilden" zählt auch Gilden ohne Mitglieder mit (Wafebreakers Bund der Wellenbrecher fehlte); die Gilde hat keine eigene Seite und steht nicht in den Vergleichen.
 - Diagramme: Der Tooltip bleibt auf kleinen Bildschirmen im Diagramm und bricht lange Zeilen um, statt links aus dem Bildschirm zu ragen.
 
 ## 2026.10.21 (21.10.2026)

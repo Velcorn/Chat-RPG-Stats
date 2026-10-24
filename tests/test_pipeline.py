@@ -476,3 +476,24 @@ class UpgradeTriesTests(unittest.TestCase):
         self.assertEqual(sorted(data["steps"]), ["1", "2", "3", "4"])
         for step in data["steps"].values():
             self.assertTrue(0 <= step["ok"] <= step["tries"])
+
+
+class FinaleTests(unittest.TestCase):
+    def test_the_top_story_and_the_records(self):
+        import build
+        self.addCleanup(setattr, build, "GEAR_SINCE", build.GEAR_SINCE)
+        build.GEAR_SINCE = 0
+        pipe = Pipeline()
+        for step in range(6):  # every two hours: "a" leads at first, "b" from step 3 on
+            a, b = 100 + step, 100 + 3 * step if step >= 3 else 99
+            board = sorted([("a", a, 1, 1, 1), ("b", b, 1, 1, 1)], key=lambda r: -r[1])
+            pipe.run(snap({"karni": [member("a", a, donated=10), member("b", b, donated=500)]}, board=board),
+                     T0 + step * 7200)
+        summary, _ = pipe.build(T0 + 6 * 7200)
+        f = summary["finale"]
+        self.assertEqual(f["top"]["score"], f["top"]["series"][-1][1])
+        self.assertEqual(f["top"]["first"]["login"], "b")  # the first to reach the final top score
+        self.assertEqual([r[0] for r in f["top"]["holders"]], ["a", "b"])
+        self.assertEqual(f["top"]["ever"], 2)
+        self.assertEqual(f["records"]["donors"][0][:3], ["b", "B", 500])
+        self.assertEqual(f["records"]["growth"][0][0], "b")

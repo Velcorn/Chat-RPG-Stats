@@ -20,10 +20,12 @@ from zoneinfo import ZoneInfo
 
 import collect
 import fightstats
+from finale import finale
 from observed import observed
 from timelapse import timelapse, top_lapse
 
 DAY = 86400
+BOARD_LAG = 12 * 3600  # the board shows the plain gear score only a few frames after GEAR_SINCE
 BOARD_GRID = 2 * 3600  # the top-100 time lapse has a frame every two hours
 PEERS_MIN = 8
 PEERS_CLASS_MIN = 20  # class peers for the stat bars: within 10 % of the gear score, else this many nearest
@@ -285,7 +287,8 @@ def build(data: Path, out: Path, now: float | None = None, include_archives: boo
                "channel_stats": channel_stats(h, state, summary_stats["channels"]),
                "rules": {"now": state.get("rules", {}), "log": h.rules_log[::-1][:60],
                          "since": h.first if state.get("rules") else None},
-               "economy": economy(h, now)}
+               "economy": economy(h, now),
+               "finale": finale(h, players, BOARD_GRID, GEAR_SINCE + BOARD_LAG)}
 
     target = out / "data"
     if target.exists():

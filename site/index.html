@@ -65,6 +65,9 @@
                  overflow-wrap: anywhere; hyphens: auto; }
   .tile.kk { display: grid; grid-template-columns: auto 1fr; column-gap: 12px; align-content: start; }
   .tile.kk .sub { grid-column: 1 / -1; }
+  .season-podium { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  @media (max-width: 700px) { .season-podium { grid-template-columns: minmax(0, 1fr); } }
+  .season-podium .podium-first { border-color: #c9a227; background: linear-gradient(130deg, #3d3519, #1a2028); }
   .tile .pwl { text-transform: none; letter-spacing: 0; }
   .tile .sub a { padding: 0; font-size: inherit; }
   .tile .pwv { align-self: start; margin-top: 8px; font-size: 13px; font-weight: 650; line-height: 1.2; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
@@ -1579,31 +1582,41 @@ function reductionCurve(box, def, survival) {
     sv("text", { x: x(def) + 8, y: y(reduction(def)) + 18, class: "marklabel me" }, `DEF ${fmtInt(def)}: ${fmtInt(survival ?? Math.round(reduction(def)))} %`));
   svg.append(sv("text", { x: W - m.r, y: m.t + 4, "text-anchor": "end", class: "marklabel" }, "100 x DEF / (DEF + 80)"));
 }
+const perMember = (g, total) => g.members ? total / g.members : null;  // guild totals per member, so size alone doesn't win
+
+// The guild tiles: averages per (active) member, so size alone doesn't win. Small guilds (under 10 active) don't count.
+function guildTiles(s) {
+  const bigOnes = s.guilds.filter((g) => g.active >= 10);
+  const by = (f) => bigOnes.reduce((a, g) => (!a || (f(g) ?? -Infinity) > (f(a) ?? -Infinity) ? g : a), null);
+  const strongest = by((g) => g.avg_gear), engaged = by((g) => g.members ? g.active / g.members : null),
+    richest = by((g) => perMember(g, g.treasury)), giving = by((g) => perMember(g, g.donated));
+  return el("div", { class: "grid tiles" },
+    tile("Höchster Ø Ausrüstungswert", strongest ? strongest.login : "-", strongest ? `${fmtDec(strongest.avg_gear, 1)} je aktivem Mitglied` : ""),
+    tile("Höchster Aktiven-Anteil", engaged ? engaged.login : "-", engaged ? `${pct(engaged.active, engaged.members)} der Mitglieder aktiv` : ""),
+    tile("Größte Kasse je Mitglied", richest ? richest.login : "-", richest ? `${fmtSilver(perMember(richest, richest.treasury))} je Mitglied` : ""),
+    tile("Meist gespendet je Mitglied", giving ? giving.login : "-", giving ? `${fmtSilver(perMember(giving, giving.donated))} je Mitglied` : ""));
+}
+
 function viewGuildRace(s) {
   const cols = [
     { label: "Gilde", get: (g) => el("a", { href: `#/gilden/${g.login}` }, g.name) },
     { label: "Mitglieder", num: true, get: (g) => `${fmtInt(g.members)} (${fmtInt(g.active)} aktiv)` },
     { label: "Ø Ausrüstungswert", short: "Ø AW", num: true, title: "Durchschnitt der aktiven Mitglieder", get: (g) => fmtDec(g.avg_gear, 1) },
     { label: "Kasse", num: true, get: (g) => fmtSilver(g.treasury) },
+    { label: "Kasse je Mitglied", num: true, sm: false, get: (g) => fmtSilver(perMember(g, g.treasury)) },
     { label: "Kasse 7 Tage", num: true, sm: false, get: (g) => g.treasury_week == null ? "-" : el("span", { class: g.treasury_week >= 0 ? "up" : "down" }, signed(g.treasury_week)) },
     { label: "Gespendet", num: true, sm: false, get: (g) => fmtSilver(g.donated) },
+    { label: "Gespendet je Mitglied", num: true, sm: false, get: (g) => fmtSilver(perMember(g, g.donated)) },
     { label: "Bosse", num: true, title: "Siege / Niederlagen", get: (g) => `${fmtInt(g.boss_wins)} / ${fmtInt(g.boss_losses)}` },
   ];
   // Small guilds would top every average, so they only count from 10 active members and stand last in the table.
   const big = (g) => g.active >= 10;
   const ranked = [...s.guilds].sort((x, y) => (big(y) - big(x)) || ((y.avg_gear || 0) - (x.avg_gear || 0)));
-  const bigOnes = ranked.filter(big);
-  const top = (key) => bigOnes.reduce((a, g) => (!a || (g[key] ?? -Infinity) > (a[key] ?? -Infinity) ? g : a), null);
-  const strongest = top("avg_gear"), largest = top("members"), busiest = top("active"), richest = top("treasury");
   return [el("section", { class: "grid" },
     el("div", { class: "head" }, el("h1", {}, "Gilden im Vergleich")),
-    el("div", { class: "grid tiles" },
-      tile("Höchster Ø Ausrüstungswert", strongest ? strongest.login : "-", strongest ? `${fmtDec(strongest.avg_gear, 1)} je aktivem Mitglied` : ""),
-      tile("Meiste Mitglieder", largest ? largest.login : "-", largest ? `${fmtInt(largest.members)}, davon ${fmtInt(largest.active)} aktiv` : ""),
-      tile("Meiste Aktive", busiest ? busiest.login : "-", busiest ? `${fmtInt(busiest.active)} aktive Mitglieder` : ""),
-      tile("Größte Kasse", richest ? richest.login : "-", richest ? fmtSilver(richest.treasury) : "")),
+    guildTiles(s),
     card("Alle Gilden nach Ø Ausrüstungswert", el("div", { class: "scroll" }, table(cols, ranked, { cards: true })),
-      el("p", { class: "note" }, "Durchschnitt: nur aktive Mitglieder. Gilden unter 10 Aktiven gewinnen keine Kachel.")),
+      el("p", { class: "note" }, "Die Kacheln zählen je (aktivem) Mitglied statt Summen, damit nicht einfach die größten Gilden gewinnen. Gilden unter 10 Aktiven gewinnen keine Kachel.")),
     chartCard("Silber in den Gildenkassen", s.economy.series.map((p) => [p.t, p.treasury]), { fmt: fmtSilver, until: s.generated }),
     guildFightsCard(s),
     firstKillsCard(s))];
@@ -2567,7 +2580,7 @@ async function viewSeason(s) {
   const season = s.season || {}, archived = !!season.archived;
   const label = season.label || (archived ? "Archiv" : "Aktuelle Saison");
   const days = s.since ? Math.max(1, Math.ceil((s.generated - s.since) / DAY_S)) : null;
-  const leader = s.board[0], strongest = [...s.guilds].sort((a, b) => (b.avg_gear || 0) - (a.avg_gear || 0))[0];
+  const leader = s.board[0], strongest = [...s.guilds].filter((g) => g.active >= 10).sort((a, b) => (b.avg_gear || 0) - (a.avg_gear || 0))[0];
   const total = s.stats.total;
   const badge = archived ? "Saison abgeschlossen" : "Saison läuft";
   const end = archived && season.end ? fmtSince(season.end) : `Stand ${fmtTime(s.generated)}`;
@@ -2579,11 +2592,73 @@ async function viewSeason(s) {
     card(label, el("div", { class: "season-days" }, days == null ? "-" : count(days, "Tag", "Tage")),
       el("p", { class: "note" }, s.since ? `${fmtSince(s.since)} bis ${end}` : end)));
 
-  const headline = el("div", { class: "grid tiles" },
+  const f = s.finale, podium = s.board.slice(0, 3);
+  const headline = f ? null : el("div", { class: "grid tiles" },
     tile(archived ? "Platz 1" : "Aktuell Platz 1", leader ? leader.name : "-", leader ? `${fmtInt(leader.gear)} Ausrüstungswert` : ""),
-    tile("Höchster Ausrüstungswert", leader ? fmtInt(leader.gear) : "-", leader ? leader.name : ""),
     tile("Kämpfe", fmtInt(total.n), `${fmtInt(total.wins)} gewonnen (${pct(total.wins, total.n)})`),
     tile("Aktive Spieler", fmtInt(s.active), `${fmtInt(s.players)} insgesamt erfasst`));
+  const medals = ["Platz 1", "Platz 2", "Platz 3"];
+  const stage = f && podium.length ? [el("div", { class: "head" }, el("h1", {}, archived ? "Das Podium" : "Das Podium (Stand jetzt)")),
+    el("div", { class: "grid tiles season-podium" }, ...podium.map((r, i) => {
+      const t = tile(medals[i], r.name || r.login, `${fmtInt(r.gear)} Ausrüstungswert${r.guild ? `, ${r.guild}` : ""}`);
+      t.addEventListener("click", () => { location.hash = `#/spieler/${r.login}`; });
+      t.style.cursor = "pointer";
+      if (i === 0) t.classList.add("podium-first");
+      return t;
+    }))] : [];
+  const top = f && f.top;
+  const way = top ? [el("div", { class: "head" }, el("h1", {}, "Der Weg an die Spitze")),
+    el("div", { class: "grid two" },
+      chartCard("Höchster Ausrüstungswert der Saison", top.series, { until: s.generated }),
+      card("An der Spitze", el("dl", { class: "facts" },
+          top.first ? [el("dt", {}, `Als Erster auf ${fmtInt(top.score)}`),
+            el("dd", {}, el("a", { href: `#/spieler/${top.first.login}` }, top.first.name), ` (${fmtSince(top.first.t)})`)] : null,
+          el("dt", {}, archived ? "Zum Schluss auf dem Höchstwert" : "Aktuell auf dem Höchstwert"),
+          el("dd", {}, count(top.now, "Spieler", "Spieler")),
+          el("dt", {}, "Hielten den Höchstwert"), el("dd", {}, count(top.ever, "Spieler", "Spieler"))),
+        el("div", { class: "scroll" }, table([
+          { label: "Spieler", get: (r) => el("a", { href: `#/spieler/${r[0]}` }, r[1]) },
+          { label: "Zeit an der Spitze", num: true, get: (r) => `${fmtDec(r[2], 0)} h` },
+          { label: "Längste Phase", num: true, sm: false, get: (r) => `${fmtDec(r[3], 0)} h` }], top.holders)),
+        el("p", { class: "note" }, "An der Spitze zählt, wer den höchsten Wert hatte, auch geteilt (gemessen alle zwei Stunden)")))] : [];
+  const rec = f && f.records;
+  const records = rec ? [el("div", { class: "head" }, el("h1", {}, "Rekorde")),
+    el("div", { class: "grid three" },
+      card("Größter Zuwachs", el("div", { class: "scroll" }, table([
+        { label: "Spieler", get: (r) => el("a", { href: `#/spieler/${r[0]}` }, r[1]) },
+        { label: "Zuwachs", num: true, get: (r) => delta(r[2]) },
+        { label: "Von - bis", num: true, sm: false, get: (r) => `${fmtInt(r[3])} - ${fmtInt(r[4])}` }], rec.growth)),
+        el("p", { class: "note" }, "Seit der ersten Messung des Spielers.")),
+      card("Größte Spender", el("div", { class: "scroll" }, table([
+        { label: "Spieler", get: (r) => el("a", { href: `#/spieler/${r[0]}` }, r[1]) },
+        { label: "Gespendet", num: true, get: (r) => fmtSilver(r[2]) }], rec.donors))),
+      card("Höchste Kampfkraft", el("div", { class: "scroll" }, table([
+        { label: "Spieler", get: (r) => el("a", { href: `#/spieler/${r[0]}` }, r[1]) },
+        { label: "Kampfkraft", num: true, get: (r) => fmtInt(r[2]) }], rec.power)),
+        el("p", { class: "note" }, "Ausrüstung plus Talente, laut Gildenseite.")))] : [];
+  const bossWins = s.guilds.reduce((n, g) => n + (g.boss_wins || 0), 0);
+  const numbers = f ? [el("div", { class: "head" }, el("h1", {}, "Die Saison in Zahlen")),
+    el("div", { class: "grid tiles" },
+      tile("Tage", days == null ? "-" : fmtInt(days), s.since ? `seit ${fmtSince(s.since)}` : ""),
+      tile("Spieler", fmtInt(s.players), `${fmtInt(s.active)} davon aktiv`),
+      tile("Kämpfe", fmtInt(total.n), `${fmtInt(total.wins)} gewonnen (${pct(total.wins, total.n)})`),
+      tile("Bosssiege der Gilden", fmtInt(bossWins), count(s.guilds.length, "Gilde", "Gilden")),
+      tile("Gespendet", fmtSilver(s.guilds.reduce((n, g) => n + (g.donated || 0), 0)), "in die Gildenkassen"),
+      tile("In den Kassen", fmtSilver(s.guilds.reduce((n, g) => n + (g.treasury || 0), 0)), archived ? "zum Saisonende" : "aktuell"),
+      tile("Platz 100", s.top100.gear ? fmtInt(s.top100.gear) : "-", "Ausrüstungswert"),
+      tile("Höchster Ausrüstungswert", leader ? fmtInt(leader.gear) : "-", leader ? leader.name : "")),
+    chartCard("Ausrüstungswert von Platz 100", s.top100.series, { until: s.generated })] : [];
+  const guildsEnd = f && s.guilds.some((g) => g.active >= 10) ? [el("div", { class: "head" }, el("h1", {}, "Das Gildenfinale")),
+    guildTiles(s),
+    card("Alle Gilden", el("div", { class: "scroll" }, table([
+      { label: "Gilde", get: (g) => el("a", { href: `#/gilden/${g.login}` }, g.name) },
+      { label: "Ø Ausrüstungswert", short: "Ø AW", num: true, get: (g) => fmtDec(g.avg_gear, 1) },
+      { label: "Aktive", num: true, get: (g) => `${fmtInt(g.active)} von ${fmtInt(g.members)}` },
+      { label: "Kasse je Mitglied", num: true, sm: false, get: (g) => fmtSilver(perMember(g, g.treasury)) },
+      { label: "Gespendet je Mitglied", num: true, sm: false, get: (g) => fmtSilver(perMember(g, g.donated)) },
+      { label: "Bosse", num: true, title: "Siege / Niederlagen", get: (g) => `${fmtInt(g.boss_wins)} / ${fmtInt(g.boss_losses)}` }],
+      [...s.guilds].sort((x, y) => ((y.active >= 10) - (x.active >= 10)) || ((y.avg_gear || 0) - (x.avg_gear || 0))))),
+      el("p", { class: "note" }, "Durchschnitte je (aktivem) Mitglied; Gilden unter 10 Aktiven stehen zuletzt und gewinnen nichts."))] : [];
 
   const cards = el("div", { class: "grid season-share" },
     seasonShareCard("Ranglistenkarte", leader ? `${leader.name} · #1` : "Noch offen",
@@ -2626,8 +2701,8 @@ async function viewSeason(s) {
       comparisonCard("Aktive Spieler", s.active, other.data.active),
       comparisonCard("Gewonnene Kämpfe", total.wins, other.data.stats.total.wins))] : [];
 
-  return [el("section", { class: "grid" }, intro, headline, cards, journey, moments,
-    ...compare,
+  return [el("section", { class: "grid" }, intro, headline, ...stage, ...way, ...records, ...numbers, ...guildsEnd, moments,
+    journey, el("div", { class: "head" }, el("h1", {}, "Zum Teilen")), cards, ...compare,
     card(archived ? "Finale Rangliste" : "Aktuelle Top 10", table([
       { label: "#", num: true, get: (r) => fmtInt(r.rank) },
       { label: "Spieler", get: playerLink },

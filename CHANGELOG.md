@@ -45,7 +45,7 @@ Die letzten 30 bisherigen Versionen sind diesen Tagesversionen zugeordnet:
 ## 2026.10.25 (25.10.2026)
 
 ### Neu
-- Saisonbericht als Finale: Der Rückblick zeigt jetzt das Podium, den Weg an die Spitze (Verlauf des höchsten Ausrüstungswerts, wer ihn als Erster erreicht hat und wer ihn wie lange hielt), Rekorde (größter Zuwachs, größte Spender, höchste Kampfkraft), die Saison in Zahlen und das Gildenfinale.
+- Saisonbericht als Finale: Der Rückblick zeigt jetzt das Podium, den Weg an die Spitze (Verlauf des höchsten Ausrüstungswerts, wer ihn als Erster erreicht hat und wer ihn wie lange hielt), Rekorde (größte Spender, höchste Kampfkraft), die Saison in Zahlen und das Gildenfinale. Das Podium ist in Gold, Silber und Bronze gehalten.
 
 ### Verbessert
 - Gilden im Vergleich: Die Kacheln zählen nur noch Durchschnitte (höchster Ausrüstungswert, Anteil aktiver Mitglieder, Kasse und Spenden je Mitglied) statt Summen, damit nicht einfach die größten Gilden gewinnen. Die Tabelle hat dazu die Spalten "Kasse je Mitglied" und "Gespendet je Mitglied".

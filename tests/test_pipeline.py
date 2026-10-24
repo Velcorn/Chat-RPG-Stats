@@ -496,4 +496,3 @@ class FinaleTests(unittest.TestCase):
         self.assertEqual([r[0] for r in f["top"]["holders"]], ["a", "b"])
         self.assertEqual(f["top"]["ever"], 2)
         self.assertEqual(f["records"]["donors"][0][:3], ["b", "B", 500])
-        self.assertEqual(f["records"]["growth"][0][0], "b")

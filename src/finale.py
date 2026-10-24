@@ -48,23 +48,15 @@ def top_story(h, players: dict, grid: int, since: float = 0) -> dict | None:
             "ever": len(hours)}
 
 
-def records(h, players: dict, since: float = 0) -> dict:
-    """Records of the season: the biggest gear gain since the first measurement, the biggest donors and the highest
-    Kampfkraft (the latter two as the state has them)."""
-    growth = []
-    for login, series in h.gs.items():
-        s = [p for p in series if p[0] >= since and p[1] > 0]  # a 0 is a player not read yet
-        if len(s) >= 2 and s[-1][1] > s[0][1]:
-            growth.append([login, _name(players, login), s[-1][1] - s[0][1], s[0][1], s[-1][1]])
-    growth.sort(key=lambda r: -r[2])
-
+def records(h, players: dict) -> dict:
+    """Records of the season as the state has them: the biggest donors and the highest Kampfkraft."""
     def best(key):
         rows = [(login, p[key]) for login, p in players.items() if p.get(key)]
         return [[login, _name(players, login), v, players[login].get("guild")]
                 for login, v in sorted(rows, key=lambda r: -r[1])[:TOP_N]]
-    return {"growth": growth[:TOP_N], "donors": best("donated"), "power": best("gear")}
+    return {"donors": best("donated"), "power": best("gear")}
 
 
 def finale(h, players: dict, grid: int, since: float = 0) -> dict:
     """`since`: the board showed Kampfkraft before it, so those frames and scores are left out."""
-    return {"top": top_story(h, players, grid, since), "records": records(h, players, since)}
+    return {"top": top_story(h, players, grid, since), "records": records(h, players)}

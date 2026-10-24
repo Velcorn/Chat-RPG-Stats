@@ -67,7 +67,15 @@
   .tile.kk .sub { grid-column: 1 / -1; }
   .season-podium { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   @media (max-width: 700px) { .season-podium { grid-template-columns: minmax(0, 1fr); } }
-  .season-podium .podium-first { border-color: #c9a227; background: linear-gradient(130deg, #3d3519, #1a2028); }
+  .season-podium .tile .label { font-weight: 650; }
+  .season-podium .podium-1 { border-color: #d4af37; background: linear-gradient(130deg, #4a3d12, #1a2028); }
+  .season-podium .podium-1 .label { color: #e6c653; }
+  .season-podium .podium-2 { border-color: #aab4bf; background: linear-gradient(130deg, #343b43, #1a2028); }
+  .season-podium .podium-2 .label { color: #c5cdd5; }
+  .season-podium .podium-3 { border-color: #b87333; background: linear-gradient(130deg, #44301d, #1a2028); }
+  .season-podium .podium-3 .label { color: #d08c4f; }
+  @media (min-width: 701px) { .season-podium .podium-2 { order: 1; } .season-podium .podium-1 { order: 2; } .season-podium .podium-3 { order: 3; }
+    .season-podium .podium-1 { padding-top: 28px; padding-bottom: 28px; } }
   .tile .pwl { text-transform: none; letter-spacing: 0; }
   .tile .sub a { padding: 0; font-size: inherit; }
   .tile .pwv { align-self: start; margin-top: 8px; font-size: 13px; font-weight: 650; line-height: 1.2; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
@@ -2597,13 +2605,13 @@ async function viewSeason(s) {
     tile(archived ? "Platz 1" : "Aktuell Platz 1", leader ? leader.name : "-", leader ? `${fmtInt(leader.gear)} Ausrüstungswert` : ""),
     tile("Kämpfe", fmtInt(total.n), `${fmtInt(total.wins)} gewonnen (${pct(total.wins, total.n)})`),
     tile("Aktive Spieler", fmtInt(s.active), `${fmtInt(s.players)} insgesamt erfasst`));
-  const medals = ["Platz 1", "Platz 2", "Platz 3"];
+  const medals = ["Gold", "Silber", "Bronze"];
   const stage = f && podium.length ? [el("div", { class: "head" }, el("h1", {}, archived ? "Das Podium" : "Das Podium (Stand jetzt)")),
     el("div", { class: "grid tiles season-podium" }, ...podium.map((r, i) => {
       const t = tile(medals[i], r.name || r.login, `${fmtInt(r.gear)} Ausrüstungswert${r.guild ? `, ${r.guild}` : ""}`);
       t.addEventListener("click", () => { location.hash = `#/spieler/${r.login}`; });
       t.style.cursor = "pointer";
-      if (i === 0) t.classList.add("podium-first");
+      t.classList.add(`podium-${i + 1}`);
       return t;
     }))] : [];
   const top = f && f.top;
@@ -2614,21 +2622,14 @@ async function viewSeason(s) {
           top.first ? [el("dt", {}, `Als Erster auf ${fmtInt(top.score)}`),
             el("dd", {}, el("a", { href: `#/spieler/${top.first.login}` }, top.first.name), ` (${fmtSince(top.first.t)})`)] : null,
           el("dt", {}, archived ? "Zum Schluss auf dem Höchstwert" : "Aktuell auf dem Höchstwert"),
-          el("dd", {}, count(top.now, "Spieler", "Spieler")),
-          el("dt", {}, "Hielten den Höchstwert"), el("dd", {}, count(top.ever, "Spieler", "Spieler"))),
+          el("dd", {}, count(top.now, "Spieler", "Spieler"))),
         el("div", { class: "scroll" }, table([
           { label: "Spieler", get: (r) => el("a", { href: `#/spieler/${r[0]}` }, r[1]) },
-          { label: "Zeit an der Spitze", num: true, get: (r) => `${fmtDec(r[2], 0)} h` },
-          { label: "Längste Phase", num: true, sm: false, get: (r) => `${fmtDec(r[3], 0)} h` }], top.holders)),
+          { label: "Zeit an der Spitze", num: true, get: (r) => `${fmtDec(r[2], 0)} h` }], top.holders)),
         el("p", { class: "note" }, "An der Spitze zählt, wer den höchsten Wert hatte, auch geteilt (gemessen alle zwei Stunden)")))] : [];
   const rec = f && f.records;
   const records = rec ? [el("div", { class: "head" }, el("h1", {}, "Rekorde")),
-    el("div", { class: "grid three" },
-      card("Größter Zuwachs", el("div", { class: "scroll" }, table([
-        { label: "Spieler", get: (r) => el("a", { href: `#/spieler/${r[0]}` }, r[1]) },
-        { label: "Zuwachs", num: true, get: (r) => delta(r[2]) },
-        { label: "Von - bis", num: true, sm: false, get: (r) => `${fmtInt(r[3])} - ${fmtInt(r[4])}` }], rec.growth)),
-        el("p", { class: "note" }, "Seit der ersten Messung des Spielers.")),
+    el("div", { class: "grid two" },
       card("Größte Spender", el("div", { class: "scroll" }, table([
         { label: "Spieler", get: (r) => el("a", { href: `#/spieler/${r[0]}` }, r[1]) },
         { label: "Gespendet", num: true, get: (r) => fmtSilver(r[2]) }], rec.donors))),
@@ -2639,15 +2640,11 @@ async function viewSeason(s) {
   const bossWins = s.guilds.reduce((n, g) => n + (g.boss_wins || 0), 0);
   const numbers = f ? [el("div", { class: "head" }, el("h1", {}, "Die Saison in Zahlen")),
     el("div", { class: "grid tiles" },
-      tile("Tage", days == null ? "-" : fmtInt(days), s.since ? `seit ${fmtSince(s.since)}` : ""),
       tile("Spieler", fmtInt(s.players), `${fmtInt(s.active)} davon aktiv`),
       tile("Kämpfe", fmtInt(total.n), `${fmtInt(total.wins)} gewonnen (${pct(total.wins, total.n)})`),
       tile("Bosssiege der Gilden", fmtInt(bossWins), count(s.guilds.length, "Gilde", "Gilden")),
-      tile("Gespendet", fmtSilver(s.guilds.reduce((n, g) => n + (g.donated || 0), 0)), "in die Gildenkassen"),
-      tile("In den Kassen", fmtSilver(s.guilds.reduce((n, g) => n + (g.treasury || 0), 0)), archived ? "zum Saisonende" : "aktuell"),
-      tile("Platz 100", s.top100.gear ? fmtInt(s.top100.gear) : "-", "Ausrüstungswert"),
-      tile("Höchster Ausrüstungswert", leader ? fmtInt(leader.gear) : "-", leader ? leader.name : "")),
-    chartCard("Ausrüstungswert von Platz 100", s.top100.series, { until: s.generated })] : [];
+      tile("Gespendet", fmtSilver(s.guilds.reduce((n, g) => n + (g.donated || 0), 0)), "in die Gildenkassen")),
+    chartCard("Die Einstiegshürde: Ausrüstungswert von Platz 100", s.top100.series, { until: s.generated })] : [];
   const guildsEnd = f && s.guilds.some((g) => g.active >= 10) ? [el("div", { class: "head" }, el("h1", {}, "Das Gildenfinale")),
     guildTiles(s),
     card("Alle Gilden", el("div", { class: "scroll" }, table([
@@ -2655,8 +2652,7 @@ async function viewSeason(s) {
       { label: "Ø Ausrüstungswert", short: "Ø AW", num: true, get: (g) => fmtDec(g.avg_gear, 1) },
       { label: "Aktive", num: true, get: (g) => `${fmtInt(g.active)} von ${fmtInt(g.members)}` },
       { label: "Kasse je Mitglied", num: true, sm: false, get: (g) => fmtSilver(perMember(g, g.treasury)) },
-      { label: "Gespendet je Mitglied", num: true, sm: false, get: (g) => fmtSilver(perMember(g, g.donated)) },
-      { label: "Bosse", num: true, title: "Siege / Niederlagen", get: (g) => `${fmtInt(g.boss_wins)} / ${fmtInt(g.boss_losses)}` }],
+      { label: "Gespendet je Mitglied", num: true, sm: false, get: (g) => fmtSilver(perMember(g, g.donated)) }],
       [...s.guilds].sort((x, y) => ((y.active >= 10) - (x.active >= 10)) || ((y.avg_gear || 0) - (x.avg_gear || 0))))),
       el("p", { class: "note" }, "Durchschnitte je (aktivem) Mitglied; Gilden unter 10 Aktiven stehen zuletzt und gewinnen nichts."))] : [];
 

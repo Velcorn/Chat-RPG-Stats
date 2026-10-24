@@ -256,7 +256,7 @@
   .tip .key.k2 { background: var(--series-2); height: 0; border-top: 2px dashed var(--series-2); }
   @media (prefers-reduced-motion: reduce) { .chart .draw, .chart .fadein { animation: none; stroke-dashoffset: 0; } }
   .tip { position: absolute; pointer-events: none; background: var(--surface-2); border: 1px solid var(--border);
-         border-radius: 6px; padding: 6px 9px; font-size: 12px; white-space: nowrap; display: none; z-index: 2; }
+         border-radius: 6px; padding: 6px 9px; font-size: 12px; width: max-content; max-width: calc(100% - 4px); display: none; z-index: 2; }
   .tip strong { display: block; font-size: 14px; }
   .tip .key { display: inline-block; width: 12px; height: 2px; background: var(--series-1); vertical-align: middle; margin-right: 6px; }
   .hero { background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 22%, var(--surface-1)) 0%, var(--surface-1) 60%); }
@@ -578,7 +578,7 @@ function stepAt(points, t) { let v = null; for (const p of points) { if (p.t > t
 // A tooltip that stays inside its chart.
 function placeTip(tip, left, width) {
   tip.style.display = "block";
-  tip.style.left = Math.min(Math.max(0, left - tip.offsetWidth / 2), width - tip.offsetWidth) + "px";
+  tip.style.left = Math.max(0, Math.min(left - tip.offsetWidth / 2, width - tip.offsetWidth)) + "px";
   tip.style.top = "-8px";
 }
 
@@ -2644,7 +2644,7 @@ async function viewSeason(s) {
       tile("Kämpfe", fmtInt(total.n), `${fmtInt(total.wins)} gewonnen (${pct(total.wins, total.n)})`),
       tile("Bosssiege der Gilden", fmtInt(bossWins), count(s.guilds.length, "Gilde", "Gilden")),
       tile("Gespendet", fmtSilver(s.guilds.reduce((n, g) => n + (g.donated || 0), 0)), "in die Gildenkassen")),
-    chartCard("Die Einstiegshürde: Ausrüstungswert von Platz 100", s.top100.series, { until: s.generated })] : [];
+    chartCard("Einstiegshürde (Platz 100)", s.top100.series, { until: s.generated })] : [];
   const guildsEnd = f && s.guilds.some((g) => g.active >= 10) ? [el("div", { class: "head" }, el("h1", {}, "Das Gildenfinale")),
     guildTiles(s),
     card("Alle Gilden", el("div", { class: "scroll" }, table([

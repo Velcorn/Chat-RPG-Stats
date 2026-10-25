@@ -55,6 +55,9 @@ class History:
         self.fightx: dict[int, dict] = defaultdict(dict)  # fight id -> detail and live digests (since 0.9.0)
         self.rules_log: list[list] = []                      # [[t, rule, old, new], ...] (since 0.10.0)
         self.live_runs: dict[str, list] = defaultdict(lambda: [0, 0])  # channel -> [runs live, runs seen]
+        self.leader: list[list] = []                         # [[t, login of place 1], ...] (only changes)
+        self.top_score: list[list] = []                      # [[t, gear score of place 1], ...] (only changes)
+        self.board_last: list = []                           # [[login, score], ...] of the latest gear board
         self.board_at: dict[int, list] = {}                  # grid time -> [[login, score], ...] of the gear board then
         self.first = self.last = None
         self.runs = 0
@@ -86,7 +89,10 @@ class History:
             for login, d in rec.get("details", {}).items():
                 self.details[login].append([t, d])
             if "gear" in rec.get("boards", {}):
-                board_scores = rec["boards"]["gear"]
+                board_scores = self.board_last = rec["boards"]["gear"]
+                if board_scores:
+                    put(self.leader, t, board_scores[0][0])
+                    put(self.top_score, t, board_scores[0][1])
                 new = [login for login, _ in rec["boards"]["gear"]]
                 for login in set(board) - set(new):
                     put(self.rank[login], t, None)
@@ -315,7 +321,7 @@ def build(data: Path, out: Path, now: float | None = None, include_archives: boo
                "guild_boss": {"guilds": len(guilds), "wins": sum(g.get("boss_wins") or 0 for g in guilds.values()),
                               "losses": sum(g.get("boss_losses") or 0 for g in guilds.values())},
                "economy": economy(h, now),
-               "finale": finale(h, players, BOARD_GRID, GEAR_SINCE + BOARD_LAG)}
+               "finale": finale(h, players, GEAR_SINCE + BOARD_LAG)}
 
     target = out / "data"
     if target.exists():

@@ -550,6 +550,18 @@ class FinaleTests(unittest.TestCase):
         self.assertEqual([r[0] for r in top["holders"]], ["a"])
         self.assertEqual(top["now"], 2)
 
+    def test_the_time_at_the_top_runs_to_the_next_change_of_the_first_place(self):
+        import build
+        self.addCleanup(setattr, build, "GEAR_SINCE", build.GEAR_SINCE)
+        build.GEAR_SINCE = 0
+        pipe = Pipeline()
+        for step, first in enumerate(["a", "a", "b", "a"]):  # every 15 minutes
+            board = [(first, 200, 1, 1, 1), ("b" if first == "a" else "a", 200, 1, 1, 1)]
+            pipe.run(snap({"karni": [member("a", 200), member("b", 200)]}, board=board), T0 + step * 900)
+        summary, _ = pipe.build(T0 + 3 * 900)
+        holders = [r[:1] + r[2:] for r in summary["finale"]["top"]["holders"]]
+        self.assertEqual(holders, [["a", 0.5, 0.5], ["b", 0.25, 0.25]])
+
 
 class BorderSeriesTests(unittest.TestCase):
     def test_the_border_series_skips_the_kampfkraft_era_of_the_board(self):

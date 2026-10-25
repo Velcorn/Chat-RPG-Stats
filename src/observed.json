@@ -867,6 +867,11 @@
 },
 "14": {
 "armor": {
+"der Festung": [
+11,
+62,
+0
+],
 "des Berserkers": [
 47,
 26,
@@ -979,6 +984,11 @@
 102,
 22,
 22
+],
+"des Inquisitors": [
+117,
+15,
+14
 ],
 "des Kriegsherrn": [
 124,

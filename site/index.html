@@ -1232,7 +1232,7 @@ function viewRanks(s, sub) {
       { label: "Spieler", get: playerLink },
       { label: "Gilde", sm: false, get: (r) => r.guild || "-" },
       { label: "Kampfkraft", short: "KK", num: true, get: (r) => fmtInt(r.power) },
-      { label: "Abstand", num: true, title: "Rückstand auf den Platz davor, für Platz 1 der Vorsprung auf Platz 2. Bei gleicher Kampfkraft in Silber", get: gapCell },
+      { label: "Abstand", num: true, title: "Rückstand auf den Platz davor. Bei gleicher Kampfkraft in Silber", get: gapCell },
       { label: "24 h", num: true, title: "Änderung der Kampfkraft", get: (r) => delta(r.power_day) },
       { label: "Ausrüstungswert", num: true, sm: false, title: "Ohne Talente; danach ordnet das Spiel", get: (r) => fmtInt(r.gear) },
     ], s.power_board),
@@ -1263,20 +1263,20 @@ function viewRanks(s, sub) {
       { label: "Spieler", get: playerLink },
       { label: "Gilde", sm: false, get: (r) => r.guild || "-" },
       { label: "Ausrüstungswert", short: "AW", num: true, get: (r) => fmtInt(r.gear) },
-      { label: "Abstand", num: true, title: "Rückstand auf den Platz davor, für Platz 1 der Vorsprung auf Platz 2. Bei gleichem Ausrüstungswert in Silber", get: gapCell },
+      { label: "Abstand", num: true, title: "Rückstand auf den Platz davor. Bei gleichem Ausrüstungswert in Silber", get: gapCell },
       { label: "24 h", num: true, title: "Änderung des Ausrüstungswerts", get: (r) => delta(r.day) },
       { label: "Pro Tag", num: true, sm: false, title: "Ausrüstungswert, Durchschnitt der letzten 7 Tage", get: (r) => r.pace == null ? "-" : fmtDec(r.pace) },
       { label: "ATK", num: true, sm: false, get: (r) => fmtInt(r.atk) },
       { label: "DEF", num: true, sm: false, get: (r) => fmtInt(r.def) },
       { label: "SUP", num: true, sm: false, get: (r) => fmtInt(r.sup) },
     ], s.board),
-    el("p", { class: "note" }, "Bei gleichem Ausrüstungswert entscheidet das Silber: wer mehr hat, steht weiter oben. Der Abstand zeigt, wie weit es bis zum Platz davor fehlt (Platz 1: wie weit er vor Platz 2 liegt), bei Gleichstand in Silber."),
+    el("p", { class: "note" }, "Bei gleichem Ausrüstungswert entscheidet das Silber: wer mehr hat, steht weiter oben. Der Abstand zeigt, wie weit es bis zum Platz davor fehlt, bei Gleichstand in Silber. Platz 1 hat keinen: sein Vorsprung ist der Rückstand von Platz 2."),
   ];
 }
 
 const gapCell = (r) => {
   const g = r.gap;
-  if (!g) return "-";
+  if (!g || g.ahead) return "";  // the leader's lead is the second place's gap with the sign turned
   const text = g.tie ? fmtSilver(g.amount) + " Silber" : count(g.amount, "Punkt", "Punkte");
   return el("span", { class: g.ahead ? "up" : "down" }, (g.ahead ? "+" : "-") + text);
 };

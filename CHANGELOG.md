@@ -50,7 +50,7 @@ Die letzten 30 bisherigen Versionen sind diesen Tagesversionen zugeordnet:
 ### Verbessert
 - Gilden im Vergleich: Die Kacheln zählen nur noch Durchschnitte (höchster Ausrüstungswert, Anteil aktiver Mitglieder, Kasse und Spenden je Mitglied) statt Summen, damit nicht einfach die größten Gilden gewinnen. Die Tabelle hat dazu die Spalten "Kasse je Mitglied" und "Gespendet je Mitglied".
 
-- Rangliste: Gleiche Ausrüstungswerte sind nach Silber geordnet (so sortiert das Spiel). Auch die Kampfkraft-Rangliste ordnet Gleichstände nach Silber, die Aufsteiger nach "Nach AW" ebenso, und die Top 10 im Saisonrückblick zeigen das Silber. Neue Spalten "Silber" und "Abstand" zeigen, wie weit es bis zum Platz davor fehlt, bei Platz 1 den Vorsprung auf Platz 2, bei Gleichstand in Silber.
+- Rangliste: Gleiche Ausrüstungswerte sind nach Silber geordnet (so sortiert das Spiel). Auch die Kampfkraft-Rangliste ordnet Gleichstände nach Silber, die Aufsteiger nach "Nach AW" ebenso, und die Top 10 im Saisonrückblick zeigen das Silber. Auf der Spielerseite zeigen "Nächster Rang" und der Kopf bei Gleichstand den Abstand in Silber; der archivierte Rückblick friert das zuletzt bekannte Silber mit ein. Die Startseite zeigt statt "Höchster Ausrüstungswert" den Spieler auf Platz 1 (bei Gleichstand ist der Wert nicht eindeutig). Neue Spalten "Silber" und "Abstand" zeigen, wie weit es bis zum Platz davor fehlt, bei Platz 1 den Vorsprung auf Platz 2, bei Gleichstand in Silber.
 
 ### Behoben
 - Saisonbericht: "Bosssiege der Gilden" zählt auch Gilden ohne Mitglieder mit (Wafebreakers Bund der Wellenbrecher fehlte); die Gilde hat keine eigene Seite und steht nicht in den Vergleichen.

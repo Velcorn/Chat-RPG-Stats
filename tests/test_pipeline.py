@@ -189,6 +189,12 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(f["next_gap"], 207 - 170 + 1)
         self.assertEqual(f["next_days"], 3.8)
 
+    def test_the_forecast_carries_the_gap_to_the_next_place_of_the_board(self):
+        top = json.loads((self.out / "p" / "top.json").read_text())
+        slow = json.loads((self.out / "p" / "slow.json").read_text())
+        self.assertEqual(top["forecast"]["gap"], {"ahead": True, "tie": False, "amount": 207 - 164})
+        self.assertEqual(slow["forecast"]["gap"], {"ahead": False, "tie": False, "amount": 207 - 164})
+
     def test_guild_standing_and_series(self):
         fast = json.loads((self.out / "p" / "fast.json").read_text())
         self.assertEqual((fast["guild"]["donation_rank"], fast["guild"]["donation_gap"]), (2, 1000 - 350 + 1))

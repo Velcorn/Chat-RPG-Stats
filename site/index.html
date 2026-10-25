@@ -504,7 +504,7 @@ function loadBase(path) {
 function tile(label, value, sub, power) {
   return el("div", { class: "card tile" + (power == null ? "" : " kk") },
     el("div", { class: "label" }, label), power == null ? null : el("div", { class: "label pwl", title: "Ausrüstung plus Talente; der Rang zählt nur die Ausrüstung" }, "Kampfkraft"),
-    el("div", { class: "value", title: value }, value), power == null ? null : el("div", { class: "pwv" }, fmtInt(power)),
+    el("div", { class: "value", title: typeof value === "string" ? value : null }, value), power == null ? null : el("div", { class: "pwv" }, fmtInt(power)),
     el("div", { class: "sub" }, sub ?? ""));
 }
 function card(title, ...body) { return el("section", { class: "card" }, title ? el("h2", {}, title) : null, ...body); }
@@ -1467,7 +1467,9 @@ function gearHero(p) {
     : p.split.atk != null ? p.split : null;
   const f = p.forecast, cls = p.peers && p.peers.cls;
   const rank = f.exact ? `#${f.rank}` : `~#${fmtInt(f.rank)}`;
-  const gap = f.next_gap != null ? `${fmtInt(f.next_gap)} bis #${fmtInt(f.rank - 1)}`
+  const g = f.gap, tieText = g && g.tie ? `${fmtSilver(g.amount)} Silber` : null;
+  const gap = tieText ? (g.ahead ? `${tieText} vor #2` : `${tieText} bis #${fmtInt(f.rank - 1)}`)
+    : f.next_gap != null ? `${fmtInt(f.next_gap)} bis #${fmtInt(f.rank - 1)}`
     : f.lead != null ? `${fmtInt(f.lead)} vor #2` : "";
   const max = Math.max(1, ...["atk", "def", "sup"].flatMap((k) => [sp ? sp[k] : 0, cls ? (cls.band ? cls.band[k][1] : cls.med[k]) : 0])) * 1.1;
   const at = (v) => `${100 * v / max}%`;
@@ -1527,7 +1529,10 @@ async function viewPlayer(s, login) {
     el("dt", {}, "Vergleich"), el("dd", {}, p.standing.better >= 99.95
       ? `Mehr als alle ${fmtInt(p.standing.of)} erfassten Spieler`
       : `Mehr als ${fmtDec(p.standing.better, 1)} % der ${fmtInt(p.standing.of)} Spieler`),
-    el("dt", {}, "Nächster Rang"), el("dd", {}, f.next_gap == null ? "du stehst vorn"
+    el("dt", {}, "Nächster Rang"), el("dd", {}, f.gap && f.gap.tie
+      ? (f.gap.ahead ? `du stehst vorn, ${fmtSilver(f.gap.amount)} Silber vor #2 (gleicher Ausrüstungswert, das Silber entscheidet)`
+        : `${fmtSilver(f.gap.amount)} Silber (gleicher Ausrüstungswert, das Silber entscheidet)`)
+      : f.next_gap == null ? "du stehst vorn"
       : `${count(f.next_gap, "Punkt", "Punkte")}` + (f.next_days ? `, bei deinem Tempo ${inDays(f.next_days)}` : "")),
     el("dt", {}, "Top 100"), el("dd", {}, top100),
     el("dt", {}, "Tempo"), el("dd", {}, p.peers && p.peers.pace != null && p.pace != null
@@ -1722,7 +1727,7 @@ function viewStart(s) {
     meCard(),
     el("div", { class: "grid tiles" },
       tile("Spieler erfasst", fmtInt(s.players), `${fmtInt(s.active)} davon aktiv`),
-      tile("Höchster Ausrüstungswert", top[0] ? fmtInt(top[0].gear) : "-", top[0] ? playerLink(top[0]) : ""),
+      tile("Platz 1", top[0] ? playerLink(top[0]) : "-", top[0] ? `${fmtInt(top[0].gear)} Ausrüstungswert` : ""),
       tile("Kämpfe", fmtInt(t.n), t.n ? `${fmtInt(t.wins)} gewonnen, letzte ${fmtInt(s.stats.days)} Tage` : ""),
       tile("Gilden", fmtInt(s.guilds.length), `${fmtInt(s.guilds.reduce((n, g) => n + g.members, 0))} Mitglieder`)),
     keyCard(s),
@@ -1732,6 +1737,7 @@ function viewStart(s) {
         { label: "#", num: true, get: (r) => fmtInt(r.rank) },
         { label: "Spieler", get: playerLink },
         { label: "Ausrüstungswert", num: true, get: (r) => fmtInt(r.gear) },
+        { label: "Silber", num: true, title: "Bei gleichem Ausrüstungswert entscheidet das Silber", get: (r) => r.silver == null ? "-" : fmtInt(r.silver) },
       ], top), more("#/rangliste/ausruestungswert", "Ganze Bestenliste")] : el("p", { class: "note" }, "Noch keine Daten.")),
       card("Gilden", guilds.length ? [table([
         { label: "Gilde", get: (g) => el("a", { href: `#/gilden/${g.login}` }, g.login) },

@@ -497,7 +497,11 @@ def player_page(login, h, state, now, rank, paces, with_split, top100_gear, top1
     lower = max((x["gs"] for k, x in players.items() if k != login and x.get("gs") is not None and x["gs"] <= g),
                 default=None)
     on_board = h.rank[login][-1][1] if h.rank.get(login) else None
-    forecast = {"rank": on_board or rank(g), "exact": on_board is not None, "next_gap": next_gap,
+    board = state["boards"].get("gear", [])
+    place = next((i for i, (x, _) in enumerate(board) if x == login), None)
+    gap = None if place is None else board_gap(place, [v for _, v in board],
+                                               [{"silver": details.get(x, {}).get("silver")} for x, _ in board])
+    forecast = {"rank": on_board or rank(g), "exact": on_board is not None, "next_gap": next_gap, "gap": gap,
                 "next_days": rounded(next_gap / my_pace, 1) if next_gap and my_pace and my_pace > 0 else None,
                 "top100_gap": None, "top100_days": None,
                 "lead": g - lower if next_gap is None and lower is not None else None}

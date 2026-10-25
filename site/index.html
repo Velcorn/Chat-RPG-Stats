@@ -2647,7 +2647,7 @@ async function viewSeason(s) {
         el("div", { class: "scroll" }, table([
           { label: "Spieler", get: (r) => el("a", { href: `#/spieler/${r[0]}` }, r[1]) },
           { label: "Zeit an der Spitze", num: true, get: (r) => `${fmtDec(r[2], 0)} h` }], top.holders)),
-        el("p", { class: "note" }, "An der Spitze zählt, wer den höchsten Wert hatte, auch geteilt (gemessen alle zwei Stunden)")))] : [];
+        el("p", { class: "note" }, "An der Spitze steht, wer auf Platz 1 der Rangliste stand: bei gleichem Wert entscheidet das Silber (gemessen alle zwei Stunden)")))] : [];
   const rec = f && f.records;
   const records = rec ? [el("div", { class: "head" }, el("h1", {}, "Rekorde")),
     el("div", { class: "grid two" },

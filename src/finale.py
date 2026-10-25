@@ -15,8 +15,8 @@ def _name(players: dict, login: str) -> str:
 
 
 def top_story(h, players: dict, grid: int, since: float = 0) -> dict | None:
-    """The highest gear score over time and who held it. Players on the same score share the top (the game orders
-    them by something else), so a place at the top means "had the highest score", alone or not.
+    """The highest gear score over time and who held it. Players on the same score are ordered by silver, so only the
+    first of the board holds the top (a shared score doesn't share it).
     `holders`: [login, name, hours at the top, longest stretch in hours], most hours first; `first`: who reached the
     final top score first; `series`: [[t, top score], ...] (only changes)."""
     times = sorted(t for t in h.board_at if t >= since)
@@ -31,7 +31,7 @@ def top_story(h, players: dict, grid: int, since: float = 0) -> dict | None:
         top = rows[0][1]
         if not series or series[-1][1] != top:
             series.append([t, top])
-        holders = {login for login, score in rows if score == top}
+        holders = {rows[0][0]}
         for login in holders:
             hours[login] += grid / 3600
             run[login] = run.get(login, 0) + grid / 3600

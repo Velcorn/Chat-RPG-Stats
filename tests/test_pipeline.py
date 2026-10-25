@@ -537,6 +537,19 @@ class FinaleTests(unittest.TestCase):
         self.assertEqual(f["top"]["ever"], 2)
         self.assertEqual(f["records"]["donors"][0][:3], ["b", "B", 500])
 
+    def test_a_shared_top_score_belongs_to_the_first_of_the_board(self):
+        import build
+        self.addCleanup(setattr, build, "GEAR_SINCE", build.GEAR_SINCE)
+        build.GEAR_SINCE = 0
+        pipe = Pipeline()
+        for step in range(3):  # the same score, "a" first (more silver)
+            board = [("a", 200, 1, 1, 1), ("b", 200, 1, 1, 1)]
+            pipe.run(snap({"karni": [member("a", 200), member("b", 200)]}, board=board), T0 + step * 7200)
+        summary, _ = pipe.build(T0 + 3 * 7200)
+        top = summary["finale"]["top"]
+        self.assertEqual([r[0] for r in top["holders"]], ["a"])
+        self.assertEqual(top["now"], 2)
+
 
 class BorderSeriesTests(unittest.TestCase):
     def test_the_border_series_skips_the_kampfkraft_era_of_the_board(self):

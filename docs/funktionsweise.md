@@ -140,3 +140,7 @@ Spielern fehlen Tempo und Prognose.
 Versionsregel: CalVer JJJJ.MM.TT, genau eine Version pro Kalendertag ohne Suffix. Die erste Änderung eines Tages setzt die Version in `pyproject.toml`, führt `uv lock` aus und beginnt den Tagesabschnitt in `CHANGELOG.md`. Weitere Änderungen desselben Tages behalten die Version und ergänzen denselben Eintrag. Keine Git-Tags. Ältere Angaben wie "seit 0.45.0" sind historische SemVer-Nummern und bleiben erhalten.
 
 **Änderungen der Seite** (`#/changelog`, Link im Fuß): `src/build.py` liest `CHANGELOG.md` beim Bau und schreibt `data/changelog.json` mit Version, Datum und Gruppen von Stichpunkten. Die Seite lädt diese Datei erst beim Öffnen, zeigt die aktuelle Version sowie den Stand des neuesten Eintrags und listet die Tage absteigend. Die gemessenen Regeländerungen unter Spiel bleiben eine eigene Ansicht.
+
+## Gleichstand in der Rangliste
+
+Das Spiel ordnet gleiche Ausrüstungswerte nach Silber (mehr Silber steht weiter oben; gemessen an den gespeicherten Ranglisten: in über 99,9 % der Gleichstände). `build.board_gap` gibt jeder Zeile der Top 100 den Abstand zum Platz davor (Platz 1: zu Platz 2): bei gleichem Ausrüstungswert die Silberdifferenz, sonst die Punktedifferenz. Dieselbe Regel gilt für die Kampfkraft-Rangliste (dort ordnet die Seite selbst, zuerst nach Kampfkraft, dann nach Silber) und für die Reihenfolge der Aufsteiger "Nach AW". Das Silber stammt aus der Ranglisten-Antwort, es kommt keine Anfrage dazu.

@@ -437,6 +437,25 @@ class ArchiveTests(unittest.TestCase):
         self.assertEqual(build.season_manifest(data)["archives"], [])
 
 
+GAP_ROWS = [{"silver": 900}, {"silver": 500}, {"silver": 200}, {"silver": 300}]
+GAP_SCORES = [681, 681, 681, 680]
+
+
+class BoardGapTests(unittest.TestCase):
+
+    def test_a_tie_is_measured_in_silver_to_the_player_above(self):
+        self.assertEqual(build.board_gap(2, GAP_SCORES, GAP_ROWS), {"ahead": False, "tie": True, "amount": 300})
+
+    def test_the_leader_is_measured_against_the_second_place(self):
+        self.assertEqual(build.board_gap(0, GAP_SCORES, GAP_ROWS), {"ahead": True, "tie": True, "amount": 400})
+        gap = build.board_gap(0, [682, *GAP_SCORES[1:]], GAP_ROWS)
+        self.assertEqual(gap, {"ahead": True, "tie": False, "amount": 1})
+
+    def test_without_a_tie_the_gap_is_in_points_and_unknown_silver_gives_none(self):
+        self.assertEqual(build.board_gap(3, GAP_SCORES, GAP_ROWS), {"ahead": False, "tie": False, "amount": 1})
+        self.assertIsNone(build.board_gap(1, [5, 5], [{"silver": None}, {"silver": 3}]))
+
+
 class HelperTests(unittest.TestCase):
     def test_value_at_and_pace(self):
         series = [[0, 10], [DAY, 20]]

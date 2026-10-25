@@ -182,6 +182,20 @@ def publish_archives(data: Path, target: Path, manifest: dict) -> None:
         shutil.copytree(source, target / "seasons", dirs_exist_ok=True)
 
 
+def board_gap(i: int, scores: list, rows: list) -> dict | None:
+    """The distance to the next place: behind the player above, for the leader ahead of the second place. The board
+    orders equal scores by silver, so a tie is measured in silver, else in score points."""
+    j = i - 1 if i else 1
+    if j >= len(rows) or scores[i] is None or scores[j] is None:
+        return None
+    if scores[i] != scores[j]:
+        return {"ahead": i == 0, "tie": False, "amount": abs(scores[j] - scores[i])}
+    mine, other = rows[i].get("silver"), rows[j].get("silver")
+    if mine is None or other is None:
+        return None
+    return {"ahead": i == 0, "tie": True, "amount": abs(other - mine)}
+
+
 def build(data: Path, out: Path, now: float | None = None, include_archives: bool = True) -> dict:
     h = History(replay(data / "days"))
     state = json.loads((data / "state.json").read_text("utf-8"))
@@ -206,7 +220,8 @@ def build(data: Path, out: Path, now: float | None = None, include_archives: boo
     def row(login):
         p = players[login]
         return {"login": login, "name": p.get("name") or login, "gear": p.get("gs"), "guild": p.get("guild"),
-                "day": day.get(login), "week": week.get(login), "pace": rounded(paces.get(login))}
+                "day": day.get(login), "week": week.get(login), "pace": rounded(paces.get(login)),
+                "silver": details.get(login, {}).get("silver")}
 
     def risers(span):
         gains = {login: gain(h.gs[login], now, span) for login in gear}
@@ -218,6 +233,9 @@ def build(data: Path, out: Path, now: float | None = None, include_archives: boo
         prev = ranks_24h.get(login)
         board_rows.append({**row(login), "rank": i + 1, "rank_change": None if prev is None else prev - (i + 1),
                            **{k: details.get(login, {}).get(k) for k in ("atk", "def", "sup")}})
+    scores = [score for _, score in state["boards"].get("gear", [])]
+    for i, r in enumerate(board_rows):
+        r["gap"] = board_gap(i, scores, board_rows)
 
     # The roles of the top places, read from the main stat of the gear (the game doesn't publish the chosen role):
     # {"top": n, "n": players with a known split, "tank": .., "fighter": .., "support": ..} for the top 10/25/50/100.
@@ -232,9 +250,12 @@ def build(data: Path, out: Path, now: float | None = None, include_archives: boo
     # The Kampfkraft ranking (gear plus talents): the game ranks by the gear score, but its guild pages give the
     # Kampfkraft of every member, so this is the top 100 of everyone known, not only of the game's board.
     power = {login: p["gear"] for login, p in players.items() if p.get("gear") is not None}
+    by_power = sorted(power, key=lambda x: (-power[x], -(details.get(x, {}).get("silver") or 0)))  # ties: silver
     power_rows = [{**row(login), "rank": i + 1, "power": power[login],
                    "power_day": change(h.power[login], now, DAY)}
-                  for i, login in enumerate(sorted(power, key=lambda x: -power[x])[:100])]
+                  for i, login in enumerate(by_power[:100])]
+    for i, r in enumerate(power_rows):
+        r["gap"] = board_gap(i, [x["power"] for x in power_rows], power_rows)
 
     guild_members: dict[str, list[str]] = defaultdict(list)
     for login, p in players.items():

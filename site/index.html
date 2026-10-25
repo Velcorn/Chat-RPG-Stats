@@ -1232,7 +1232,6 @@ function viewRanks(s, sub) {
       { label: "Spieler", get: playerLink },
       { label: "Gilde", sm: false, get: (r) => r.guild || "-" },
       { label: "Kampfkraft", short: "KK", num: true, get: (r) => fmtInt(r.power) },
-      { label: "Silber", num: true, sm: false, title: "Bei gleicher Kampfkraft steht weiter oben, wer mehr Silber hat", get: (r) => r.silver == null ? "-" : fmtInt(r.silver) },
       { label: "Abstand", num: true, title: "Rückstand auf den Platz davor, für Platz 1 der Vorsprung auf Platz 2. Bei gleicher Kampfkraft in Silber", get: gapCell },
       { label: "24 h", num: true, title: "Änderung der Kampfkraft", get: (r) => delta(r.power_day) },
       { label: "Ausrüstungswert", num: true, sm: false, title: "Ohne Talente; danach ordnet das Spiel", get: (r) => fmtInt(r.gear) },
@@ -1264,7 +1263,6 @@ function viewRanks(s, sub) {
       { label: "Spieler", get: playerLink },
       { label: "Gilde", sm: false, get: (r) => r.guild || "-" },
       { label: "Ausrüstungswert", short: "AW", num: true, get: (r) => fmtInt(r.gear) },
-      { label: "Silber", num: true, title: "Bei gleichem Ausrüstungswert entscheidet das Silber über den Platz", get: (r) => r.silver == null ? "-" : fmtInt(r.silver) },
       { label: "Abstand", num: true, title: "Rückstand auf den Platz davor, für Platz 1 der Vorsprung auf Platz 2. Bei gleichem Ausrüstungswert in Silber", get: gapCell },
       { label: "24 h", num: true, title: "Änderung des Ausrüstungswerts", get: (r) => delta(r.day) },
       { label: "Pro Tag", num: true, sm: false, title: "Ausrüstungswert, Durchschnitt der letzten 7 Tage", get: (r) => r.pace == null ? "-" : fmtDec(r.pace) },
@@ -1737,7 +1735,6 @@ function viewStart(s) {
         { label: "#", num: true, get: (r) => fmtInt(r.rank) },
         { label: "Spieler", get: playerLink },
         { label: "Ausrüstungswert", num: true, get: (r) => fmtInt(r.gear) },
-        { label: "Silber", num: true, title: "Bei gleichem Ausrüstungswert entscheidet das Silber", get: (r) => r.silver == null ? "-" : fmtInt(r.silver) },
       ], top), more("#/rangliste/ausruestungswert", "Ganze Bestenliste")] : el("p", { class: "note" }, "Noch keine Daten.")),
       card("Gilden", guilds.length ? [table([
         { label: "Gilde", get: (g) => el("a", { href: `#/gilden/${g.login}` }, g.login) },
@@ -2722,7 +2719,6 @@ async function viewSeason(s) {
       { label: "#", num: true, get: (r) => fmtInt(r.rank) },
       { label: "Spieler", get: playerLink },
       { label: "Ausrüstungswert", short: "AW", num: true, get: (r) => fmtInt(r.gear) },
-      { label: "Silber", num: true, title: "Bei gleichem Ausrüstungswert entscheidet das Silber", get: (r) => r.silver == null ? "-" : fmtInt(r.silver) },
       { label: "Gilde", sm: false, get: (r) => r.guild || "-" },
     ], s.board.slice(0, 10))))];
 }

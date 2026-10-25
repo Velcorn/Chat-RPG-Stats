@@ -54,6 +54,7 @@ Die letzten 30 bisherigen Versionen sind diesen Tagesversionen zugeordnet:
 
 ### Behoben
 - Saisonbericht: "Bosssiege der Gilden" zählt auch Gilden ohne Mitglieder mit (Wafebreakers Bund der Wellenbrecher fehlte); die Gilde hat keine eigene Seite und steht nicht in den Vergleichen.
+- Saisonrückblick: Das Podium zeigt auch das Silber, das bei gleichem Ausrüstungswert über die Plätze entscheidet.
 - Saisonrückblick: "Zeit an der Spitze" zählt nur noch, wer auf Platz 1 der Rangliste stand (bei gleichem Wert entscheidet das Silber), nicht mehr alle mit dem höchsten Wert. Gemessen wird bei jedem Sammellauf (alle paar Minuten) statt alle zwei Stunden.
 - Saisonrückblick: Das Diagramm "Einstiegshürde" war nur ein schmaler Streifen in der Mitte und zeigte einen Sprung durch die Werte der Zeit, als die Rangliste noch nach Kampfkraft ordnete; jetzt füllt es die Breite und beginnt mit dem Ausrüstungswert. Gleiches gilt für "Grenze Top 100" auf den Spielerseiten.
 - Diagramme: Der Tooltip bleibt auf kleinen Bildschirmen im Diagramm und bricht lange Zeilen um, statt links aus dem Bildschirm zu ragen.

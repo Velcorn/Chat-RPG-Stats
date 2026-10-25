@@ -2629,7 +2629,7 @@ async function viewSeason(s) {
   const medals = ["Gold", "Silber", "Bronze"];
   const stage = f && podium.length ? [el("div", { class: "head" }, el("h1", {}, archived ? "Das Podium" : "Das Podium (Stand jetzt)")),
     el("div", { class: "grid tiles season-podium" }, ...podium.map((r, i) => {
-      const t = tile(medals[i], r.name || r.login, `${fmtInt(r.gear)} Ausrüstungswert${r.guild ? `, ${r.guild}` : ""}`);
+      const t = tile(medals[i], r.name || r.login, `${fmtInt(r.gear)} Ausrüstungswert${r.silver != null ? `, ${fmtSilver(r.silver)} Silber` : ""}${r.guild ? `, ${r.guild}` : ""}`);
       t.addEventListener("click", () => { location.hash = `#/spieler/${r.login}`; });
       t.style.cursor = "pointer";
       t.classList.add(`podium-${i + 1}`);

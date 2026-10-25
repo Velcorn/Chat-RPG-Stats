@@ -2236,14 +2236,24 @@ function viewUpgrade(s) {
         { label: "Summe bei +4", num: true, get: (r) => `+${r.total}` },
         { label: "Punkte der nächsten Stufe", num: true, title: "Punkte, die ein Stück der nächsten Stufe mehr hat als eines dieser Stufe", get: (r) => `+${oneTier(r.kind)}` }], gainRows, { cards: true })),
       el("p", { class: "note" }, "Ein Stück auf +4 hat mehr Punkte als eines der nächsten Stufe (Einhandwaffe +6 gegen +5), kostet aber Rollen und Versuche. Die Summe der Basiswerte bleibt gleich, die Punkte kommen in den Wert, den du beim Verbessern wählst (anteilig oder alles in einen).")),
+    card("Was der volle Ausbau bei der besten Ausrüstung bringt", el("div", { class: "scroll" }, table([
+        { label: "Klasse (Hauptwert)", get: (r) => `${r.name} (${["ATK", "DEF", "SUP"][r.main]})` },
+        { label: "Ohne Verbesserung", num: true, get: (r) => fmtInt(r.plain) },
+        { label: "Voll ausgebaut", num: true, get: (r) => fmtInt(r.full) },
+        { label: "Gewinn", num: true, get: (r) => delta(r.full - r.plain) }],
+      CLASSES.map(([name, main]) => ({ name, main, plain: bestBuild(main, false).sum.reduce((a, x) => a + x, 0),
+        full: bestBuild(main, true).sum.reduce((a, x) => a + x, 0) })), { cards: true })),
+      el("p", { class: "note" }, "Summe aus ATK, DEF und SUP der besten Ausrüstung je Klasse (+4 und ein Stein in jedem Stück), mit den Stücken der höchsten bekannten Stufe. Die Zusammensetzung steht unter ",
+        el("a", { href: "#/spiel/hoechstwerte" }, "Höchstwerte"), ".")),
     card("Kosten", el("p", { class: "note" }, `Ein Versuch kostet ${count(per3, "Rolle", "Rollen")} je angefangene drei Stufen des Stücks` +
       (per3 === 1 ? "" : ` (aufgerundet Stufe geteilt durch drei, mal ${per3})`) + ` (Stufe 13: ${count(per3 * Math.ceil(13 / 3), "Rolle", "Rollen")}).`)))];
 }
 
 async function viewGame(s, sub) {
-  if (sub === "ausruestung") {
-    try { OBSERVED = await load("observed.json"); } catch { /* the table then shows the sheet only */ }
-    return [...viewMax(), ...viewForms(), ...viewSpecial()];
+  if (sub === "hoechstwerte") return viewMax();
+  if (sub === "formen" || sub === "spezial") {
+    if (sub === "formen") try { OBSERVED = await load("observed.json"); } catch { /* the table then shows the sheet only */ }
+    return sub === "formen" ? viewForms() : viewSpecial();
   }
   if (sub === "verbessern") return viewUpgrade(s);
   if (sub === "regeln") return [...viewRules(s), ...await viewChanges(s)];
@@ -2739,8 +2749,8 @@ const SECTIONS = {
                render: viewRanks },
   gilden: { subs: (s) => [["vergleich", "Vergleich"], ["zeitraffer", "Zeitraffer"], ...s.guilds.map((g) => [g.login, g.name || g.login])], render: viewGuild,
             dropdown: true },
-  spiel: { subs: () => [["regeln", "Regeln"], ["ausruestung", "Ausrüstung"], ["verbessern", "Verbessern"]],
-           alias: { aenderungen: "regeln", formen: "ausruestung", maximum: "ausruestung", spezial: "ausruestung" }, render: viewGame },
+  spiel: { subs: () => [["regeln", "Regeln"], ["hoechstwerte", "Höchstwerte"], ["formen", "Formen"], ["spezial", "Spezialitems"], ["verbessern", "Verbessern"]],
+           alias: { aenderungen: "regeln", ausruestung: "hoechstwerte", maximum: "hoechstwerte" }, render: viewGame },
   kaempfe: { subs: () => [["uebersicht", "Übersicht"], ["kraft", "Kampfkraft"], ["letzte", "Letzte Kämpfe"]],
              render: viewFights },
 };

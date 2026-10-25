@@ -279,6 +279,9 @@ class BuildTests(unittest.TestCase):
 
 class BuildEdgeTests(unittest.TestCase):
     def test_top100_border(self):
+        for name in ("GEAR_SINCE", "BOARD_LAG"):  # the made-up history starts before the board showed the plain score
+            self.addCleanup(setattr, build, name, getattr(build, name))
+            setattr(build, name, 0)
         pipe = Pipeline()
         for d in range(3):
             board = [(f"p{i:03d}", 500 - i + 2 * d, 10, 10, 10) for i in range(100)]
@@ -533,3 +536,15 @@ class FinaleTests(unittest.TestCase):
         self.assertEqual([r[0] for r in f["top"]["holders"]], ["a", "b"])
         self.assertEqual(f["top"]["ever"], 2)
         self.assertEqual(f["records"]["donors"][0][:3], ["b", "B", 500])
+
+
+class BorderSeriesTests(unittest.TestCase):
+    def test_the_border_series_skips_the_kampfkraft_era_of_the_board(self):
+        pipe = Pipeline()
+        for d in range(3):
+            board = [(f"p{i:03d}", 500 - i + 2 * d, 10, 10, 10) for i in range(100)]
+            pipe.run(snap({"karni": [member(lo, g) for lo, g, *_ in board]}, board=board), T0 + d * DAY)
+        self.addCleanup(setattr, build, "GEAR_SINCE", build.GEAR_SINCE)
+        build.GEAR_SINCE = T0 + DAY - build.BOARD_LAG
+        summary, _ = pipe.build(T0 + 2 * DAY)
+        self.assertEqual(summary["top100"]["series"], [[T0 + d * DAY, 401 + 2 * d] for d in (1, 2)])

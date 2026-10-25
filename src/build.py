@@ -228,6 +228,8 @@ def build(data: Path, out: Path, now: float | None = None, include_archives: boo
         best = sorted((login for login in gains if gains[login]), key=lambda x: -gains[x])[:25]
         return [{**row(login), "gain": gains[login]} for login in best]
 
+    # The border before the board showed the plain gear score (Kampfkraft then) would be a different measure.
+    border_series = [p for p in h.border if p[0] >= GEAR_SINCE + BOARD_LAG]
     board_rows = []
     for i, login in enumerate(board):
         prev = ranks_24h.get(login)
@@ -291,7 +293,7 @@ def build(data: Path, out: Path, now: float | None = None, include_archives: boo
                "active": sum(1 for p in players.values() if p.get("active")),
                "board": board_rows, "power_board": power_rows,
                "risers": {"day": risers(DAY), "week": risers(7 * DAY)},
-               "top100": {"gear": top100_gear, "pace": rounded(top100_pace), "series": h.border,
+               "top100": {"gear": top100_gear, "pace": rounded(top100_pace), "series": border_series,
                           "roles": top_roles},
                "guilds": sorted(guild_rows, key=lambda g: -(g.get("gear") or 0)),
                "final_boss_at": FINAL_BOSS_AT,

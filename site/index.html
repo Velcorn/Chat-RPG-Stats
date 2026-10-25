@@ -848,7 +848,13 @@ function chartCard(title, series, opts = {}) {
       show(c);
     });
   }
-  requestAnimationFrame(() => { ctl = lineChart(box, pts, { label: title, ...opts, compare: [], onView }); });
+  // Drawn once the box is in the page (a view that awaits data attaches it late, and a box without width draws a stub).
+  let tries = 0;
+  const start = () => {
+    if (!box.isConnected || !box.clientWidth) return void (tries++ < 300 && requestAnimationFrame(start));
+    ctl = lineChart(box, pts, { label: title, ...opts, compare: [], onView });
+  };
+  requestAnimationFrame(start);
   return el("section", { class: "card" }, el("div", { class: "chart-head" }, el("h2", {}, title), el("div", { class: "chart-ctl" }, picker, asked, buttons)), box);
 }
 

@@ -311,8 +311,8 @@ def pooled(groups: list[dict]) -> dict | None:
         for k in sorted(hist):
             seen += hist[k]
             if seen >= q * n:
-                return k
-        return max(hist)
+                break
+        return k
     mean_ = total / n
     return {"n": n, "fights": len(groups), "mean": round(mean_), "std": round(math.sqrt(var), 1), "var": round(var),
             "cv": round(100 * math.sqrt(var) / mean_, 1) if mean_ > 0 else None,

@@ -1,6 +1,8 @@
 """Fight statistics: the digests the collector keeps and the sums the build makes of them."""
 import itertools
+import json
 import statistics
+import time
 import unittest
 from datetime import UTC, datetime
 
@@ -433,3 +435,66 @@ class BackfillTests(unittest.TestCase):
         self.assertEqual(backfill.missing(h, NOW), [])  # fight 1 has its digest, the raid and the old fight don't count
         h2 = build.History(iter(records[:1]))
         self.assertEqual([f["id"] for f in backfill.missing(h2, NOW)], [1])
+
+
+class CoverageGapTests(unittest.TestCase):
+    def test_spread_of_nothing_is_none(self):
+        self.assertIsNone(fightstats.spread([]))
+
+    def test_a_type_without_a_survivor_count_is_left_out(self):
+        row = {"kind": "BOSS", "name": "X", "level": 1, "alive": None, "outcome": "VICTORY"}
+        self.assertEqual(fightstats.payout([row]), [])
+
+    def test_backfill_reads_the_missing_reports_and_skips_a_gone_one(self):
+        import io
+        import tempfile
+        import urllib.error
+        from contextlib import redirect_stdout
+        from pathlib import Path
+        from unittest import mock
+
+        import backfill
+        import collect
+        now = time.time()
+        stamp = datetime.fromtimestamp(now - 3600, UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+        fights = [{**fight(1, kind="BOSS"), "endedAt": stamp}, {**fight(2, kind="BOSS"), "endedAt": stamp}]
+
+        class FakeSite:
+            requests = 2
+
+            def get(self, path):
+                if path.endswith("/2"):
+                    raise urllib.error.HTTPError(path, 404, "gone", None, io.BytesIO())
+                return {}
+
+        with tempfile.TemporaryDirectory() as tmp:
+            days = Path(tmp) / "days"
+            days.mkdir()
+            (days / "2026-10-27.jsonl").write_text(json.dumps({"t": int(now), "fights": fights}) + "\n")
+            digest = {"pg": {"n": 1}, "lt": {"el": 1}}
+            argv = ["backfill", "--data", tmp]
+            with mock.patch("sys.argv", [*argv, "--dry"]), redirect_stdout(io.StringIO()):
+                self.assertEqual(backfill.main(), 0)
+            with (mock.patch("sys.argv", argv), mock.patch.object(collect, "Site", FakeSite),
+                  mock.patch.object(collect, "detail_digest", return_value=digest), redirect_stdout(io.StringIO())):
+                self.assertEqual(backfill.main(), 0)
+            out = list(days.glob("*-backfill.jsonl"))
+            self.assertEqual(len(out), 1)
+            self.assertEqual(list(json.loads(out[0].read_text())["fightx"]), ["1"])
+            (days / "2026-10-27.jsonl").write_text("")
+            with mock.patch("sys.argv", argv), redirect_stdout(io.StringIO()):
+                self.assertEqual(backfill.main(), 0)
+
+    def test_top_story_pads_the_series_with_the_score_before_the_window(self):
+        from types import SimpleNamespace
+
+        import finale
+
+        def history(top_score):
+            return SimpleNamespace(leader=[[100, "a"], [200, "b"]], last=300, top_score=top_score,
+                                   gs={"a": [[100, 12]], "b": [[200, 12]]}, board_last=[["a", 12]])
+
+        self.assertIsNone(finale.top_story(history([[50, 10]]), {}, since=400))
+        self.assertIsNone(finale.top_story(history([]), {}, since=150))
+        top = finale.top_story(history([[50, 10], [250, 12]]), {}, since=150)
+        self.assertEqual(top["series"][0], [150, 10])

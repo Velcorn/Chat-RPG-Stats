@@ -6,7 +6,10 @@ average gear and power and the recommendation). Digests exist only for fights co
 """
 from __future__ import annotations
 
+import csv
+import io
 import math
+import statistics
 from collections import defaultdict
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -206,6 +209,73 @@ def guild_fights(fights: list[dict], extra: dict[int, dict], now: float, days: i
             row["bosses"] += 1
             row["boss_wins"] += win
     return sorted(rows.values(), key=lambda r: (-(r["raids"] + r["bosses"]), r["guild"]))
+
+
+def spread(xs: list[float]) -> dict | None:
+    """Mean, sample standard deviation, variance, coefficient of variation (percent), min, median and max."""
+    if not xs:
+        return None
+    mean_ = statistics.fmean(xs)
+    std = statistics.stdev(xs) if len(xs) > 1 else 0.0
+    return {"n": len(xs), "mean": round(mean_), "std": round(std, 1), "var": round(std * std),
+            "cv": round(100 * std / mean_, 1) if mean_ > 0 else None,
+            "min": min(xs), "med": round(statistics.median(xs)), "max": max(xs)}
+
+
+def payout_rows(fights: list[dict], extra: dict[int, dict], since: float = UPDATE) -> list[dict]:
+    """One row per fight since `since` whose report named the silver paid out: the mean per fighter who stood at the
+    end and per fighter who fell (a fight's digest `pay`). Sums over fighters only, nothing per player."""
+    rows = []
+    for f in fights:
+        pay = extra.get(f["id"], {}).get("pay")
+        t = iso_ts(f.get("endedAt"))
+        if not pay or not t or t < since or (pay[0] is None and pay[1] is None):
+            continue
+        rows.append({"id": f["id"], "ended": f["endedAt"], "kind": f.get("kind"), "name": f.get("name"),
+                     "level": f.get("bossLevel") if f.get("kind") == "BOSS" else
+                     f.get("difficulty") if f.get("kind") == "RAID" else None,
+                     "outcome": f.get("outcome"), "fighters": f.get("fighters"),
+                     "alive": pay[0], "fallen": pay[1]})
+    return rows
+
+
+def payout(rows: list[dict]) -> list[dict]:
+    """Per fight type (bosses by name and level, raids by name and difficulty, adventures by name): the spread of the
+    silver a fighter standing at the end got, over the fights; also the mean after a win and after a loss, the mean
+    of the fallen and the single values (`pts`, for the strip chart). Types without a payout (raids) are left out;
+    the most fights first."""
+    types: dict[tuple, list[dict]] = defaultdict(list)
+    for r in rows:
+        types[(r["kind"], r["name"], r["level"])].append(r)
+    out = []
+    for (kind, name, level), rs in types.items():
+        alive = [r["alive"] for r in rs if r["alive"] is not None]
+        if not alive:
+            continue
+        won = [r["alive"] for r in rs if r["alive"] is not None and r["outcome"] == "VICTORY"]
+        lost = [r["alive"] for r in rs if r["alive"] is not None and r["outcome"] != "VICTORY"]
+        fallen = [r["fallen"] for r in rs if r["fallen"] is not None]
+        out.append({"kind": kind, "name": name, "difficulty": level if kind == "RAID" else None,
+                    "bossLevel": level if kind == "BOSS" else None, "n": len(rs),
+                    "wins": sum(r["outcome"] == "VICTORY" for r in rs),
+                    "alive": spread(alive), "fallen": spread(fallen),
+                    "win": round(statistics.fmean(won)) if won else None,
+                    "loss": round(statistics.fmean(lost)) if lost else None, "pts": alive})
+    return sorted(out, key=lambda t: (-t["n"], t["name"] or ""))
+
+
+def payout_csv(rows: list[dict]) -> str:
+    """The rows as a CSV with English column names, for people who want to work with the numbers themselves."""
+    head = ["fight_id", "ended_at", "kind", "name", "level_or_difficulty", "outcome", "fighters",
+            "silver_per_survivor", "silver_per_fallen"]
+    buf = io.StringIO()
+    w = csv.writer(buf, lineterminator="\n")
+    w.writerow(head)
+    for r in rows:
+        w.writerow([r["id"], r["ended"], r["kind"], r["name"], "" if r["level"] is None else r["level"],
+                    r["outcome"], r["fighters"], "" if r["alive"] is None else r["alive"],
+                    "" if r["fallen"] is None else r["fallen"]])
+    return buf.getvalue()
 
 
 def stat_curves(fights: list[dict], extra: dict[int, dict], now: float, days: int = 30, step: int = 10,

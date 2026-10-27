@@ -42,6 +42,11 @@ Die letzten 30 bisherigen Versionen sind diesen Tagesversionen zugeordnet:
 | 0.45.10 | 2026.10.15 |
 | 0.45.9 | 2026.10.15 |
 
+## 2026.10.27 (27.10.2026)
+
+### Neu
+- Kämpfe > Auszahlung: Wie viel Silber ein Kämpfer in jedem Boss und jedem Abenteuer bekommt, mit Streudiagramm (ein Punkt je Kampf, Mittel und Band ± eine Standardabweichung) und Tabelle (Kämpfe, Ø Silber, Std, Varianz, Std in Prozent, Min, Median, Max, Ø bei Sieg und Niederlage, Ø der Gefallenen). Die Rohdaten, eine Zeile je Kampf, gibt es als CSV und JSON zum Herunterladen.
+
 ## 2026.10.25 (25.10.2026)
 
 ### Neu

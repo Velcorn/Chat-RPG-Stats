@@ -320,3 +320,37 @@ class StatCurveTests(unittest.TestCase):
         rec = {"Loserqueue": 400, "Ostmauer": 600, "Finanzamt": 270}
         order = [c["boss"] for c in fightstats.stat_curves(fights, extra, NOW, boss_rec=rec)]
         self.assertEqual(order, ["Ostmauer", "Loserqueue", "Finanzamt", "Neuer"])  # unknown boss last
+
+
+class PayoutTests(unittest.TestCase):
+    def rows(self):
+        fights = [{**fight(1, kind="BOSS"), "name": "Boss A"},
+                  {**fight(2, kind="BOSS"), "name": "Boss A"},
+                  fight(3), fight(4, "DEFEAT"), fight(5, kind="RAID"),
+                  {**fight(6), "endedAt": "2026-08-01T10:00:00Z"}]
+        extra = {1: {"pay": [900, 500]}, 2: {"pay": [910, None]}, 3: {"pay": [500, 100]},
+                 4: {"pay": [-100, -300]}, 5: {"pay": [None, None]}, 6: {"pay": [999, 1]}}
+        return fightstats.payout_rows(fights, extra, since=NOW - 86400 * 20)
+
+    def test_rows_keep_the_fights_with_a_payout_after_the_cut(self):
+        self.assertEqual([r["id"] for r in self.rows()], [1, 2, 3, 4])  # no payout (raid) or too old: left out
+
+    def test_spread_per_type_has_std_variance_and_the_outcome_means(self):
+        types = {t["name"]: t for t in fightstats.payout(self.rows())}
+        boss = types["Boss A"]
+        self.assertEqual((boss["n"], boss["alive"]["mean"], boss["alive"]["std"], boss["alive"]["var"]),
+                         (2, 905, 7.1, 50))
+        self.assertEqual((boss["alive"]["min"], boss["alive"]["med"], boss["alive"]["max"]), (900, 905, 910))
+        self.assertEqual(boss["fallen"]["n"], 1)  # the fight without fallen fighters adds none
+        story = types["Koboldmarkt"]
+        self.assertEqual((story["win"], story["loss"], story["alive"]["mean"]), (500, -100, 200))
+
+    def test_a_single_fight_has_no_spread(self):
+        s = fightstats.spread([300])
+        self.assertEqual((s["std"], s["var"]), (0.0, 0))
+
+    def test_csv_has_one_line_per_fight(self):
+        lines = fightstats.payout_csv(self.rows()).splitlines()
+        self.assertEqual(len(lines), 5)
+        self.assertTrue(lines[0].startswith("fight_id,ended_at,kind"))
+        self.assertIn("910,", lines[2] + ",")

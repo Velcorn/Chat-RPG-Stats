@@ -1908,9 +1908,76 @@ function guildFightsCard(s) {
     el("p", { class: "note" }, `Kassenänderung bekannt bei ${fmtInt(known)} von ${fmtInt(raids)} Überfällen.`));
 }
 
+// ---- what a fight pays: the silver per fighter, spread over the fights of a type ----
+const PAYOUT_FEW = 5;  // fights a type needs to show in the table and chart
+// One row per fight type: a dot per fight (the mean of those standing at the end), the mean as a bar, mean +- 1 std as a band.
+function payoutChart(box, types) {
+  box.replaceChildren();
+  const W = Math.max(280, box.clientWidth), row = 26, m = { l: Math.min(170, Math.round(W * 0.4)), r: 12, t: 8, b: 26 };
+  const H = m.t + m.b + row * types.length;
+  const all = types.flatMap((t) => t.pts), lo = Math.min(0, ...all), hi = Math.max(...all);
+  const pad = (hi - lo) * 0.03, bot = lo - pad, top = hi + pad, ticks = niceTicks(lo, hi, 5).filter((v) => v >= bot && v <= top);
+  const x = (v) => m.l + (v - bot) / (top - bot || 1) * (W - m.l - m.r);
+  const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Silber je Kämpfer nach Kampf", style: `height:${H}px` });
+  box.append(svg);
+  const axis = sv("g", { class: "axis" });
+  for (const v of ticks) axis.append(sv("line", { x1: x(v), x2: x(v), y1: m.t, y2: H - m.b, class: "gridline" }),
+    sv("text", { x: x(v), y: H - 8, "text-anchor": "middle" }, fmtInt(v)));
+  svg.append(axis);
+  if (bot < 0) svg.append(sv("line", { x1: x(0), x2: x(0), y1: m.t, y2: H - m.b, class: "mark ref" }));
+  const tip = el("div", { class: "tip" });
+  box.append(tip);
+  const short = (n) => { const t = n.replace(/^(Die|Das|Der|Verteidigung der) /, ""); return t.length > 24 ? `${t.slice(0, 23)}...` : t; };
+  types.forEach((t, i) => {
+    const cy = m.t + row * i + row / 2, col = t.kind === "BOSS" ? "var(--accent)" : "var(--warning)", a = t.alive;
+    svg.append(sv("text", { x: m.l - 8, y: cy + 4, "text-anchor": "end", class: "marklabel" }, short(t.name)),
+      sv("rect", { x: x(a.mean - a.std), y: cy - 9, width: Math.max(2, x(a.mean + a.std) - x(a.mean - a.std)), height: 18, rx: 3, style: `fill:${col};opacity:.2` }));
+    t.pts.forEach((v, j) => svg.append(sv("circle", { cx: x(v), cy: cy + ((j * 37) % 9 - 4) * 1.2, r: 2.6, style: `fill:${col};opacity:.75` })));
+    svg.append(sv("line", { x1: x(a.mean), x2: x(a.mean), y1: cy - 10, y2: cy + 10, style: "stroke:var(--text-primary);stroke-width:2" }));
+    const hit = sv("rect", { x: 0, y: cy - row / 2, width: W, height: row, fill: "transparent" });
+    hit.addEventListener("pointerenter", () => {
+      tip.replaceChildren(el("strong", {}, fightLabel(t)), el("span", { class: "muted" },
+        `Ø ${fmtInt(a.mean)}, Std ${fmtDec(a.std)}, ${fmtInt(a.min)} bis ${fmtInt(a.max)} Silber (${count(t.n, "Kampf", "Kämpfe")})`));
+      placeTip(tip, Math.min(W - 10, Math.max(10, x(a.mean))) * svg.getBoundingClientRect().width / W, svg.getBoundingClientRect().width);
+    });
+    hit.addEventListener("pointerleave", () => { tip.style.display = "none"; });
+    svg.append(hit);
+  });
+}
+function viewPayout(s) {
+  const all = s.payout || [], types = all.filter((t) => t.n >= PAYOUT_FEW && t.alive), few = all.filter((t) => t.n < PAYOUT_FEW);
+  if (!types.length) return [card("Was ein Kampf einbringt", el("p", { class: "note" }, "Noch keine Auszahlungen erfasst."))];
+  const byMean = [...types].sort((a, b) => b.alive.mean - a.alive.mean), box = el("div", { class: "chart" });
+  requestAnimationFrame(() => payoutChart(box, byMean));
+  const dl = (name, text) => el("a", { href: `data/${DATA_ROOT}payout.${name}`, download: `auszahlung.${name}` }, text);
+  return [
+    card("Was ein Kampf einbringt", el("p", { class: "note" },
+      "Silber je Kämpfer, so wie der Kampfbericht es nennt (Gold und Silber zusammen). Jeder Kampf zählt einmal, mit dem Mittel derer, die am Ende standen; ",
+      "Std und Varianz zeigen, wie stark dieses Mittel von Kampf zu Kampf schwankt. Überfälle zahlen nichts."),
+      box, el("p", { class: "note" }, "Punkt: ein Kampf. Strich: Mittel. Band: Mittel ± eine Std. Blau: Boss, gelb: Abenteuer.")),
+    card("Auszahlung je Kampf", el("div", { class: "scroll" }, table([
+      { label: "Kampf", get: fightLabel },
+      { label: "Kämpfe", num: true, get: (t) => fmtInt(t.n) },
+      { label: "Ø Silber", num: true, title: "Mittel der Kämpfer, die am Ende standen, über alle Kämpfe", get: (t) => el("strong", {}, fmtInt(t.alive.mean)) },
+      { label: "Std", num: true, title: "Standardabweichung zwischen den Kämpfen", get: (t) => fmtDec(t.alive.std) },
+      { label: "Varianz", num: true, sm: false, get: (t) => fmtInt(t.alive.var) },
+      { label: "Std in %", num: true, sm: false, title: "Variationskoeffizient: Std in Prozent des Mittels (kleiner = gleichmäßiger)", get: (t) => pctv(t.alive.cv) },
+      { label: "Min", num: true, sm: false, get: (t) => fmtInt(t.alive.min) },
+      { label: "Median", num: true, sm: false, get: (t) => fmtInt(t.alive.med) },
+      { label: "Max", num: true, sm: false, get: (t) => fmtInt(t.alive.max) },
+      { label: "Ø Sieg", num: true, sm: false, title: "Mittel in gewonnenen Kämpfen", get: (t) => fmtInt(t.win) },
+      { label: "Ø Niederlage", num: true, sm: false, title: "Mittel in verlorenen Kämpfen (negativ: die Niederlage kostet Silber)", get: (t) => fmtInt(t.loss) },
+      { label: "Ø Gefallene", num: true, sm: false, title: "Mittel der Kämpfer, die gefallen sind", get: (t) => t.fallen ? fmtInt(t.fallen.mean) : "-" },
+    ], byMean)),
+      few.length ? el("p", { class: "note" }, `Weniger als ${PAYOUT_FEW} Kämpfe: ${few.map((t) => `${fightLabel(t)} (${t.n})`).join(", ")}.`) : null,
+      el("p", { class: "note" }, "Rohdaten, eine Zeile je Kampf: ", dl("csv", "CSV"), " | ", dl("json", "JSON"), ".")),
+  ];
+}
+
 function viewFights(s, sub) {
   const since = s.since ? el("p", { class: "note" }, `Erfasst seit ${fmtSince(s.since)}.`) : null;
   if (sub === "kraft") return [eraBar(s), ...viewPower(s)];
+  if (sub === "auszahlung") return viewPayout(s);
   if (sub === "letzte") return [
     card("Letzte Kämpfe", el("div", { class: "scroll" }, table(RECENT_COLS(s), s.fights.recent)),
       el("p", { class: "note" }, "Der Kampfname führt zum Bericht im Spiel; ", gameLink("/kampf", "alle Kämpfe"), "."), since)];
@@ -2751,7 +2818,7 @@ const SECTIONS = {
             dropdown: true },
   spiel: { subs: () => [["regeln", "Regeln"], ["hoechstwerte", "Höchstwerte"], ["formen", "Formen"], ["spezial", "Spezialitems"], ["verbessern", "Verbessern"]],
            alias: { aenderungen: "regeln", ausruestung: "hoechstwerte", maximum: "hoechstwerte" }, render: viewGame },
-  kaempfe: { subs: () => [["uebersicht", "Übersicht"], ["kraft", "Kampfkraft"], ["letzte", "Letzte Kämpfe"]],
+  kaempfe: { subs: () => [["uebersicht", "Übersicht"], ["kraft", "Kampfkraft"], ["auszahlung", "Auszahlung"], ["letzte", "Letzte Kämpfe"]],
              render: viewFights },
 };
 async function initSeasons() {

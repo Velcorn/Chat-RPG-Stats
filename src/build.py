@@ -69,6 +69,10 @@ class History:
         rules_now: dict = {}
         live_now: dict[str, bool] = {}
         for rec in records:
+            if rec.get("part") == "backfill":  # digests of older fights (backfill.py): no run, no point in time
+                for fid, digest in rec.get("fightx", {}).items():
+                    self.fightx[int(fid)].update(digest)
+                continue
             t = rec["t"]
             self.first = self.first or t
             self.last = t

@@ -1919,7 +1919,7 @@ function viewLoot(s) {
   const types = (s.loot || []).filter((t) => t.n >= 1).sort((a, b) => (b.per100 ?? -1) - (a.per100 ?? -1));
   const dl = (name, text) => el("a", { href: `data/${DATA_ROOT}loot.${name}`, download: `beute.${name}` }, text);
   if (!types.length) return [card("Was ein Kampf droppt", el("p", { class: "note" },
-    "Die Beute der Kämpfe wird seit dem 27.10.2026 gezählt; ältere Berichte löscht das Spiel nach einer Woche. Sobald Kämpfe mit Beutedaten da sind, steht hier, wie viele Stücke in welcher Stufe fallen und wie viele Spieler eines Kampfes eines bekommen."))];
+    "Die Beute gibt es für die Kämpfe der letzten Tage vor dem 27.10.2026 und alle neuen; ältere Berichte löscht das Spiel nach einer Woche. Sobald Kämpfe mit Beutedaten da sind, steht hier, wie viele Stücke in welcher Stufe fallen und wie viele Spieler eines Kampfes eines bekommen."))];
   const max = Math.max(...types.map((t) => t.per100 || 0)) || 1;
   const bars = el("div", { class: "bars" }, types.map((t) => el("div", { class: "bar-row" },
     el("span", { class: "bar-label" }, fightLabel(t)),
@@ -1991,7 +1991,7 @@ function playerPayCard(all) {
   const have = all.filter((t) => t.all && t.all.fights >= 1).sort((a, b) => b.all.mean - a.all.mean);
   const missing = all.filter((t) => !(t.all && t.all.fights >= 1));
   if (!have.length) return card("Einzelne Spieler", el("p", { class: "note" },
-    "Die Einzelwerte aller Spieler eines Kampfes werden seit dem 27.10.2026 gesammelt; ältere Kämpfe nennen nur das Mittel. Sobald Kämpfe mit Einzelwerten da sind, steht hier die echte Streuung zwischen den Spielern."));
+    "Die Einzelwerte aller Spieler eines Kampfes gibt es für die Kämpfe der letzten Tage vor dem 27.10.2026 und alle neuen; ältere nennen nur das Mittel. Sobald Kämpfe mit Einzelwerten da sind, steht hier die echte Streuung zwischen den Spielern."));
   return card("Einzelne Spieler", el("div", { class: "scroll" }, table([
     { label: "Kampf", get: fightLabel },
     { label: "Kämpfe", num: true, get: (t) => fmtInt(t.all.fights) },

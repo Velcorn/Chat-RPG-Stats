@@ -414,3 +414,22 @@ class LootTests(unittest.TestCase):
         lines = fightstats.loot_csv(self.rows()).splitlines()
         self.assertEqual(len(lines), 4)
         self.assertTrue(lines[2].endswith("13:6;14:2"))
+
+
+class BackfillTests(unittest.TestCase):
+    def test_a_backfill_record_adds_digests_without_counting_as_a_run(self):
+        import backfill
+        import build
+        t = int(NOW)
+        fights = [{**fight(1, kind="BOSS"), "name": "Boss A", "endedAt": "2026-10-02T20:10:00Z"},
+                  {**fight(2, kind="RAID"), "endedAt": "2026-10-02T20:20:00Z"},
+                  {**fight(3), "endedAt": "2026-08-01T10:00:00Z"}]
+        records = [{"t": t, "fights": fights, "fightx": {"1": {"pay": [900, 500]}}},
+                   {"t": t + 60, "part": "backfill", "req": 3,
+                    "fightx": {"1": {"lt": {"el": 5, "dr": {}, "gu": 0, "wn": 0}}}}]
+        h = build.History(iter(records))
+        self.assertEqual((h.runs, h.last), (1, t))
+        self.assertEqual(sorted(h.fightx[1]), ["lt", "pay"])
+        self.assertEqual(backfill.missing(h, NOW), [])  # fight 1 has its digest, the raid and the old fight don't count
+        h2 = build.History(iter(records[:1]))
+        self.assertEqual([f["id"] for f in backfill.missing(h2, NOW)], [1])

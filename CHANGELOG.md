@@ -46,6 +46,7 @@ Die letzten 30 bisherigen Versionen sind diesen Tagesversionen zugeordnet:
 
 ### Neu
 - Kämpfe > Auszahlung: Wie viel Silber ein Kämpfer in jedem Boss und jedem Abenteuer bekommt, mit Streudiagramm (ein Punkt je Kampf, Mittel und Band ± eine Standardabweichung) und Tabelle (Kämpfe, Ø Silber, Std, Varianz, Std in Prozent, Min, Median, Max, Spanne, Ø bei Sieg und Niederlage, Ø der Gefallenen). Die Rohdaten, eine Zeile je Kampf, gibt es als CSV und JSON zum Herunterladen. Für neue Kämpfe speichert der Sammler zusätzlich, was jeder einzelne Spieler bekommen hat (nur die Verteilung, keine Namen): Die Karte "Einzelne Spieler" zeigt daraus die echte Streuung zwischen den Spielern (Mittel, Std, Varianz, Min, Quartile, Max, Spanne). Ältere Kämpfe nennen nur das Mittel des Kampfes.
+- Kämpfe > Beute: Wie viele Beutestücke ein Kampf droppt, je Boss und Abenteuer: Stücke je 100 Teilnehmer (Balkendiagramm), je Kampf mit Std, Min und Max, die Stufen der Stücke und der Anteil der Spieler mit einem Stück. Gezählt wird ohne Namen und ohne Empfänger, nur für Kämpfe seit dem 27.10.2026 (das Spiel löscht Berichte nach einer Woche). Rohdaten als CSV und JSON.
 
 ## 2026.10.25 (25.10.2026)
 

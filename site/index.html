@@ -170,6 +170,12 @@
   .up { color: var(--good); } .down { color: var(--critical); }
   .tag { font-size: 11px; padding: 1px 6px; border-radius: 4px; background: var(--surface-2);
          border: 1px solid var(--border); color: var(--text-secondary); white-space: nowrap; margin-left: 6px; }
+  .bars { display: grid; gap: 6px; margin: 12px 0 8px; }
+  .bar-row { display: grid; grid-template-columns: minmax(110px, 220px) 1fr 48px; gap: 10px; align-items: center; font-size: 13px; }
+  .bar-label { color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar-track { background: var(--grid); border-radius: 4px; height: 14px; overflow: hidden; }
+  .bar-fill { display: block; height: 100%; border-radius: 4px; }
+  .bar-value { text-align: right; font-variant-numeric: tabular-nums; }
   .chart { position: relative; }
   .chart svg { display: block; width: 100%; height: 220px; overflow: visible; }
   .chart .axis text { fill: var(--text-muted); font-size: 11px; }
@@ -1908,6 +1914,41 @@ function guildFightsCard(s) {
     el("p", { class: "note" }, `Kassenänderung bekannt bei ${fmtInt(known)} von ${fmtInt(raids)} Überfällen.`));
 }
 
+// ---- what a fight drops: pieces per fight and per 100 fighters, from the fights' loot counts (no names) ----
+function viewLoot(s) {
+  const types = (s.loot || []).filter((t) => t.n >= 1).sort((a, b) => (b.per100 ?? -1) - (a.per100 ?? -1));
+  const dl = (name, text) => el("a", { href: `data/${DATA_ROOT}loot.${name}`, download: `beute.${name}` }, text);
+  if (!types.length) return [card("Was ein Kampf droppt", el("p", { class: "note" },
+    "Die Beute der Kämpfe wird seit dem 27.10.2026 gezählt; ältere Berichte löscht das Spiel nach einer Woche. Sobald Kämpfe mit Beutedaten da sind, steht hier, wie viele Stücke in welcher Stufe fallen und wie viele Spieler eines Kampfes eines bekommen."))];
+  const max = Math.max(...types.map((t) => t.per100 || 0)) || 1;
+  const bars = el("div", { class: "bars" }, types.map((t) => el("div", { class: "bar-row" },
+    el("span", { class: "bar-label" }, fightLabel(t)),
+    el("span", { class: "bar-track" }, el("i", { class: "bar-fill", style: `width:${(100 * (t.per100 || 0) / max).toFixed(1)}%;background:${t.kind === "BOSS" ? "var(--accent)" : "var(--warning)"}` })),
+    el("span", { class: "bar-value" }, `${fmtDec(t.per100, 1)}`))));
+  const tiers = (t) => t.tiers.length ? t.tiers.map(([tier, n]) => `Stufe ${tier}: ${fmtInt(n)}`).join(", ") : "-";
+  return [
+    card("Was ein Kampf droppt", el("p", { class: "note" },
+      "Gezählt wird, was der Kampfbericht als Beute der Spieler nennt (ohne die garantierten Stücke des Boss-Schicksals), je Kampfart, ohne Namen. ",
+      "\"Je 100\" sind Stücke je 100 Spieler, die an der Beute teilnehmen (Begleiter ohne Beute zählen nicht mit). Überfälle droppen nichts."),
+      bars, el("p", { class: "note" }, "Stücke je 100 Teilnehmer. Blau: Boss, gelb: Abenteuer.")),
+    card("Beute je Kampf", el("div", { class: "scroll" }, table([
+      { label: "Kampf", get: fightLabel },
+      { label: "Kämpfe", num: true, get: (t) => fmtInt(t.n) },
+      { label: "Teilnehmer", num: true, sm: false, title: "Spieler mit Anteil an der Beute, über alle Kämpfe", get: (t) => fmtInt(t.eligible) },
+      { label: "Stücke", num: true, get: (t) => fmtInt(t.items) },
+      { label: "Je 100", num: true, title: "Stücke je 100 Teilnehmer", get: (t) => el("strong", {}, fmtDec(t.per100, 2)) },
+      { label: "Spieler mit Stück", num: true, sm: false, title: "Anteil der Teilnehmer, die mindestens ein Stück bekamen", get: (t) => pctv(t.eligible ? 100 * t.winners / t.eligible : null) },
+      { label: "Ø je Kampf", num: true, sm: false, get: (t) => fmtDec(t.per_fight?.mean, 1) },
+      { label: "Std", num: true, sm: false, title: "Standardabweichung der Stücke je Kampf", get: (t) => fmtDec(t.per_fight?.std, 1) },
+      { label: "Min", num: true, sm: false, get: (t) => fmtInt(t.per_fight?.min) },
+      { label: "Max", num: true, sm: false, get: (t) => fmtInt(t.per_fight?.max) },
+      { label: "Schicksalsstücke", num: true, sm: false, title: "Garantierte Stücke (Boss-Schicksal)", get: (t) => fmtInt(t.guaranteed) },
+      { label: "Stufen", sm: false, get: tiers },
+    ], types)),
+      el("p", { class: "note" }, "Rohdaten, eine Zeile je Kampf: ", dl("csv", "CSV"), " | ", dl("json", "JSON"), ".")),
+  ];
+}
+
 // ---- what a fight pays: the silver per fighter, spread over the fights of a type ----
 const PAYOUT_FEW = 5;  // fights a type needs to show in the table and chart
 // One row per fight type: a dot per fight (the mean of those standing at the end), the mean as a bar, mean +- 1 std as a band.
@@ -2004,6 +2045,7 @@ function viewFights(s, sub) {
   const since = s.since ? el("p", { class: "note" }, `Erfasst seit ${fmtSince(s.since)}.`) : null;
   if (sub === "kraft") return [eraBar(s), ...viewPower(s)];
   if (sub === "auszahlung") return viewPayout(s);
+  if (sub === "beute") return viewLoot(s);
   if (sub === "letzte") return [
     card("Letzte Kämpfe", el("div", { class: "scroll" }, table(RECENT_COLS(s), s.fights.recent)),
       el("p", { class: "note" }, "Der Kampfname führt zum Bericht im Spiel; ", gameLink("/kampf", "alle Kämpfe"), "."), since)];
@@ -2844,7 +2886,7 @@ const SECTIONS = {
             dropdown: true },
   spiel: { subs: () => [["regeln", "Regeln"], ["hoechstwerte", "Höchstwerte"], ["formen", "Formen"], ["spezial", "Spezialitems"], ["verbessern", "Verbessern"]],
            alias: { aenderungen: "regeln", ausruestung: "hoechstwerte", maximum: "hoechstwerte" }, render: viewGame },
-  kaempfe: { subs: () => [["uebersicht", "Übersicht"], ["kraft", "Kampfkraft"], ["auszahlung", "Auszahlung"], ["letzte", "Letzte Kämpfe"]],
+  kaempfe: { subs: () => [["uebersicht", "Übersicht"], ["kraft", "Kampfkraft"], ["auszahlung", "Auszahlung"], ["beute", "Beute"], ["letzte", "Letzte Kämpfe"]],
              render: viewFights },
 };
 async function initSeasons() {

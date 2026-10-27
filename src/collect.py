@@ -218,6 +218,24 @@ def pay_group(values: list[int]) -> dict | None:
             "hi": max(values), "h": hist}
 
 
+def loot_digest(fighters: list[dict]) -> dict:
+    """What a finished fight dropped, without who got it: fighters who take part in the loot (not companions), drops per
+    tier, the guaranteed pieces (the boss's fate piece, `guaranteed`) and how many fighters got a drop."""
+    drops: dict[str, int] = {}
+    guaranteed = winners = 0
+    for f in fighters:
+        got = False
+        for item in f.get("lootItems") or []:
+            if item.get("guaranteed"):
+                guaranteed += 1
+                continue
+            tier = str(item.get("tier") if item.get("tier") is not None else "?")
+            drops[tier] = drops.get(tier, 0) + 1
+            got = True
+        winners += got
+    return {"el": sum(1 for f in fighters if f.get("lootEligible")), "dr": drops, "gu": guaranteed, "wn": winners}
+
+
 def detail_digest(d: dict) -> dict:
     """What one finished fight's detail page adds up to: sums and counts only, nothing per player."""
     n, dead, pay = [0, 0, 0], [0, 0, 0], {True: [], False: []}  # pay: the silver of those standing / fallen
@@ -243,7 +261,8 @@ def detail_digest(d: dict) -> dict:
             "boost": tally.get("boosted"),
             "round": d.get("round"), "rounds": d.get("maxRounds"), "hp": d.get("hp"), "maxhp": d.get("maxHp"),
             "pay": [mean(pay[True]), mean(pay[False])],
-            "pg": {k: g for k, g in (("a", pay_group(pay[True])), ("d", pay_group(pay[False]))) if g}}
+            "pg": {k: g for k, g in (("a", pay_group(pay[True])), ("d", pay_group(pay[False]))) if g},
+            "lt": loot_digest(d.get("fighters") or [])}
 
 
 def live_digest(e: dict) -> dict:

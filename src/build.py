@@ -290,6 +290,7 @@ def build(data: Path, out: Path, now: float | None = None, include_archives: boo
 
     boss_rec = state.get("boss_rec", {})
     pay_rows = fightstats.payout_rows(h.fights, h.fightx)
+    loot_rows = fightstats.loot_rows(h.fights, h.fightx)
     summary_stats = fightstats.fight_stats(h.fights, h.fightx, now, boss_rec=boss_rec)
     summary = {"generated": int(now), "version": project_version(), "since": h.first, "runs": h.runs,
                "season": {**manifest.get("current", {}), "start": h.first, "end": None, "archived": False},
@@ -312,6 +313,7 @@ def build(data: Path, out: Path, now: float | None = None, include_archives: boo
                         "before": fightstats.fight_stats(h.fights, h.fightx, now, hi=fightstats.UPDATE,
                                                          boss_rec=boss_rec)},
                "payout": fightstats.payout(pay_rows),
+               "loot": fightstats.loot(loot_rows),
                "guild_fights": fightstats.guild_fights(h.fights, h.fightx, now),
                "stat_curves": fightstats.stat_curves(h.fights, h.fightx, now, boss_rec=boss_rec),
                "win_odds": fightstats.win_odds(h.fights, h.fightx, now, boss_rec=boss_rec),
@@ -342,6 +344,8 @@ def build(data: Path, out: Path, now: float | None = None, include_archives: boo
     write(target / "observed.json", observed(state))
     write(target / "payout.json", pay_rows)
     (target / "payout.csv").write_text(fightstats.payout_csv(pay_rows), "utf-8")
+    write(target / "loot.json", loot_rows)
+    (target / "loot.csv").write_text(fightstats.loot_csv(loot_rows), "utf-8")
     if lapse := timelapse(h, players, h.border):
         write(target / "timelapse.json", lapse)
     if top := top_lapse(h, players):

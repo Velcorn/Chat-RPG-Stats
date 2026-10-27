@@ -375,3 +375,42 @@ class PayGroupTests(unittest.TestCase):
         self.assertAlmostEqual(p["std"], round(statistics.stdev(flat), 1))
         self.assertEqual((p["q1"], p["med"], p["q3"]), (200, 300, 400))  # bucket lower edges of 50 silver
         self.assertIsNone(fightstats.pooled([None]))
+
+
+class LootTests(unittest.TestCase):
+    def fighters(self):
+        def f(**kw):
+            return {"login": "geheim", "lootEligible": True, **kw}
+        return [f(lootItems=[{"name": "Helm", "tier": 13, "guaranteed": False}]), f(),
+                f(lootItems=[{"name": "Stab", "tier": 14, "guaranteed": False},
+                             {"name": "Schicksal", "tier": 14, "guaranteed": True}]),
+                f(lootEligible=False), f(lootItems=[{"name": "Ring", "tier": 13, "guaranteed": False}])]
+
+    def test_digest_counts_drops_per_tier_without_names(self):
+        d = collect.loot_digest(self.fighters())
+        self.assertEqual(d, {"el": 4, "dr": {"13": 2, "14": 1}, "gu": 1, "wn": 3})
+        self.assertNotIn("geheim", str(d))
+        self.assertIn("lt", collect.detail_digest(detail()))
+
+    def rows(self):
+        fights = [{**fight(1, kind="BOSS"), "name": "Boss A"}, {**fight(2, kind="BOSS"), "name": "Boss A"},
+                  fight(3, kind="RAID"), fight(4)]
+        extra = {1: {"lt": {"el": 100, "dr": {"13": 4}, "gu": 0, "wn": 4}},
+                 2: {"lt": {"el": 300, "dr": {"13": 6, "14": 2}, "gu": 1, "wn": 8}},
+                 3: {"lt": {"el": 10, "dr": {}, "gu": 0, "wn": 0}}, 4: {}}
+        return fightstats.loot_rows(fights, extra)
+
+    def test_rows_need_a_digest_and_raids_drop_out_of_the_summary(self):
+        self.assertEqual([r["id"] for r in self.rows()], [1, 2, 3])
+        self.assertEqual([t["name"] for t in fightstats.loot(self.rows())], ["Boss A"])
+
+    def test_rate_per_100_fighters_and_tiers(self):
+        boss = fightstats.loot(self.rows())[0]
+        self.assertEqual((boss["n"], boss["eligible"], boss["items"], boss["per100"]), (2, 400, 12, 3.0))
+        self.assertEqual((boss["tiers"], boss["guaranteed"], boss["winners"]), ([(13, 10), (14, 2)], 1, 12))
+        self.assertEqual((boss["per_fight"]["mean"], boss["per_fight"]["min"], boss["per_fight"]["max"]), (6, 4, 8))
+
+    def test_csv_has_one_line_per_fight(self):
+        lines = fightstats.loot_csv(self.rows()).splitlines()
+        self.assertEqual(len(lines), 4)
+        self.assertTrue(lines[2].endswith("13:6;14:2"))

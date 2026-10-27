@@ -239,6 +239,59 @@ def payout_rows(fights: list[dict], extra: dict[int, dict], since: float = UPDAT
     return rows
 
 
+def loot_rows(fights: list[dict], extra: dict[int, dict]) -> list[dict]:
+    """One row per fight with a loot digest (`lt`, kept since 27.10.2026): how many fighters could take part in the
+    loot, what dropped per tier, the guaranteed pieces and how many fighters got a drop. Counts only, nothing per
+    player."""
+    rows = []
+    for f in fights:
+        lt = extra.get(f["id"], {}).get("lt")
+        if not lt or not f.get("endedAt"):
+            continue
+        rows.append({"id": f["id"], "ended": f["endedAt"], "kind": f.get("kind"), "name": f.get("name"),
+                     "level": f.get("bossLevel") if f.get("kind") == "BOSS" else
+                     f.get("difficulty") if f.get("kind") == "RAID" else None,
+                     "outcome": f.get("outcome"), "fighters": f.get("fighters"), "eligible": lt["el"],
+                     "drops": lt["dr"], "items": sum(lt["dr"].values()), "guaranteed": lt["gu"], "winners": lt["wn"]})
+    return rows
+
+
+def loot(rows: list[dict]) -> list[dict]:
+    """Per fight type: fights, fighters in the loot, drops (total, per 100 fighters, per fight with spread, per tier),
+    the guaranteed pieces and the share of fighters with a drop. Types without any drop in any fight stay in (a rate of
+    0 says something too); raids drop nothing and are left out. The most fights first."""
+    types: dict[tuple, list[dict]] = defaultdict(list)
+    for r in rows:
+        if r["kind"] != "RAID":
+            types[(r["kind"], r["name"], r["level"])].append(r)
+    out = []
+    for (kind, name, level), rs in types.items():
+        eligible, items = sum(r["eligible"] for r in rs), sum(r["items"] for r in rs)
+        tiers: dict[int, int] = defaultdict(int)
+        for r in rs:
+            for tier, n in r["drops"].items():
+                tiers[int(tier) if tier.isdigit() else -1] += n
+        out.append({"kind": kind, "name": name, "difficulty": None, "bossLevel": level if kind == "BOSS" else None,
+                    "n": len(rs), "wins": sum(r["outcome"] == "VICTORY" for r in rs), "eligible": eligible,
+                    "items": items, "per100": round(100 * items / eligible, 2) if eligible else None,
+                    "winners": sum(r["winners"] for r in rs), "guaranteed": sum(r["guaranteed"] for r in rs),
+                    "per_fight": spread([r["items"] for r in rs]), "tiers": sorted(tiers.items())})
+    return sorted(out, key=lambda t: (-t["n"], t["name"] or ""))
+
+
+def loot_csv(rows: list[dict]) -> str:
+    """The loot rows as a CSV with English column names (`tiers` as tier:count pairs joined by semicolons)."""
+    buf = io.StringIO()
+    w = csv.writer(buf, lineterminator="\n")
+    w.writerow(["fight_id", "ended_at", "kind", "name", "level_or_difficulty", "outcome", "fighters", "in_loot",
+                "drops", "guaranteed", "fighters_with_drop", "drops_by_tier"])
+    for r in rows:
+        w.writerow([r["id"], r["ended"], r["kind"], r["name"], "" if r["level"] is None else r["level"],
+                    r["outcome"], r["fighters"], r["eligible"], r["items"], r["guaranteed"], r["winners"],
+                    ";".join(f"{t}:{n}" for t, n in sorted(r["drops"].items()))])
+    return buf.getvalue()
+
+
 def pooled(groups: list[dict]) -> dict | None:
     """The pay groups of several fights (collect.pay_group) as one: over every fighter, not over the fights' means.
     Mean, sample std, variance, the extremes and the quartiles (read off the histogram, so within one step)."""

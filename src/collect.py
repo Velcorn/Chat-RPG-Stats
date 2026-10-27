@@ -202,9 +202,25 @@ def silver_value(text: str | None) -> int | None:
     return -value if m[1] != "+" else value
 
 
+PAY_STEP = 50  # silver per step of the pay histogram
+
+
+def pay_group(values: list[int]) -> dict | None:
+    """The spread of what fighters got in one fight, without who got it: count, sum, sum of squares (std and variance
+    are computed from them), the extremes and a histogram in steps of PAY_STEP (lower edge -> fighters)."""
+    if not values:
+        return None
+    hist: dict[str, int] = {}
+    for v in values:
+        key = str(v // PAY_STEP * PAY_STEP)
+        hist[key] = hist.get(key, 0) + 1
+    return {"n": len(values), "s": sum(values), "q": sum(v * v for v in values), "lo": min(values),
+            "hi": max(values), "h": hist}
+
+
 def detail_digest(d: dict) -> dict:
     """What one finished fight's detail page adds up to: sums and counts only, nothing per player."""
-    n, dead, pay = [0, 0, 0], [0, 0, 0], {True: [], False: []}
+    n, dead, pay = [0, 0, 0], [0, 0, 0], {True: [], False: []}  # pay: the silver of those standing / fallen
     by_role = [[0, 0, 0, 0] for _ in ROLES]  # per role: damage, taken, healing, boosted
     for f in d.get("fighters") or []:
         if f.get("role") in ROLES:
@@ -226,7 +242,8 @@ def detail_digest(d: dict) -> dict:
             "dmg": tally.get("damage"), "taken": tally.get("taken"), "heal": tally.get("healing"),
             "boost": tally.get("boosted"),
             "round": d.get("round"), "rounds": d.get("maxRounds"), "hp": d.get("hp"), "maxhp": d.get("maxHp"),
-            "pay": [mean(pay[True]), mean(pay[False])]}
+            "pay": [mean(pay[True]), mean(pay[False])],
+            "pg": {k: g for k, g in (("a", pay_group(pay[True])), ("d", pay_group(pay[False]))) if g}}
 
 
 def live_digest(e: dict) -> dict:

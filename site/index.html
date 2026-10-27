@@ -1945,6 +1945,29 @@ function payoutChart(box, types) {
     svg.append(hit);
   });
 }
+// What single players got, over every fighter of every fight with all values (collected since 27.10.2026): the real spread.
+function playerPayCard(all) {
+  const have = all.filter((t) => t.all && t.all.fights >= 1).sort((a, b) => b.all.mean - a.all.mean);
+  const missing = all.filter((t) => !(t.all && t.all.fights >= 1));
+  if (!have.length) return card("Einzelne Spieler", el("p", { class: "note" },
+    "Die Einzelwerte aller Spieler eines Kampfes werden seit dem 27.10.2026 gesammelt; ältere Kämpfe nennen nur das Mittel. Sobald Kämpfe mit Einzelwerten da sind, steht hier die echte Streuung zwischen den Spielern."));
+  return card("Einzelne Spieler", el("div", { class: "scroll" }, table([
+    { label: "Kampf", get: fightLabel },
+    { label: "Kämpfe", num: true, get: (t) => fmtInt(t.all.fights) },
+    { label: "Spieler", num: true, sm: false, title: "Teilnehmer, die am Ende standen, in allen Kämpfen zusammen", get: (t) => fmtInt(t.all.n) },
+    { label: "Ø Silber", num: true, get: (t) => el("strong", {}, fmtInt(t.all.mean)) },
+    { label: "Std", num: true, title: "Standardabweichung zwischen den Spielern", get: (t) => fmtDec(t.all.std) },
+    { label: "Varianz", num: true, sm: false, get: (t) => fmtInt(t.all.var) },
+    { label: "Min", num: true, get: (t) => fmtInt(t.all.min) },
+    { label: "25 %", num: true, sm: false, title: "Ein Viertel der Spieler bekam weniger (auf 50 Silber genau)", get: (t) => fmtInt(t.all.q1) },
+    { label: "Median", num: true, sm: false, title: "Auf 50 Silber genau", get: (t) => fmtInt(t.all.med) },
+    { label: "75 %", num: true, sm: false, title: "Ein Viertel der Spieler bekam mehr (auf 50 Silber genau)", get: (t) => fmtInt(t.all.q3) },
+    { label: "Max", num: true, get: (t) => fmtInt(t.all.max) },
+    { label: "Spanne", num: true, get: (t) => fmtInt(t.all.max - t.all.min) },
+  ], have)),
+    missing.length ? el("p", { class: "note" }, `Noch ohne Einzelwerte: ${missing.map((t) => fightLabel(t)).join(", ")}.`) : null,
+    el("p", { class: "note" }, "Alle Spieler, die am Ende standen, über alle erfassten Kämpfe zusammen; die Kämpfe zählen mit ihrer Teilnehmerzahl. Quartile sind aus 50-Silber-Stufen gelesen."));
+}
 function viewPayout(s) {
   const all = s.payout || [], types = all.filter((t) => t.n >= PAYOUT_FEW && t.alive), few = all.filter((t) => t.n < PAYOUT_FEW);
   if (!types.length) return [card("Was ein Kampf einbringt", el("p", { class: "note" }, "Noch keine Auszahlungen erfasst."))];
@@ -1954,9 +1977,9 @@ function viewPayout(s) {
   return [
     card("Was ein Kampf einbringt", el("p", { class: "note" },
       "Silber je Kämpfer, so wie der Kampfbericht es nennt (Gold und Silber zusammen). Jeder Kampf zählt einmal, mit dem Mittel derer, die am Ende standen; ",
-      "Std und Varianz zeigen, wie stark dieses Mittel von Kampf zu Kampf schwankt. Überfälle zahlen nichts."),
+      "Std und Varianz zeigen, wie stark dieses Mittel von Kampf zu Kampf schwankt, nicht wie stark einzelne Spieler streuen (die stehen weiter unten, sobald Kämpfe mit allen Einzelwerten da sind). Überfälle zahlen nichts."),
       box, el("p", { class: "note" }, "Punkt: ein Kampf. Strich: Mittel. Band: Mittel ± eine Std. Dünne Linie: kleinster bis größter Wert. Blau: Boss, gelb: Abenteuer.")),
-    card("Auszahlung je Kampf", el("div", { class: "scroll" }, table([
+    card("Mittel je Kampf", el("div", { class: "scroll" }, table([
       { label: "Kampf", get: fightLabel },
       { label: "Kämpfe", num: true, get: (t) => fmtInt(t.n) },
       { label: "Ø Silber", num: true, title: "Mittel der Kämpfer, die am Ende standen, über alle Kämpfe", get: (t) => el("strong", {}, fmtInt(t.alive.mean)) },
@@ -1973,6 +1996,7 @@ function viewPayout(s) {
     ], byMean)),
       few.length ? el("p", { class: "note" }, `Weniger als ${PAYOUT_FEW} Kämpfe: ${few.map((t) => `${fightLabel(t)} (${t.n})`).join(", ")}.`) : null,
       el("p", { class: "note" }, "Rohdaten, eine Zeile je Kampf: ", dl("csv", "CSV"), " | ", dl("json", "JSON"), ".")),
+    playerPayCard(all),
   ];
 }
 

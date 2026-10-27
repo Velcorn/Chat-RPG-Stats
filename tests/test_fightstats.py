@@ -1,5 +1,6 @@
 """Fight statistics: the digests the collector keeps and the sums the build makes of them."""
 import itertools
+import statistics
 import unittest
 from datetime import UTC, datetime
 
@@ -354,3 +355,23 @@ class PayoutTests(unittest.TestCase):
         self.assertEqual(len(lines), 5)
         self.assertTrue(lines[0].startswith("fight_id,ended_at,kind"))
         self.assertIn("910,", lines[2] + ",")
+
+
+class PayGroupTests(unittest.TestCase):
+    def test_the_digest_keeps_the_spread_of_every_fighter_without_names(self):
+        d = collect.detail_digest(detail())
+        a = d["pg"]["a"]  # 210 and 490 stood, -336 and -100 fell
+        self.assertEqual((a["n"], a["s"], a["lo"], a["hi"], a["q"]), (2, 700, 210, 490, 210 ** 2 + 490 ** 2))
+        self.assertEqual(a["h"], {"200": 1, "450": 1})
+        self.assertEqual(d["pg"]["d"]["lo"], -336)
+        self.assertNotIn("geheim", str(d))
+
+    def test_pooled_spread_is_over_the_fighters_not_the_fights(self):
+        values = [[100, 300], [200, 400, 600]]
+        groups = [collect.pay_group(v) for v in values]
+        p = fightstats.pooled(groups)
+        flat = [100, 300, 200, 400, 600]
+        self.assertEqual((p["n"], p["fights"], p["mean"], p["min"], p["max"]), (5, 2, 320, 100, 600))
+        self.assertAlmostEqual(p["std"], round(statistics.stdev(flat), 1))
+        self.assertEqual((p["q1"], p["med"], p["q3"]), (200, 300, 400))  # bucket lower edges of 50 silver
+        self.assertIsNone(fightstats.pooled([None]))

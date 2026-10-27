@@ -235,8 +235,36 @@ def payout_rows(fights: list[dict], extra: dict[int, dict], since: float = UPDAT
                      "level": f.get("bossLevel") if f.get("kind") == "BOSS" else
                      f.get("difficulty") if f.get("kind") == "RAID" else None,
                      "outcome": f.get("outcome"), "fighters": f.get("fighters"),
-                     "alive": pay[0], "fallen": pay[1]})
+                     "alive": pay[0], "fallen": pay[1], "pg": extra[f["id"]].get("pg")})
     return rows
+
+
+def pooled(groups: list[dict]) -> dict | None:
+    """The pay groups of several fights (collect.pay_group) as one: over every fighter, not over the fights' means.
+    Mean, sample std, variance, the extremes and the quartiles (read off the histogram, so within one step)."""
+    groups = [g for g in groups if g]
+    n = sum(g["n"] for g in groups)
+    if not n:
+        return None
+    total, squares = sum(g["s"] for g in groups), sum(g["q"] for g in groups)
+    var = max(0.0, (squares - total * total / n) / (n - 1)) if n > 1 else 0.0
+    hist: dict[int, int] = defaultdict(int)
+    for g in groups:
+        for k, c in g["h"].items():
+            hist[int(k)] += c
+
+    def quantile(q):
+        seen = 0
+        for k in sorted(hist):
+            seen += hist[k]
+            if seen >= q * n:
+                return k
+        return max(hist)
+    mean_ = total / n
+    return {"n": n, "fights": len(groups), "mean": round(mean_), "std": round(math.sqrt(var), 1), "var": round(var),
+            "cv": round(100 * math.sqrt(var) / mean_, 1) if mean_ > 0 else None,
+            "min": min(g["lo"] for g in groups), "max": max(g["hi"] for g in groups),
+            "q1": quantile(0.25), "med": quantile(0.5), "q3": quantile(0.75)}
 
 
 def payout(rows: list[dict]) -> list[dict]:
@@ -259,6 +287,8 @@ def payout(rows: list[dict]) -> list[dict]:
                     "bossLevel": level if kind == "BOSS" else None, "n": len(rs),
                     "wins": sum(r["outcome"] == "VICTORY" for r in rs),
                     "alive": spread(alive), "fallen": spread(fallen),
+                    "all": pooled([(r.get("pg") or {}).get("a") for r in rs]),
+                    "all_fallen": pooled([(r.get("pg") or {}).get("d") for r in rs]),
                     "win": round(statistics.fmean(won)) if won else None,
                     "loss": round(statistics.fmean(lost)) if lost else None, "pts": alive})
     return sorted(out, key=lambda t: (-t["n"], t["name"] or ""))
@@ -267,14 +297,15 @@ def payout(rows: list[dict]) -> list[dict]:
 def payout_csv(rows: list[dict]) -> str:
     """The rows as a CSV with English column names, for people who want to work with the numbers themselves."""
     head = ["fight_id", "ended_at", "kind", "name", "level_or_difficulty", "outcome", "fighters",
-            "silver_per_survivor", "silver_per_fallen"]
+            "silver_per_survivor", "silver_per_fallen", "survivor_min", "survivor_max"]
     buf = io.StringIO()
     w = csv.writer(buf, lineterminator="\n")
     w.writerow(head)
     for r in rows:
         w.writerow([r["id"], r["ended"], r["kind"], r["name"], "" if r["level"] is None else r["level"],
                     r["outcome"], r["fighters"], "" if r["alive"] is None else r["alive"],
-                    "" if r["fallen"] is None else r["fallen"]])
+                    "" if r["fallen"] is None else r["fallen"],
+                    *(((r.get("pg") or {}).get("a") or {}).get(k, "") for k in ("lo", "hi"))])
     return buf.getvalue()
 
 

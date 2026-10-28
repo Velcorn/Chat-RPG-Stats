@@ -280,12 +280,14 @@
   .ab-cap { font-size: 14px; color: var(--text-secondary); min-height: 1.4em; }
   .ab-row, .ab-pair, .ab-legend, .ab-actions { display: flex; gap: 12px 18px; flex-wrap: wrap; justify-content: center; }
   .ab-legend { font-size: 14px; font-weight: 600; min-height: 1.4em; }
+  .ab-legend.col { flex-direction: column; align-items: center; gap: 2px; font-size: 16px; }
+  .ab-bignum { font-size: clamp(30px, 5vw, 44px); font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
   .ab-stat { min-width: 120px; padding: 6px 12px; border: 1px solid #2a2f3a; border-radius: 10px; background: #0b0c1288; }
   .ab-stat b { display: block; font-size: clamp(24px, 4vw, 36px); font-variant-numeric: tabular-nums; }
   .ab-stat span { display: block; font-size: 12px; color: var(--text-muted); }
   .ab-stat.small b { font-size: 22px; }
   .ab-pair > div { min-width: 220px; }
-  .ab-svg { width: 100%; max-height: 32vh; }
+  .ab-svg { width: 100%; max-height: 32vh; } .ab-svg.short { max-height: 25vh; }
   .ab-grid { stroke: #ffffff18; } .ab-axis { fill: var(--text-muted); font-size: 11px; }
   .ab-line { stroke: #f0c35a; stroke-width: 2.5; stroke-linejoin: round; } .ab-dot { fill: #f0c35a; }
   .ab-mark circle { fill: none; stroke: #f0c35a; stroke-width: 2; opacity: 0; transition: opacity .3s; } .ab-mark.on circle { opacity: 1; }
@@ -2960,7 +2962,7 @@ function abWay(s) {
   const ser = top.series, t0 = ser[0][0], t1 = Math.max(s.generated, ser[ser.length - 1][0]);
   const lo = Math.floor(Math.min(...ser.map((r) => r[1])) / 50) * 50, hi = Math.ceil(top.score / 50) * 50;
   const X = (t) => m.l + (t - t0) / (t1 - t0) * (W - m.l - m.r), Y = (v) => m.t + (1 - (v - lo) / (hi - lo)) * (H - m.t - m.b);
-  const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, class: "ab-svg", role: "img", "aria-label": "Höchster Ausrüstungswert der Saison" });
+  const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, class: "ab-svg short", role: "img", "aria-label": "Höchster Ausrüstungswert der Saison" });
   for (let v = lo; v <= hi; v += 50) {
     svg.append(sv("line", { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v), class: "ab-grid" }), sv("text", { x: m.l - 6, y: Y(v) + 4, class: "ab-axis", "text-anchor": "end" }, String(v)));
   }
@@ -2975,9 +2977,9 @@ function abWay(s) {
     svg.append(g);
     return { g, t: f.t, f, v };
   });
-  const tag = el("div", { class: "ab-cap" });
+  const tag = el("div", { class: "ab-cap" }), val = el("div", { class: "ab-bignum" });
   const row = el("div", { class: "ab-row" });
-  sc.body.append(svg, row, tag);
+  sc.body.append(svg, val, tag, row);
   return { node: sc.root, update(p) {
     const x = X(t0 + (t1 - t0) * span(p, 0.04, 0.9)), vis = steps.filter(([sx]) => sx <= x);
     const last = vis[vis.length - 1] || steps[0];
@@ -2985,6 +2987,7 @@ function abWay(s) {
     dot.setAttribute("cx", x.toFixed(1)); dot.setAttribute("cy", last[1].toFixed(1));
     const now = t0 + (t1 - t0) * span(p, 0.04, 0.9);
     tag.textContent = AB_DAY(now);
+    val.textContent = fmtInt([...ser].reverse().find((r) => r[0] <= now)?.[1] ?? ser[0][1]);
     const shown = marks.filter((k) => k.t <= now);
     marks.forEach((k) => k.g.classList.toggle("on", k.t <= now));
     row.replaceChildren(...shown.map((k) => el("div", { class: "ab-stat small" }, el("b", {}, fmtInt(k.v)),
@@ -3076,9 +3079,10 @@ function abGuilds(s) {
   const X = (t) => m.l + (t - t0) / (t1 - t0) * (W - m.l - m.r), Y = (v) => m.t + (1 - (v - lo) / (hi - lo)) * (H - m.t - m.b);
   const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, class: "ab-svg", role: "img", "aria-label": "Durchschnittlicher Ausrüstungswert der Gilden" });
   for (let v = lo; v <= hi; v += 100) svg.append(sv("line", { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v), class: "ab-grid" }), sv("text", { x: m.l - 6, y: Y(v) + 4, class: "ab-axis", "text-anchor": "end" }, String(v)));
-  const lines = gl.map((g, i) => ({ g, c: AB_COLORS[i % 4], pl: sv("polyline", { fill: "none", class: "ab-line", style: `stroke:${AB_COLORS[i % 4]}` }) }));
+  const colorOf = (g, i) => GUILD_COLORS[g.login] || SPARE_COLORS[i % SPARE_COLORS.length];  // the colours of the guild comparison
+  const lines = gl.map((g, i) => ({ g, c: colorOf(g, i), pl: sv("polyline", { fill: "none", class: "ab-line", style: `stroke:${colorOf(g, i)}` }) }));
   svg.append(...lines.map((l) => l.pl));
-  const legend = el("div", { class: "ab-legend" });
+  const legend = el("div", { class: "ab-legend col" });
   sc.body.append(svg, legend);
   return { node: sc.root, update(p) {
     const now = t0 + (t1 - t0) * span(p, 0.04, 0.94), vals = [];
@@ -3103,7 +3107,7 @@ function abBuilds(s) {
   const defs = [[1, "Angriff", "var(--atk)"], [2, "Verteidigung", "var(--def)"], [3, "Unterstützung", "var(--sup)"]];
   const lines = defs.map(([i, name, col]) => ({ i, name, col, pl: sv("polyline", { fill: "none", class: "ab-line", style: `stroke:${col}` }) }));
   svg.append(...lines.map((l) => l.pl));
-  const legend = el("div", { class: "ab-legend" }), when = el("div", { class: "ab-cap" });
+  const legend = el("div", { class: "ab-legend col" }), when = el("div", { class: "ab-cap" });
   sc.body.append(svg, legend, when);
   return { node: sc.root, update(p) {
     const f = (rows.length - 1) * span(p, 0.05, 0.94), a = Math.floor(f), b = Math.min(rows.length - 1, a + 1), w = f - a;

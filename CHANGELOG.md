@@ -42,6 +42,11 @@ Die letzten 30 bisherigen Versionen sind diesen Tagesversionen zugeordnet:
 | 0.45.10 | 2026.10.15 |
 | 0.45.9 | 2026.10.15 |
 
+## 2026.10.28 (28.10.2026)
+
+### Behoben
+- Saisonrückblick: "Zeit an der Spitze" zählt die Stunden der Sperrstunde nicht mehr mit (nur die Spielzeit des Spiels, wie sie zu dem Zeitpunkt galt).
+
 ## 2026.10.27 (27.10.2026)
 
 ### Neu

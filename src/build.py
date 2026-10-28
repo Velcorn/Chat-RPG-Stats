@@ -53,6 +53,7 @@ class History:
         self.guilds: dict[str, list] = defaultdict(list)     # guild -> [[t, treasury, members, active, gear], ...]
         self.fights: list[dict] = []
         self.fightx: dict[int, dict] = defaultdict(dict)  # fight id -> detail and live digests (since 0.9.0)
+        self.window: list[list] = []                         # [[t, from, to], ...] the play window, at every change
         self.rules_log: list[list] = []                      # [[t, rule, old, new], ...] (since 0.10.0)
         self.live_runs: dict[str, list] = defaultdict(lambda: [0, 0])  # channel -> [runs live, runs seen]
         self.leader: list[list] = []                         # [[t, login of place 1], ...] (only changes)
@@ -112,6 +113,10 @@ class History:
                 if rule in rules_now and rules_now[rule] != v:
                     self.rules_log.append([t, rule, rules_now[rule], v])
                 rules_now[rule] = v
+            if "playWindowFrom" in rules_now and "playWindowTo" in rules_now:
+                span = [rules_now["playWindowFrom"], rules_now["playWindowTo"]]
+                if not self.window or self.window[-1][1:] != span:
+                    self.window.append([t, *span])
             live_now.update(rec.get("channels", {}))
             for channel, live in ({} if rec.get("part") == "profiles" else live_now).items():
                 self.live_runs[channel][0] += bool(live)

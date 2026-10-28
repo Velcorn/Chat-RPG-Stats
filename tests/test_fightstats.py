@@ -492,9 +492,24 @@ class CoverageGapTests(unittest.TestCase):
 
         def history(top_score):
             return SimpleNamespace(leader=[[100, "a"], [200, "b"]], last=300, top_score=top_score,
-                                   gs={"a": [[100, 12]], "b": [[200, 12]]}, board_last=[["a", 12]])
+                                   gs={"a": [[100, 12]], "b": [[200, 12]]}, window=[], board_last=[["a", 12]])
 
         self.assertIsNone(finale.top_story(history([[50, 10]]), {}, since=400))
         self.assertIsNone(finale.top_story(history([]), {}, since=150))
         top = finale.top_story(history([[50, 10], [250, 12]]), {}, since=150)
         self.assertEqual(top["series"][0], [150, 10])
+
+
+class OpenHoursTests(unittest.TestCase):
+    def test_the_sperrstunde_is_left_out(self):
+        import finale
+        day = datetime(2026, 10, 20, 0, 0, tzinfo=finale.BERLIN).timestamp()
+        window = [[0, 9, 27]]  # open 9 to 3 o'clock
+        self.assertEqual(finale.open_hours(window, day, day + 86400), 18)
+        self.assertEqual(finale.open_hours(window, day + 2 * 3600, day + 4 * 3600), 1)  # from 3 o'clock on it is closed
+        self.assertEqual(finale.open_hours([[0, 7, 24]], day, day + 86400), 17)
+        self.assertEqual(finale.open_hours([[0, 0, 24]], day, day + 86400), 24)
+        self.assertEqual(finale.open_hours([], day, day + 7200), 2)
+        # the window changed at noon: 7 to 24 before, 9 to 3 after
+        mixed = [[0, 7, 24], [day + 12 * 3600, 9, 27]]
+        self.assertEqual(finale.open_hours(mixed, day + 6 * 3600, day + 32 * 3600), 5 + 12 + 3)

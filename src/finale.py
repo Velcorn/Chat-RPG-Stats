@@ -5,9 +5,30 @@ run, the gear scores per player and the donation and Kampfkraft values of the st
 """
 from __future__ import annotations
 
+from bisect import bisect_right
 from collections import defaultdict
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 TOP_N = 5
+BERLIN = ZoneInfo("Europe/Berlin")
+
+
+def open_hours(window: list[list], a: float, b: float) -> float:
+    """Hours between a and b (timestamps) inside the game's play window, which the Sperrstunde closes (Berlin time;
+    `window` is [[t, from, to], ...] at every change, `to` may come as 27 for 3 o'clock). No window known: all of it."""
+    if not window:
+        return max(0.0, b - a) / 3600
+    starts = [w[0] for w in window]
+    total, t = 0.0, a
+    while t < b:
+        nxt = min(b, (t // 3600 + 1) * 3600)  # the next full hour (Berlin zones are whole hours from UTC)
+        _, start, end = window[max(0, bisect_right(starts, t) - 1)]
+        start, end, hour = start % 24, end % 24, datetime.fromtimestamp(t, BERLIN).hour
+        if start == end or (start <= hour < end if start < end else hour >= start or hour < end):
+            total += nxt - t
+        t = nxt
+    return total / 3600
 
 
 def _name(players: dict, login: str) -> str:
@@ -17,7 +38,7 @@ def _name(players: dict, login: str) -> str:
 def top_story(h, players: dict, since: float = 0) -> dict | None:
     """The highest gear score over time and who held it. Players on the same score are ordered by silver, so only the
     first of the board holds the top (a shared score doesn't share it); every run of the collector counts, the time
-    between two changes of the first place goes to its holder.
+    between two changes of the first place goes to its holder, without the hours of the Sperrstunde.
     `holders`: [login, name, hours at the top, longest stretch in hours], most hours first; `first`: who reached the
     final top score first; `series`: [[t, top score], ...] (only changes)."""
     if not h.leader or h.last is None or h.last <= since:
@@ -25,7 +46,7 @@ def top_story(h, players: dict, since: float = 0) -> dict | None:
     hours: dict[str, float] = defaultdict(float)
     longest: dict[str, float] = defaultdict(float)
     for (t, login), nxt in zip(h.leader, [*h.leader[1:], [h.last, None]], strict=True):
-        spent = (nxt[0] - max(t, since)) / 3600
+        spent = open_hours(h.window, max(t, since), nxt[0])
         if spent > 0:
             hours[login] += spent
             longest[login] = max(longest[login], spent)

@@ -537,6 +537,15 @@ class FinaleTests(unittest.TestCase):
         self.assertEqual(f["top"]["ever"], 2)
         self.assertEqual(f["records"]["donors"][0][:3], ["b", "B", 500])
 
+    def test_the_play_window_is_kept_at_every_change(self):
+        pipe = Pipeline()
+        for step, (start, end) in enumerate([(7, 24), (7, 24), (9, 27)]):
+            s = snap({"karni": [member("a", 200)]}, board=[("a", 200, 1, 1, 1)])
+            s["rules"] = {"playWindowFrom": start, "playWindowTo": end}
+            pipe.run(s, T0 + step * 900)
+        h = build.History(build.replay(pipe.data / "days"))
+        self.assertEqual(h.window, [[T0, 7, 24], [T0 + 1800, 9, 27]])
+
     def test_a_shared_top_score_belongs_to_the_first_of_the_board(self):
         import build
         self.addCleanup(setattr, build, "GEAR_SINCE", build.GEAR_SINCE)

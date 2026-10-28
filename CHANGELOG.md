@@ -44,6 +44,9 @@ Die letzten 30 bisherigen Versionen sind diesen Tagesversionen zugeordnet:
 
 ## 2026.10.28 (28.10.2026)
 
+### Neu
+- Saison > Abspann: Der Saisonbericht läuft jetzt als Film durch, mit Pause, Tempo 1, 2 und 4 (Leertaste, Pfeiltasten, Tasten 1, 2, 4, Esc zurück zur Seite). Er zeigt nur, was das Spiel in seinem eigenen Abspann nicht hat: den Weg an die Spitze mit den Ersten auf 680 und 681, die Überholmanöver an der Spitze, wie oft das Silber den Gleichstand entschied, das Rennen der zehn Besten, das Wachstum pro Tag mit den Tagen von Regeländerungen, die Gilden im Duell, die Bauweise (Angriff, Verteidigung, Unterstützung) als Weg im Dreieck, die Aktivitätsuhr der Kämpfe, die Rollen, die Zeitkapsel (Tag 1 gegen heute) und die letzte Rangliste. Der bisherige Bericht bleibt unter "Als Seite lesen"; bei reduzierter Bewegung und in älteren Archiven öffnet sich er direkt.
+
 ### Verbessert
 - Saisonrückblick: Unter "Erster auf" stehen jetzt beide Höchstwerte, 680 und 681, je mit dem Ersten und dem Zeitpunkt in einer Zeile (680 ist der andere Höchstwert, mit Zweihandwaffe); wer auf 680 steht, zählt bei "Aktuell auf dem Höchstwert" mit.
 

@@ -20,7 +20,7 @@ from zoneinfo import ZoneInfo
 
 import collect
 import fightstats
-from finale import finale
+from finale import abspann, finale
 from observed import observed
 from timelapse import timelapse, top_lapse
 
@@ -341,7 +341,8 @@ def build(data: Path, out: Path, now: float | None = None, include_archives: boo
                "guild_boss": {"guilds": len(guilds), "wins": sum(g.get("boss_wins") or 0 for g in guilds.values()),
                               "losses": sum(g.get("boss_losses") or 0 for g in guilds.values())},
                "economy": economy(h, now),
-               "finale": finale(h, players, GEAR_SINCE + BOARD_LAG)}
+               "finale": finale(h, players, GEAR_SINCE + BOARD_LAG),
+               "abspann": abspann(h, {g["login"]: g for g in guild_rows})}
 
     target = out / "data"
     if target.exists():

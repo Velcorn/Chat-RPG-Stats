@@ -10,7 +10,7 @@ dein Ausrüstungswert, wann erreichst du den nächsten Rang oder die Top 100, wi
 Werte, wo stehst du in deiner Gilde und welche Kämpfe gewinnt man meistens. Die Seite hat vier Bereiche mit
 Unterseiten: Ranglisten (Ausrüstungswert, Kampfkraft, Aufsteiger), Gilden (Vergleich mit den ersten Siegen über die Bosse und eine Seite pro Gilde),
 Kämpfe (Übersicht, Kampfkraft, Auszahlung, Beute, letzte Kämpfe) und Spiel (Regeln mit Changelog, Höchstwerte, Formen, Spezialitems, Verbessern), dazu eine Seite pro Spieler
-mit Teilen-Knopf. Die Startseite zeigt Kennzahlen, den Termin des letzten Bosses mit Countdown, die Spielersuche, die Top 5, die Gilden und die Streamer mit Live-Status, Kämpfen, Link zum Stream und Gildenstand. Die Saisonauswahl oben rechts öffnet den laufenden Saisonbericht (Podium, Weg an die Spitze, Rekorde, Zahlen, Gildenfinale) und später unveränderliche Archive früherer Saisons mit Abschlusskarten, Rangreise und Vergleich.
+mit Teilen-Knopf. Die Saisonseite läuft als Abspann-Film (Pause, Tempo, Kapitel) mit den Zahlen, die das Spiel selbst nicht zeigt; der Bericht bleibt als Seite lesbar. Die Startseite zeigt Kennzahlen, den Termin des letzten Bosses mit Countdown, die Spielersuche, die Top 5, die Gilden und die Streamer mit Live-Status, Kämpfen, Link zum Stream und Gildenstand. Die Saisonauswahl oben rechts öffnet den laufenden Saisonbericht (Podium, Weg an die Spitze, Rekorde, Zahlen, Gildenfinale) und später unveränderliche Archive früherer Saisons mit Abschlusskarten, Rangreise und Vergleich.
 
 **Zur Seite: <https://velcorn.github.io/Chat-RPG-Stats/>**
 

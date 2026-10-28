@@ -603,3 +603,75 @@ class GearOrderTests(unittest.TestCase):
         players = {"a": {"gs": 100}, "b": {"gs": 100}, "c": {"gs": 100}, "d": {"gs": 120}}
         details = {"a": {"silver": 5}, "b": {"silver": 90}}
         self.assertEqual(sorted(players, key=build.gear_key(players, details)), ["d", "b", "a", "c"])
+
+
+class AbspannDataTests(unittest.TestCase):
+    def history(self, **extra):
+        from types import SimpleNamespace
+        base = dict(leader=[], gs={}, fights=[], top_score=[], rules_log=[], details={}, guilds={})
+        return SimpleNamespace(**{**base, **extra})
+
+    def test_overtakes_count_changes_ties_and_the_longest_stretch(self):
+        import finale
+        self.assertIsNone(finale.overtakes(self.history(leader=[[T0, "a"]])))
+        h = self.history(leader=[[T0, "a"], [T0 + 3600, "b"], [T0 + 3 * 3600, "a"]],
+                         gs={"a": [[T0, 100], [T0 + 7200, 101]], "b": [[T0 + 3600, 100]]})
+        o = finale.overtakes(h)
+        # at T0+1h a and b stand on 100 (silver decided), at T0+3h b has 100 and a 101
+        self.assertEqual((o["changes"], o["silver"]), (2, 1))
+        self.assertEqual(o["longest"], {"hours": 2.0, "login": "b"})
+        self.assertEqual(sum(n for _, n in o["per_day"]), 2)
+
+    def test_a_leader_without_a_score_yet_is_not_a_tie(self):
+        import finale
+        h = self.history(leader=[[T0, "a"], [T0 + 60, "b"]], gs={"a": [[T0 + 120, 5]]})
+        self.assertEqual(finale.overtakes(h)["silver"], 0)
+
+    def test_activity_counts_fights_by_berlin_weekday_and_hour(self):
+        import finale
+        # 2026-10-26 is a Monday; 22:30 UTC is 23:30 in Berlin (CET)
+        h = self.history(fights=[{"endedAt": "2026-10-26T22:30:00Z"}, {"endedAt": None}, {}])
+        grid = finale.activity(h)
+        self.assertEqual((grid[0][23], sum(map(sum, grid))), (1, 1))
+
+    def test_growth_gains_per_day_and_rule_marks(self):
+        import finale
+        day = finale._day(T0)
+        h = self.history(top_score=[[day + 100, 300], [day + 200, 310], [day + 86400 + 5, 330]],
+                         rules_log=[[day + 10, "smeltFeePerTier", 1, 2], [day + 20, "smeltFeePerTier", 2, 3],
+                                    [day + 30, "repairFeePerTier", 1, 2]])
+        g = finale.growth(h)
+        self.assertEqual(g["gains"], [[day + 86400, 20]])
+        self.assertEqual(g["marks"], [(day, ["smeltFeePerTier", "repairFeePerTier"])])
+
+    def test_builds_average_the_shares_once_enough_players_are_known(self):
+        import finale
+        many = {f"p{i}": [[T0, {"atk": 50, "def": 30, "sup": 20}]] for i in range(finale.MIN_BUILDS)}
+        many["none"] = [[T0, {"atk": None, "def": 1, "sup": 1}], [T0, {"atk": 0, "def": 0, "sup": 0}]]
+        row = finale.builds(self.history(details=many))[0]
+        self.assertEqual(row[1:], [0.5, 0.3, 0.2, finale.MIN_BUILDS])
+        self.assertEqual(finale.builds(self.history(details={"a": many["p0"]})), [])
+
+    def test_guild_gear_keeps_guilds_with_ten_active_members_and_thins_the_series(self):
+        import finale
+        rows = [[T0 + i, 0, 0, 10, 100 * i + 100] for i in range(300)]
+        h = self.history(guilds={"big": rows, "small": rows, "empty": [[T0, 0, 0, 0, 0]]})
+        out = finale.guild_gear(h, {"big": {"active": 10, "name": "Big"}, "small": {"active": 3},
+                                    "empty": {"active": 20}})
+        self.assertEqual([g["login"] for g in out], ["big"])
+        self.assertEqual((len(out[0]["series"]), out[0]["series"][-1]), (finale.SERIES_POINTS, [T0 + 299, 3000.0]))
+        self.assertEqual(finale.abspann(h, {})["guilds"], [])
+
+
+class AbspannSummaryTests(unittest.TestCase):
+    def test_the_summary_carries_the_data_of_the_credits(self):
+        import build
+        self.addCleanup(setattr, build, "GEAR_SINCE", build.GEAR_SINCE)
+        build.GEAR_SINCE = 0
+        pipe = Pipeline()
+        for step in range(3):
+            board = [("a", 100 + step, 1, 1, 1), ("b", 100, 1, 1, 1)]
+            pipe.run(snap({"karni": [member("a", 100 + step), member("b", 100)]}, board=board), T0 + step * 7200)
+        summary, _ = pipe.build(T0 + 3 * 7200)
+        self.assertEqual(sorted(summary["abspann"]), ["activity", "builds", "growth", "guilds", "overtakes"])
+        self.assertEqual(len(summary["abspann"]["activity"]), 7)

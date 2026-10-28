@@ -123,23 +123,6 @@ def overtakes(h) -> dict | None:
             "longest": {"hours": round(longest[0], 1), "login": longest[1]}}
 
 
-def activity(h) -> list[list[int]]:
-    """Finished fights by weekday (Monday first) and hour of the day, Berlin time."""
-    grid = [[0] * 24 for _ in range(7)]
-    for f in h.fights:
-        t = _iso(f.get("endedAt"))
-        if t:
-            d = datetime.fromtimestamp(t, BERLIN)
-            grid[d.weekday()][d.hour] += 1
-    return grid
-
-
-def _iso(text: str | None) -> float | None:
-    if not text:
-        return None
-    return datetime.fromisoformat(text.replace("Z", "+00:00")).timestamp()
-
-
 def growth(h) -> dict:
     """The highest gear score gained per day, and the days the game's rules changed (`marks`: [day, [rule, ...]])."""
     last: dict[int, int] = {}
@@ -183,5 +166,5 @@ def guild_gear(h, guilds: dict) -> list[dict]:
 
 def abspann(h, guilds: dict) -> dict:
     """Everything the credits page draws that no other summary field already holds."""
-    return {"overtakes": overtakes(h), "activity": activity(h), "growth": growth(h), "builds": builds(h),
+    return {"overtakes": overtakes(h), "growth": growth(h), "builds": builds(h),
             "guilds": guild_gear(h, guilds)}

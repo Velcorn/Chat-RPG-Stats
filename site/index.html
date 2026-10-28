@@ -268,14 +268,14 @@
                      background-image: radial-gradient(#fff6 1px, transparent 1px), radial-gradient(#fff4 1px, transparent 1px);
                      background-size: 90px 90px, 53px 53px; background-position: 0 0, 20px 30px; }
   .ab-host { position: relative; flex: 1; display: flex; padding: 22px clamp(12px, 3vw, 30px) 8px; min-width: 0; }
-  .ab-scene { width: 100%; text-align: center; display: flex; flex-direction: column; align-items: center; min-width: 0; }
+  .ab-scene { width: 100%; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0; }
   .ab-scene.in { animation: abIn .6s ease both; }
   @keyframes abIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
   .ab-kick { color: #f0c35a; letter-spacing: .28em; text-transform: uppercase; font-size: 12px; margin-top: 8px; }
   .ab-h { margin: 8px 0 4px; padding: 0; border: 0; text-transform: none; letter-spacing: 0; font-weight: 700; font-size: clamp(24px, 4.5vw, 40px); color: #f0c35a; text-shadow: 0 0 24px #f0c35a44; }
   .ab-title { margin: 12px 0; font-size: clamp(40px, 9vw, 76px); color: #f0c35a; text-shadow: 0 0 28px #f0c35a55; }
   .ab-sub { color: var(--text-muted); margin: 4px 0 12px; max-width: 60ch; }
-  .ab-body { width: 100%; max-width: 860px; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 10px; flex: 1; }
+  .ab-body { width: 100%; max-width: 860px; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 10px; }
   .ab-note, .ab-cap { color: var(--text-muted); font-size: 12px; margin: 2px 0; }
   .ab-cap { font-size: 14px; color: var(--text-secondary); min-height: 1.4em; }
   .ab-row, .ab-pair, .ab-legend, .ab-actions { display: flex; gap: 12px 18px; flex-wrap: wrap; justify-content: center; }
@@ -286,9 +286,7 @@
   .ab-stat.small b { font-size: 22px; }
   .ab-pair > div { min-width: 220px; }
   .ab-svg { width: 100%; max-height: 32vh; }
-  .ab-svg.tri { max-width: 520px; }
   .ab-grid { stroke: #ffffff18; } .ab-axis { fill: var(--text-muted); font-size: 11px; }
-  .ab-tgrid { stroke-opacity: .2; stroke-width: 1; } .ab-svg.tri { overflow: hidden; }
   .ab-line { stroke: #f0c35a; stroke-width: 2.5; stroke-linejoin: round; } .ab-dot { fill: #f0c35a; }
   .ab-mark circle { fill: none; stroke: #f0c35a; stroke-width: 2; opacity: 0; transition: opacity .3s; } .ab-mark.on circle { opacity: 1; }
   .ab-bars { display: flex; align-items: flex-end; gap: 3px; height: 150px; width: 100%; }
@@ -301,9 +299,6 @@
   .ab-hbar span { width: 140px; color: var(--text-muted); flex: none; } .ab-hbar i { height: 18px; background: #f0c35a; border-radius: 3px; flex: none; max-width: calc(100% - 220px); }
   .ab-hbar.alt i { background: #e5534b; } .ab-hbar b { font-variant-numeric: tabular-nums; }
   .ab-race { width: 100%; max-width: 640px; }
-  .ab-heat { display: grid; grid-template-columns: 28px repeat(24, 1fr); gap: 2px; width: 100%; max-width: 720px; font-size: 11px; color: var(--text-muted); }
-  .ab-heat i { aspect-ratio: 1.3; border-radius: 2px; background: rgb(240 195 90 / calc(.07 + .93 * var(--v, 0))); }
-  .ab-heat .hr { text-align: center; }
   .ab-scroll { position: relative; width: 100%; max-width: 420px; height: 46vh; min-height: 220px; overflow: hidden; flex: none;
                -webkit-mask-image: linear-gradient(transparent, #000 12%, #000 88%, transparent); mask-image: linear-gradient(transparent, #000 12%, #000 88%, transparent); }
   .ab-scroll-in { will-change: transform; } .ab-name { display: flex; gap: 12px; align-items: baseline; padding: 4px 0; font-size: 17px; }
@@ -2977,7 +2972,7 @@ function abWay(s) {
     svg.append(g);
     return { g, t: f.t, f, v };
   });
-  const score = abBig("", "aktueller Höchstwert"), tag = el("div", { class: "ab-cap" });
+  const tag = el("div", { class: "ab-cap" });
   const row = el("div", { class: "ab-row" });
   sc.body.append(svg, row, tag);
   return { node: sc.root, update(p) {
@@ -2986,11 +2981,10 @@ function abWay(s) {
     line.setAttribute("points", [...vis, [x, last[1]]].map((q) => q.map((n) => n.toFixed(1)).join(",")).join(" "));
     dot.setAttribute("cx", x.toFixed(1)); dot.setAttribute("cy", last[1].toFixed(1));
     const now = t0 + (t1 - t0) * span(p, 0.04, 0.9);
-    score.set(fmtInt([...ser].reverse().find((r) => r[0] <= now)?.[1] ?? ser[0][1]));
     tag.textContent = AB_DAY(now);
     const shown = marks.filter((k) => k.t <= now);
     marks.forEach((k) => k.g.classList.toggle("on", k.t <= now));
-    row.replaceChildren(score.box, ...shown.map((k) => el("div", { class: "ab-stat small" }, el("b", {}, fmtInt(k.v)),
+    row.replaceChildren(...shown.map((k) => el("div", { class: "ab-stat small" }, el("b", {}, fmtInt(k.v)),
       el("span", {}, `Erster: ${k.f.name}`), el("span", {}, fmtSince(k.f.t).replace(/ Uhr$/, "")))));
   } };
 }
@@ -3002,30 +2996,15 @@ function abOvertakes(s) {
   const max = Math.max(...o.per_day.map((r) => r[1])), bars = o.per_day.map(([d, n]) => ({ d, n, i: el("i", { title: `${AB_DAY(d)}: ${n}` }) }));
   const chart = el("div", { class: "ab-bars" }, ...bars.map((b) => b.i));
   const peak = o.per_day.reduce((a, b) => (b[1] > a[1] ? b : a));
-  const changes = abBig("", "Wechsel"), longest = abBig("", "längste Serie am Stück");
-  sc.body.append(chart, el("div", { class: "ab-row" }, changes.box, longest.box), el("div", { class: "ab-cap" }, `Am meisten los war der ${AB_DAY(peak[0])} mit ${peak[1]} Wechseln`));
+  const changes = abBig("", "Wechsel"), ties = abBig("", "bei gleichem Wert: das Silber entschied"), longest = abBig("", "längste Serie am Stück");
+  sc.body.append(chart, el("div", { class: "ab-row" }, changes.box, ties.box, longest.box), el("div", { class: "ab-cap" }, `Am meisten los war der ${AB_DAY(peak[0])} mit ${peak[1]} Wechseln`));
   const holder = s.finale.top.holders.find((h) => h[0] === o.longest.login);
   const who = (holder ? holder[1] : o.longest.login);
   return { node: sc.root, update(p) {
     bars.forEach((b, k) => { b.i.style.height = `${(100 * b.n / max * span(p, 0.05 + 0.6 * k / bars.length, 0.2 + 0.6 * k / bars.length)).toFixed(1)}%`; });
     changes.set(fmtInt(o.changes * span(p, 0.1, 0.8)));
+    ties.set(fmtInt(o.silver * span(p, 0.3, 0.9)));
     longest.set(p > 0.8 ? `${fmtDec(o.longest.hours, 0)} h (${who})` : `${fmtDec(o.longest.hours * span(p, 0.1, 0.8), 0)} h`);
-  } };
-}
-
-// How often the silver, not the gear score, decided.
-function abTies(s) {
-  const o = s.abspann.overtakes, by = o.changes - o.silver;
-  const sc = abScene("Gleichstand-Krimi", `${fmtInt(o.silver)} Mal entschied das Silber`, "Bei gleichem Ausrüstungswert steht oben, wer mehr Silber hat");
-  const a = el("i", {}), b = el("i", {}), na = el("b", {}), nb = el("b", {});
-  sc.body.append(el("div", { class: "ab-rows" },
-    el("div", { class: "ab-hbar" }, el("span", {}, "Der Wert entschied"), a, na),
-    el("div", { class: "ab-hbar alt" }, el("span", {}, "Das Silber entschied"), b, nb)),
-  abNote(`${fmtInt(o.changes)} Wechsel an der Spitze insgesamt`));
-  return { node: sc.root, update(p) {
-    const w = span(p, 0.1, 0.7);
-    a.style.width = `${(100 * by / o.changes * w).toFixed(1)}%`; na.textContent = fmtInt(by * w);
-    b.style.width = `${(100 * o.silver / o.changes * span(p, 0.3, 0.9)).toFixed(1)}%`; nb.textContent = fmtInt(o.silver * span(p, 0.3, 0.9));
   } };
 }
 
@@ -3107,68 +3086,31 @@ function abGuilds(s) {
   } };
 }
 
-// Attack, defense and support as the average share of the players whose split is known: a point in a zoomed triangle.
+// Attack, defense and support as the average share among the players whose split is known, one line each.
 function abBuilds(s) {
-  const rows = s.abspann.builds, W = 460, H = 400;
-  const sc = abScene("Die Bauweise", "Wie sich die Builds verschoben", `Durchschnitt von rund ${fmtInt(rows[rows.length - 1][4])} Spielern, ein Ausschnitt des Dreiecks aus Angriff, Verteidigung und Unterstützung`);
-  // The shares sit close together, so the triangle is zoomed onto the path the average took and centred on it.
-  const unit = { a: [0, -Math.sqrt(3) / 3], d: [-0.5, Math.sqrt(3) / 6], s: [0.5, Math.sqrt(3) / 6] };
-  const raw = (a, d, ss) => [a * unit.a[0] + d * unit.d[0] + ss * unit.s[0], a * unit.a[1] + d * unit.d[1] + ss * unit.s[1]];
-  const pts0 = rows.map((r) => raw(r[1], r[2], r[3])), xs = pts0.map((q) => q[0]), ys = pts0.map((q) => q[1]);
-  const ext = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys), 1e-3);
-  const side = 0.5 * Math.min(W, H) / ext, mid = [(Math.max(...xs) + Math.min(...xs)) / 2, (Math.max(...ys) + Math.min(...ys)) / 2];
-  const XY = (a, d, ss) => { const q = raw(a, d, ss); return [W / 2 + (q[0] - mid[0]) * side, H / 2 + (q[1] - mid[1]) * side]; };
-  const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, class: "ab-svg tri", role: "img", "aria-label": "Verschiebung von Angriff, Verteidigung und Unterstützung" });
-  const step = side / 100 >= 14 ? 0.01 : side / 100 >= 6 ? 0.02 : 0.05;
-  for (let v = step; v < 1 - 1e-9; v += step) {
-    for (const [p1, p2, col] of [[XY(v, 1 - v, 0), XY(v, 0, 1 - v), "var(--atk)"], [XY(1 - v, v, 0), XY(0, v, 1 - v), "var(--def)"], [XY(1 - v, 0, v), XY(0, 1 - v, v), "var(--sup)"]]) {
-      svg.append(sv("line", { x1: p1[0], y1: p1[1], x2: p2[0], y2: p2[1], class: "ab-tgrid", style: `stroke:${col}` }));
+  const rows = s.abspann.builds, W = 800, H = 300, m = { l: 44, r: 16, t: 12, b: 24 };
+  const sc = abScene("Die Bauweise", "Wie sich die Builds verschoben", `Durchschnittlicher Anteil von Angriff, Verteidigung und Unterstützung am Ausrüstungswert, rund ${fmtInt(rows[rows.length - 1][4])} Spieler je Zeitpunkt`);
+  const all = rows.flatMap((r) => [r[1], r[2], r[3]]), lo = Math.floor(Math.min(...all) * 20) / 20, hi = Math.ceil(Math.max(...all) * 20) / 20;
+  const t0 = rows[0][0], t1 = rows[rows.length - 1][0];
+  const X = (t) => m.l + (t - t0) / (t1 - t0) * (W - m.l - m.r), Y = (v) => m.t + (1 - (v - lo) / (hi - lo)) * (H - m.t - m.b);
+  const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, class: "ab-svg", role: "img", "aria-label": "Anteile von Angriff, Verteidigung und Unterstützung" });
+  for (let v = lo; v <= hi + 1e-9; v += 0.05) svg.append(sv("line", { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v), class: "ab-grid" }), sv("text", { x: m.l - 6, y: Y(v) + 4, class: "ab-axis", "text-anchor": "end" }, `${Math.round(v * 100)} %`));
+  const defs = [[1, "Angriff", "var(--atk)"], [2, "Verteidigung", "var(--def)"], [3, "Unterstützung", "var(--sup)"]];
+  const lines = defs.map(([i, name, col]) => ({ i, name, col, pl: sv("polyline", { fill: "none", class: "ab-line", style: `stroke:${col}` }) }));
+  svg.append(...lines.map((l) => l.pl));
+  const legend = el("div", { class: "ab-legend" }), when = el("div", { class: "ab-cap" });
+  sc.body.append(svg, legend, when);
+  return { node: sc.root, update(p) {
+    const f = (rows.length - 1) * span(p, 0.05, 0.94), a = Math.floor(f), b = Math.min(rows.length - 1, a + 1), w = f - a;
+    const t = rows[a][0] + (rows[b][0] - rows[a][0]) * w;
+    for (const l of lines) {
+      const pts = rows.slice(0, a + 1).map((r) => [X(r[0]), Y(r[l.i])]);
+      pts.push([X(t), Y(rows[a][l.i] + (rows[b][l.i] - rows[a][l.i]) * w)]);
+      l.pl.setAttribute("points", pts.map((q) => q.map((n) => n.toFixed(1)).join(",")).join(" "));
+      l.v = pts[pts.length - 1];
     }
-  }
-  const trail = sv("polyline", { class: "ab-line", fill: "none" }), dot = sv("circle", { r: 6, class: "ab-dot" });
-  svg.append(trail, dot);
-  const txt = el("div", { class: "ab-legend" }), when = el("div", { class: "ab-cap" });
-  sc.body.append(svg, txt, when, abNote(`Jede Linie ist ${fmtDec(step * 100, 0)} Prozentpunkt eines Wertes (Rot: Angriff, Blau: Verteidigung, Grün: Unterstützung)`));
-  return { node: sc.root, update(p) {
-    const f = (rows.length - 1) * span(p, 0.05, 0.92), a = Math.floor(f), b = Math.min(rows.length - 1, a + 1), w = f - a;
-    const pts = rows.slice(0, a + 1).map((r) => XY(r[1], r[2], r[3]));
-    const at = (i) => rows[a][i] + (rows[b][i] - rows[a][i]) * w, q = XY(at(1), at(2), at(3));
-    trail.setAttribute("points", [...pts, q].map((r) => r.map((n) => n.toFixed(1)).join(",")).join(" "));
-    dot.setAttribute("cx", q[0].toFixed(1)); dot.setAttribute("cy", q[1].toFixed(1));
-    txt.replaceChildren(el("span", { style: "color:var(--atk)" }, `Angriff ${fmtDec(100 * at(1), 0)} %`), el("span", { style: "color:var(--def)" }, `Verteidigung ${fmtDec(100 * at(2), 0)} %`), el("span", { style: "color:var(--sup)" }, `Unterstützung ${fmtDec(100 * at(3), 0)} %`));
-    when.textContent = AB_DAY(rows[a][0] + (rows[b][0] - rows[a][0]) * w);
-  } };
-}
-
-// Finished fights by weekday and hour: a heat map that fills column by column.
-function abActivity(s) {
-  const grid = s.abspann.activity, max = Math.max(...grid.flat(), 1), days = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
-  const sc = abScene("Die Aktivitätsuhr", "Wann gekämpft wurde", "Fertige Kämpfe nach Wochentag und Stunde, Berliner Zeit");
-  const cells = [], heat = el("div", { class: "ab-heat" });
-  grid.forEach((row, d) => { heat.append(el("span", {}, days[d])); row.forEach((n, h) => { const c = el("i", { title: `${days[d]} ${h} Uhr: ${n}` }); cells.push({ c, n, h }); heat.append(c); }); });
-  heat.append(el("span", {}), ...Array.from({ length: 24 }, (_, h) => el("span", { class: "hr" }, h % 3 === 0 ? String(h) : "")));
-  sc.body.append(heat, abNote("Das dunkle Band ist die Sperrstunde"));
-  return { node: sc.root, update(p) {
-    for (const { c, n, h } of cells) c.style.setProperty("--v", String((n / max * span(p, 0.05 + 0.7 * h / 24, 0.2 + 0.7 * h / 24)).toFixed(3)));
-  } };
-}
-
-// Who fights, who falls: the shares of the three roles and how often each was down when the fight ended.
-function abRoles(s) {
-  const roles = s.stats.roles, name = { TANK: "Schildträger", FIGHTER: "Kämpfer", SUPPORT: "Unterstützer" };
-  const sc = abScene("Die Rollen", "Wer kämpft, wer fällt", "Anteil der Rollen und wie oft sie am Ende gefallen waren");
-  const mk = (title, key, scale, alt) => {
-    const bars = roles.map((r) => ({ r, i: el("i", {}), n: el("b", {}) }));
-    return { bars, node: el("div", { class: "ab-rows" }, el("h3", {}, title),
-      ...bars.map(({ r, i, n }) => el("div", { class: `ab-hbar${alt ? " alt" : ""}` }, el("span", {}, name[r.role] || r.role), i, n))), key, scale };
-  };
-  const a = mk("Anteil an den Kämpfern", "share", 100, false), b = mk("Gefallen am Ende", "death", 40, true);
-  sc.body.append(a.node, b.node);
-  return { node: sc.root, update(p) {
-    for (const [g, from] of [[a, 0.1], [b, 0.4]]) g.bars.forEach(({ r, i, n }, k) => {
-      const w = span(p, from + k * 0.06, from + 0.3 + k * 0.06);
-      i.style.width = `${(100 * r[g.key] / g.scale * w).toFixed(1)}%`; n.textContent = `${fmtDec(r[g.key] * w, 0)} %`;
-    });
+    legend.replaceChildren(...lines.map((l) => el("span", { style: `color:${l.col}` }, `${l.name} ${fmtDec(100 * (rows[a][l.i] + (rows[b][l.i] - rows[a][l.i]) * w), 0)} %`)));
+    when.textContent = AB_DAY(t);
   } };
 }
 
@@ -3208,22 +3150,19 @@ function abEnd(s, ctx) {
 }
 
 const AB_SCENES = [
-  ["title", 5, (s) => {
+  ["title", 6, (s) => {
     const sc = abScene("Das Spiel ist gewonnen", "Chat-RPG", "Der Abspann unserer Messungen");
     sc.body.append(abNote(`Gemessen ab ${s.since ? fmtSince(s.since).replace(/ Uhr$/, "") : "dem ersten Lauf"}, jede Zahl aus öffentlichen Daten.`));
     return { node: sc.root, update() {} };
   }],
-  ["way", 16, (s) => abWay(s)],
-  ["overtakes", 11, (s) => abOvertakes(s)],
-  ["ties", 8, (s) => abTies(s)],
-  ["race", 28, (s, x) => abRace(s, x.top)],
-  ["growth", 12, (s) => abGrowth(s)],
-  ["guilds", 11, (s) => abGuilds(s)],
-  ["builds", 12, (s) => abBuilds(s)],
-  ["activity", 10, (s) => abActivity(s)],
-  ["roles", 9, (s) => abRoles(s)],
-  ["capsule", 9, (s, x) => abCapsule(s, x.top, x.tl)],
-  ["hall", 36, (s) => abHall(s)],
+  ["way", 24, (s) => abWay(s)],
+  ["overtakes", 18, (s) => abOvertakes(s)],
+  ["race", 42, (s, x) => abRace(s, x.top)],
+  ["growth", 18, (s) => abGrowth(s)],
+  ["guilds", 16, (s) => abGuilds(s)],
+  ["builds", 16, (s) => abBuilds(s)],
+  ["capsule", 14, (s, x) => abCapsule(s, x.top, x.tl)],
+  ["hall", 50, (s) => abHall(s)],
   ["end", Infinity, (s, x) => abEnd(s, x)],
 ];
 
@@ -3234,28 +3173,32 @@ async function viewAbspann(s) {
   try { tl = await load("timelapse.json"); } catch { /* the capsule shows no hurdle */ }
   const ctx = { top, tl, restart: () => go(0) };
   const list = AB_SCENES.filter(([id]) => (id !== "race" && id !== "capsule") || (top && top.frames.length > 1))
-    .filter(([id]) => id !== "overtakes" && id !== "ties" || s.abspann.overtakes)
+    .filter(([id]) => id !== "overtakes" || s.abspann.overtakes)
     .filter(([id]) => id !== "growth" || s.abspann.growth.gains.length)
     .filter(([id]) => id !== "guilds" || s.abspann.guilds.length)
     .filter(([id]) => id !== "builds" || s.abspann.builds.length > 1);
   const stage = el("div", { class: "ab-stage" }), host = el("div", { class: "ab-host" });
   const bar = el("div", { class: "ab-prog" }, el("i", {})), label = el("span", { class: "ab-label" });
   const playBtn = el("button", { class: "ab-ctl", "aria-label": "Pause" }, "❚❚");
-  const speeds = [1, 2, 4].map((x) => el("button", { class: "ab-ctl sp", onclick: () => { speed = x; paint(); } }, `${x}×`));
+  const SPEEDS = [0.5, 1, 2, 4];
+  const speeds = SPEEDS.map((x) => el("button", { class: "ab-ctl sp", onclick: () => { speed = x; paint(); } }, `${x === 0.5 ? "½" : x}×`));
+  const autoBtn = el("button", { class: "ab-ctl auto", title: "Am Ende eines Kapitels automatisch weiter (A)", onclick: () => { auto = !auto; paint(); } }, "Auto weiter");
   const prev = el("button", { class: "ab-ctl", "aria-label": "Vorheriges Kapitel", onclick: () => go(idx - 1) }, "⏮");
   const next = el("button", { class: "ab-ctl", "aria-label": "Nächstes Kapitel", onclick: () => go(idx + 1) }, "⏭");
-  const ctl = el("div", { class: "ab-ctls" }, prev, playBtn, next, ...speeds, label, bar);
+  const ctl = el("div", { class: "ab-ctls" }, prev, playBtn, next, ...speeds, autoBtn, label, bar);
   const poster = el("div", { class: "ab-poster" }, el("div", { class: "ab-kick" }, "Das Spiel ist gewonnen"), el("h1", { class: "ab-title" }, "Chat-RPG"),
     el("p", { class: "ab-sub" }, "Der Abspann unserer Messungen"),
     el("button", { class: "ab-btn", onclick: () => start(0) }, "▶ Abspann abspielen"),
-    el("p", { class: "ab-note" }, "Leertaste: Pause · Pfeiltasten: Kapitel · 1, 2, 4: Tempo · Esc: zur Seite"),
+    el("p", { class: "ab-note" }, "Leertaste: Pause · Pfeiltasten: Kapitel · 5, 1, 2, 4: Tempo · A: nicht automatisch weiter · Esc: zur Seite"),
     el("a", { class: "ab-link", href: "#/saison/seite" }, "Lieber als Seite lesen"));
   stage.append(poster);
-  let idx = 0, t = 0, playing = false, speed = 1, cur = null, last = 0, raf = 0;
+  let idx = 0, t = 0, playing = false, speed = 1, auto = true, cur = null, last = 0, raf = 0;
   const paint = () => {
     playBtn.textContent = playing ? "❚❚" : "▶";
     playBtn.setAttribute("aria-label", playing ? "Pause" : "Weiter");
-    speeds.forEach((b, k) => b.classList.toggle("on", [1, 2, 4][k] === speed));
+    speeds.forEach((b, k) => b.classList.toggle("on", SPEEDS[k] === speed));
+    autoBtn.classList.toggle("on", auto);
+    autoBtn.setAttribute("aria-pressed", String(auto));
     label.textContent = `${idx + 1} / ${list.length}`;
   };
   function go(i, frac = 0) {
@@ -3271,8 +3214,8 @@ async function viewAbspann(s) {
     if (playing) {
       const dur = list[idx][1];
       t += dt * speed;
-      if (t >= dur && idx < list.length - 1) go(idx + 1);
-      else { cur.update(clamp01(t / dur)); bar.firstChild.style.width = `${(100 * (idx + clamp01(t / (dur === Infinity ? 1 : dur))) / list.length).toFixed(2)}%`; }
+      if (t >= dur && idx < list.length - 1 && auto) go(idx + 1);
+      else { if (t >= dur && idx < list.length - 1) label.textContent = `${idx + 1} / ${list.length} - weiter mit der Pfeiltaste rechts`; cur.update(clamp01(t / dur)); bar.firstChild.style.width = `${(100 * (idx + clamp01(t / (dur === Infinity ? 1 : dur))) / list.length).toFixed(2)}%`; }
     }
     raf = requestAnimationFrame(tick);
   }
@@ -3288,6 +3231,8 @@ async function viewAbspann(s) {
     else if (e.key === "ArrowRight") go(idx + 1);
     else if (e.key === "ArrowLeft") go(idx - 1);
     else if (["1", "2", "4"].includes(e.key)) { speed = +e.key; paint(); }
+    else if (e.key === "5") { speed = 0.5; paint(); }
+    else if (e.key === "a" || e.key === "A") { auto = !auto; paint(); }
     else if (e.key === "Escape") location.hash = "#/saison/seite";
   };
   document.addEventListener("keydown", keys);

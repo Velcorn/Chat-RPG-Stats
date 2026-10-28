@@ -627,13 +627,6 @@ class AbspannDataTests(unittest.TestCase):
         h = self.history(leader=[[T0, "a"], [T0 + 60, "b"]], gs={"a": [[T0 + 120, 5]]})
         self.assertEqual(finale.overtakes(h)["silver"], 0)
 
-    def test_activity_counts_fights_by_berlin_weekday_and_hour(self):
-        import finale
-        # 2026-10-26 is a Monday; 22:30 UTC is 23:30 in Berlin (CET)
-        h = self.history(fights=[{"endedAt": "2026-10-26T22:30:00Z"}, {"endedAt": None}, {}])
-        grid = finale.activity(h)
-        self.assertEqual((grid[0][23], sum(map(sum, grid))), (1, 1))
-
     def test_growth_gains_per_day_and_rule_marks(self):
         import finale
         day = finale._day(T0)
@@ -673,5 +666,4 @@ class AbspannSummaryTests(unittest.TestCase):
             board = [("a", 100 + step, 1, 1, 1), ("b", 100, 1, 1, 1)]
             pipe.run(snap({"karni": [member("a", 100 + step), member("b", 100)]}, board=board), T0 + step * 7200)
         summary, _ = pipe.build(T0 + 3 * 7200)
-        self.assertEqual(sorted(summary["abspann"]), ["activity", "builds", "growth", "guilds", "overtakes"])
-        self.assertEqual(len(summary["abspann"]["activity"]), 7)
+        self.assertEqual(sorted(summary["abspann"]), ["builds", "growth", "guilds", "overtakes"])

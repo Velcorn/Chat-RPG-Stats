@@ -11,6 +11,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 TOP_N = 5
+ALT_MAX = 680  # the other highest score: what a build with a two-hander tops out at
 BERLIN = ZoneInfo("Europe/Berlin")
 
 
@@ -40,7 +41,8 @@ def top_story(h, players: dict, since: float = 0) -> dict | None:
     first of the board holds the top (a shared score doesn't share it); every run of the collector counts, the time
     between two changes of the first place goes to its holder, without the hours of the Sperrstunde.
     `holders`: [login, name, hours at the top, longest stretch in hours], most hours first; `first`: who reached the
-    final top score first; `series`: [[t, top score], ...] (only changes)."""
+    final top score first, `first_alt` who reached `alt` (the other highest score, a two-hander's) first, `now` counts
+    both; `series`: [[t, top score], ...] (only changes)."""
     if not h.leader or h.last is None or h.last <= since:
         return None
     hours: dict[str, float] = defaultdict(float)
@@ -58,9 +60,12 @@ def top_story(h, players: dict, since: float = 0) -> dict | None:
         return None
     final = series[-1][1]
     first = min(((t, login) for login, s in h.gs.items() for t, v in s if t >= since and v >= final), default=None)
-    return {"score": final, "series": series,
-            "now": sum(1 for _, score in h.board_last if score == final),
+    alt = min(((t, login) for login, s in h.gs.items() for t, v in s if t >= since and v >= ALT_MAX), default=None)
+    alt = alt if ALT_MAX < final else None
+    return {"score": final, "series": series, "alt": ALT_MAX if ALT_MAX < final else None,
+            "now": sum(1 for _, score in h.board_last if score in (final, ALT_MAX)),
             "first": {"login": first[1], "name": _name(players, first[1]), "t": first[0]} if first else None,
+            "first_alt": {"login": alt[1], "name": _name(players, alt[1]), "t": alt[0]} if alt else None,
             "holders": [[login, _name(players, login), round(hours[login], 2), round(longest[login], 2)]
                         for login in sorted(hours, key=lambda x: -hours[x])[:TOP_N]],
             "ever": len(hours)}

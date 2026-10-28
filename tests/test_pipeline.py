@@ -546,6 +546,19 @@ class FinaleTests(unittest.TestCase):
         h = build.History(build.replay(pipe.data / "days"))
         self.assertEqual(h.window, [[T0, 7, 24], [T0 + 1800, 9, 27]])
 
+    def test_the_other_highest_score_has_its_first_and_counts_as_the_top(self):
+        import build
+        self.addCleanup(setattr, build, "GEAR_SINCE", build.GEAR_SINCE)
+        build.GEAR_SINCE = 0
+        pipe = Pipeline()
+        for step, (a, b, c) in enumerate([(680, 600, 600), (680, 681, 600), (680, 681, 680)]):
+            board = [("b", b, 1, 1, 1), ("a", a, 1, 1, 1), ("c", c, 1, 1, 1)]
+            board.sort(key=lambda r: -r[1])
+            pipe.run(snap({"karni": [member("a", a), member("b", b), member("c", c)]}, board=board), T0 + step * 7200)
+        top = pipe.build(T0 + 3 * 7200)[0]["finale"]["top"]
+        self.assertEqual((top["score"], top["alt"], top["now"]), (681, 680, 3))  # a, c at 680 and b at 681
+        self.assertEqual((top["first"]["login"], top["first_alt"]["login"]), ("b", "a"))
+
     def test_a_shared_top_score_belongs_to_the_first_of_the_board(self):
         import build
         self.addCleanup(setattr, build, "GEAR_SINCE", build.GEAR_SINCE)

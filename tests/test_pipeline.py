@@ -595,3 +595,11 @@ class BorderSeriesTests(unittest.TestCase):
         build.GEAR_SINCE = T0 + DAY - build.BOARD_LAG
         summary, _ = pipe.build(T0 + 2 * DAY)
         self.assertEqual(summary["top100"]["series"], [[T0 + d * DAY, 401 + 2 * d] for d in (1, 2)])
+
+
+class GearOrderTests(unittest.TestCase):
+    def test_equal_gear_is_ordered_by_silver(self):
+        import build
+        players = {"a": {"gs": 100}, "b": {"gs": 100}, "c": {"gs": 100}, "d": {"gs": 120}}
+        details = {"a": {"silver": 5}, "b": {"silver": 90}}
+        self.assertEqual(sorted(players, key=build.gear_key(players, details)), ["d", "b", "a", "c"])

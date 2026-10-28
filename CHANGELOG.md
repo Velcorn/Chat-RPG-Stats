@@ -48,6 +48,7 @@ Die letzten 30 bisherigen Versionen sind diesen Tagesversionen zugeordnet:
 - Saisonrückblick: Unter "Erster auf" stehen jetzt beide Höchstwerte, 680 und 681, je mit dem Ersten und dem Zeitpunkt in einer Zeile (680 ist der andere Höchstwert, mit Zweihandwaffe); wer auf 680 steht, zählt bei "Aktuell auf dem Höchstwert" mit.
 
 ### Behoben
+- Ranglisten nach Ausrüstungswert ordnen Gleichstände nach Silber, auch "Höchster Ausrüstungswert" auf den Gildenseiten, der Gildenplatz nach Ausrüstungswert auf der Spielerseite und die Reihenfolge der Spielersuche. Das Silber ist nur für die Top 100 und die Beobachtungsliste bekannt, alle anderen stehen bei Gleichstand hinten.
 - Saisonrückblick: "Zeit an der Spitze" zählt die Stunden der Sperrstunde nicht mehr mit (nur die Spielzeit des Spiels, wie sie zu dem Zeitpunkt galt).
 
 ## 2026.10.27 (27.10.2026)

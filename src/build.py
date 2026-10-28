@@ -197,6 +197,11 @@ def publish_archives(data: Path, target: Path, manifest: dict) -> None:
         shutil.copytree(source, target / "seasons", dirs_exist_ok=True)
 
 
+def gear_key(players: dict, details: dict):
+    """Sort key in the game's order: gear score, equal scores by silver (known for the board and the watchlist)."""
+    return lambda login: (-(players[login].get("gs") or 0), -(details.get(login, {}).get("silver") or 0))
+
+
 def board_gap(i: int, scores: list, rows: list) -> dict | None:
     """The distance to the next place: behind the player above, for the leader ahead of the second place. The board
     orders equal scores by silver, so a tie is measured in silver, else in score points."""
@@ -219,6 +224,8 @@ def build(data: Path, out: Path, now: float | None = None, include_archives: boo
     players, details, guilds = state["players"], state["details"], state["guilds"]
     gear = {login: p["gs"] for login, p in players.items() if p.get("gs") is not None}
     order = sorted(gear.values(), reverse=True)
+
+    gear_order = gear_key(players, details)
 
     def rank(g):  # ties share a rank
         return bisect.bisect_left([-x for x in order], -g) + 1
@@ -292,7 +299,7 @@ def build(data: Path, out: Path, now: float | None = None, include_archives: boo
                            "treasury_week": change(treasury_series, now, 7 * DAY),
                            "avg_gear": rounded(statistics.mean(active_gear), 1) if active_gear else None,
                            "donated": sum(players[m].get("donated") or 0 for m in members),
-                           "top": [row(m) for m in sorted(members, key=lambda m: -(players[m].get("gs") or 0))[:10]],
+                           "top": [row(m) for m in sorted(members, key=gear_order)[:10]],
                            "donors": [{**row(m), "donated": players[m].get("donated")}
                                       for m in sorted(members, key=lambda m: -(players[m].get("donated") or 0))[:10]],
                            "series": h.guilds.get(g, [])})
@@ -343,9 +350,9 @@ def build(data: Path, out: Path, now: float | None = None, include_archives: boo
     write(target / "summary.json", summary)
     write(target / "changelog.json", parse_changelog(
         (Path(__file__).resolve().parent.parent / "CHANGELOG.md").read_text("utf-8")))
-    write(target / "players.json", sorted(
-        ([login, p.get("name") or login, p["gs"], p.get("guild"), bool(p.get("active"))]
-         for login, p in players.items() if p.get("gs") is not None), key=lambda r: -r[2]))
+    write(target / "players.json", [
+        [login, p.get("name") or login, p["gs"], p.get("guild"), bool(p.get("active"))]
+        for login, p in sorted(players.items(), key=lambda kv: gear_order(kv[0])) if p.get("gs") is not None])
     with_split = [x for x in gear if all(details.get(x, {}).get(k) is not None for k in ("atk", "def", "sup"))]
     # Every known split without names, for the build map: [attack, defense, support, gear score].
     write(target / "builds.json", [[details[x]["atk"], details[x]["def"], details[x]["sup"], gear[x]]
@@ -555,7 +562,7 @@ def player_page(login, h, state, now, rank, paces, with_split, top100_gear, top1
         members = sorted(guild_members[p["guild"]], key=lambda m: -(players[m].get("donated") or 0))
         pos = members.index(login)
         above = players[members[pos - 1]].get("donated") or 0 if pos else None
-        by_gear = sorted(guild_members[p["guild"]], key=lambda m: -(players[m].get("gs") or 0))
+        by_gear = sorted(guild_members[p["guild"]], key=gear_key(players, details))
         info = state["guilds"].get(p["guild"], {})
         total = sum(players[m].get("donated") or 0 for m in members)
         guild = {"login": p["guild"], "name": info.get("name"), "members": len(members), "joined": p.get("joined"),

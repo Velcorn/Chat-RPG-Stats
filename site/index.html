@@ -304,6 +304,9 @@
   .ab-scroll-in { will-change: transform; } .ab-name { display: flex; gap: 12px; align-items: baseline; padding: 4px 0; font-size: 17px; }
   .ab-name span { width: 2.4em; text-align: right; color: var(--text-muted); font-variant-numeric: tabular-nums; } .ab-name a { flex: 1; text-align: left; color: var(--text-primary); text-decoration: none; }
   .ab-name em { font-style: normal; color: #f0c35a; font-variant-numeric: tabular-nums; }
+  .ab-line.thin { stroke-width: 1.6; opacity: .9; }
+  .ab-split { display: flex; height: 26px; border-radius: 4px; overflow: hidden; background: #ffffff10; margin: 6px 0; }
+  .ab-split i { display: block; height: 100%; width: 0; } .ab-split .atk { background: var(--atk); } .ab-split .def { background: var(--def); } .ab-split .sup { background: var(--sup); }
   .ab-btn { background: #f0c35a; color: #000; border: 0; border-radius: 6px; padding: 10px 22px; font: inherit; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-block; }
   .ab-btn.alt { background: transparent; color: #f0c35a; border: 1px solid #f0c35a; }
   .ab-link { color: var(--text-muted); font-size: 13px; }
@@ -1613,7 +1616,7 @@ async function viewPlayer(s, login) {
   const out = [
     el("div", { class: "head start" }, el("h1", {}, p.name), g ? el("a", { href: `#/gilden/${g.login}` }, g.name) : null,
       p.active === false ? el("span", { class: "tag" }, "laut Gilde inaktiv") : null,
-      gameLink(`/spieler/${login}`, "Im Spiel"), shareButton(p, login), meButton(login)),
+      gameLink(`/spieler/${login}`, "Im Spiel"), el("a", { href: `#/abspann/${encodeURIComponent(login)}` }, "Abspann"), shareButton(p, login), meButton(login)),
     el("div", { class: "grid two" }, hero, chartCard("Ausrüstungswert", p.series.gear, { until: s.generated, compare: gearCompare(s, p, login) })),
     hasGear ? gearCard(p.watch.slots, p.power) : null,
     hasGear ? upgradePlanCard(p.watch.slots) : null,
@@ -3024,6 +3027,7 @@ function abRace(s, d) {
     return { i, a, bar, sc: sc2, rk };
   });
   const when = el("div", { class: "ab-cap" }), tie = el("div", { class: "ab-note" });
+  const silver = new Map(s.board.map((r) => [r.login, r.silver]));  // the silver of the last run, shown on the last picture
   sc.body.append(box, when, tie);
   return { node: sc.root, update(p) {
     const f = start + (F - 1 - start) * span(p, 0.02, 0.96), a = Math.floor(f), b = Math.min(F - 1, a + 1);
@@ -3035,12 +3039,13 @@ function abRace(s, d) {
       const sa = score[r.i][a] || score[r.i][b], sb = score[r.i][b] || sa, v = sa + (sb - sa) * w;
       r.a.style.display = ""; r.a.style.transform = `translateY(${(pos * row).toFixed(1)}px)`;
       r.a.style.opacity = String(clamp01(N - pos)); r.a.classList.toggle("lead", pos < 0.5);
-      r.rk.textContent = String((w < 0.5 ? ra || rb : rb || ra)); r.sc.textContent = fmtInt(v);
+      const end = Math.round(f) >= F - 1 && silver.get(d.logins[r.i]) != null;
+      r.rk.textContent = String((w < 0.5 ? ra || rb : rb || ra)); r.sc.textContent = end ? `${fmtInt(v)} | ${fmtSilver(silver.get(d.logins[r.i]))} Silber` : fmtInt(v);
       lo = Math.min(lo, v); hi = Math.max(hi, v); on.push([r, v]);
     }
     for (const [r, v] of on) r.bar.style.width = `${(10 + 90 * (v - lo * 0.97) / (hi - lo * 0.97 || 1)).toFixed(1)}%`;
     when.textContent = fmtTime(d.frames[Math.round(f)]);
-    tie.textContent = hi === lo ? "Alle zehn stehen auf dem Höchstwert, die Reihenfolge entscheidet das Silber" : "";
+    tie.textContent = hi === lo ? "Alle zehn stehen auf dem Höchstwert, die Reihenfolge entscheidet das Silber (Stand der letzten Messung)" : "";
   } };
 }
 
@@ -3143,7 +3148,7 @@ function abHall(s) {
 
 function abEnd(s, ctx) {
   const sc = abScene("Das war die Saison", "Danke fürs Zuschauen", "In unseren Messungen ab dem " + (s.since ? fmtSince(s.since).replace(/ Uhr$/, "") : "ersten Lauf"));
-  sc.body.append(el("div", { class: "ab-actions" },
+  sc.body.append(el("p", { class: "ab-sub" }, "Dein eigener Abspann:"), abSearch(), el("div", { class: "ab-actions" },
     el("button", { class: "ab-btn", onclick: () => ctx.restart() }, "Noch einmal"),
     el("a", { class: "ab-btn alt", href: "#/saison/seite" }, "Als Seite lesen")));
   return { node: sc.root, update() {} };
@@ -3166,17 +3171,172 @@ const AB_SCENES = [
   ["end", Infinity, (s, x) => abEnd(s, x)],
 ];
 
-async function viewAbspann(s) {
-  if (!s.abspann || !s.finale?.top || REDUCED_MOTION) return viewSeason(s);
-  let top = null, tl = null;
-  try { top = await load("toplapse.json"); } catch { /* the race scene is left out */ }
-  try { tl = await load("timelapse.json"); } catch { /* the capsule shows no hurdle */ }
-  const ctx = { top, tl, restart: () => go(0) };
-  const list = AB_SCENES.filter(([id]) => (id !== "race" && id !== "capsule") || (top && top.frames.length > 1))
-    .filter(([id]) => id !== "overtakes" || s.abspann.overtakes)
-    .filter(([id]) => id !== "growth" || s.abspann.growth.gains.length)
-    .filter(([id]) => id !== "guilds" || s.abspann.guilds.length)
-    .filter(([id]) => id !== "builds" || s.abspann.builds.length > 1);
+// ---- Dein Abspann: the same film for one player, from the player's own file (p/<login>.json) ----
+// A line chart that draws itself: the player's `main` series and, behind it, `extra` lines of the field. `invert`:
+// the first place on top (the rank). Returns the svg and `draw(p)`, which reveals up to the point in time p stands for.
+function abLine(main, { extra = [], invert = false, step = false, until }) {
+  const W = 800, H = 300, m = { l: 52, r: 16, t: 12, b: 24 };
+  const all = [main, ...extra.map((e) => e.series)].filter((x) => x.length);
+  const t0 = Math.min(...all.map((x) => x[0][0])), t1 = Math.max(until || 0, ...all.map((x) => x[x.length - 1][0]));
+  const vals = all.flatMap((x) => x.map((r) => r[1]));
+  const stepSize = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000]
+    .find((q) => (Math.max(...vals) - Math.min(...vals)) / q <= 6) || 100000;
+  const lo = Math.floor(Math.min(...vals) / stepSize) * stepSize, hi = Math.max(Math.ceil(Math.max(...vals) / stepSize) * stepSize, lo + stepSize);
+  const X = (t) => m.l + (t - t0) / (t1 - t0 || 1) * (W - m.l - m.r);
+  const Y = (v) => { const f = (v - lo) / (hi - lo); return m.t + (invert ? f : 1 - f) * (H - m.t - m.b); };
+  const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, class: "ab-svg", role: "img" });
+  for (let v = lo; v <= hi + 1e-9; v += stepSize) svg.append(sv("line", { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v), class: "ab-grid" }), sv("text", { x: m.l - 6, y: Y(v) + 4, class: "ab-axis", "text-anchor": "end" }, fmtInt(v)));
+  const lines = [...extra.map((e) => ({ ...e, pl: sv("polyline", { fill: "none", class: "ab-line thin", style: `stroke:${e.color}` }) })),
+    { series: main, color: "#f0c35a", pl: sv("polyline", { fill: "none", class: "ab-line" }) }];
+  svg.append(...lines.map((l) => l.pl));
+  const dot = sv("circle", { r: 5, class: "ab-dot" });
+  svg.append(dot);
+  return { svg, t0, t1, draw(prog) {
+    const now = t0 + (t1 - t0) * prog, out = [];
+    for (const l of lines) {
+      const pts = [];
+      l.series.forEach(([t, v], i) => {
+        if (t > now) return;
+        if (step && i && pts.length) pts.push([X(t), pts[pts.length - 1][1]]);
+        pts.push([X(t), Y(v)]);
+      });
+      if (pts.length) pts.push([X(now), pts[pts.length - 1][1]]);
+      l.pl.setAttribute("points", pts.map((q) => q.map((n) => n.toFixed(1)).join(",")).join(" "));
+      const vis = l.series.filter((r) => r[0] <= now);
+      out.push(vis.length ? vis[vis.length - 1][1] : null);
+      if (l.series === main && pts.length) { dot.setAttribute("cx", pts[pts.length - 1][0].toFixed(1)); dot.setAttribute("cy", pts[pts.length - 1][1].toFixed(1)); }
+    }
+    return { now, values: out };
+  } };
+}
+
+function abMeTitle(p) {
+  const sc = abScene("Dein Abspann", p.name, p.guild ? p.guild.name : "In keiner Gilde");
+  const b = p.standing.better >= 99.95 ? "alle" : `${fmtDec(p.standing.better, 1)} %`;
+  sc.body.append(el("div", { class: "ab-row" },
+    el("div", { class: "ab-stat" }, el("b", {}, fmtInt(p.gear)), el("span", {}, "Ausrüstungswert zum Schluss")),
+    p.board_rank ? el("div", { class: "ab-stat" }, el("b", {}, `#${fmtInt(p.board_rank)}`), el("span", {}, "in der Rangliste")) : null,
+    el("div", { class: "ab-stat" }, el("b", {}, b), el("span", {}, `mehr als von ${fmtInt(p.standing.of)} Spielern`))));
+  return { node: sc.root, update() {} };
+}
+
+function abMeWay(p, ctx) {
+  const sc = abScene("Dein Weg", "Wie dein Ausrüstungswert wuchs", "Jeder Schritt der Linie ist ein Fund, ein Kauf oder eine Verbesserung");
+  const g = p.series.gear, chart = abLine(g, { step: true, until: ctx.summary.generated });
+  const cap = el("div", { class: "ab-cap" }), row = el("div", { class: "ab-row" });
+  const days = new Map();
+  g.forEach(([t, v]) => { const k = AB_DAY(t); days.set(k, [...(days.get(k) || [v, t, v]).slice(0, 2), v]); });
+  const best = [...days.entries()].map(([k, [first, , last]]) => [k, last - first]).reduce((a, b) => (b[1] > a[1] ? b : a), ["", 0]);
+  const start = abBig("", `am ${AB_DAY(g[0][0])}`), end = abBig("", "zum Schluss");
+  row.append(start.box, end.box, ...(best[1] > 0 ? [el("div", { class: "ab-stat" }, el("b", {}, signed(best[1])), el("span", {}, `bester Tag, der ${best[0]}`))] : []));
+  sc.body.append(chart.svg, cap, row);
+  return { node: sc.root, update(prog) {
+    const r = chart.draw(span(prog, 0.04, 0.92));
+    cap.textContent = AB_DAY(r.now);
+    start.set(fmtInt(g[0][1])); end.set(fmtInt(r.values[r.values.length - 1] ?? g[0][1]));
+  } };
+}
+
+// Your gear against the median and the best tenth of all active players (the data of the Zeitraffer).
+function abMeField(p, ctx) {
+  const tl = ctx.tl, grp = tl && tl.groups[0];
+  const sc = abScene("Du gegen das Feld", "Wie du dich gegen alle behauptest", "Dein Ausrüstungswert gegen den Median und die besten zehn Prozent der aktiven Spieler");
+  const pick = (idx) => tl.frames.map((t, i) => [t, grp.pct[i][idx]]).filter((r) => r[1] != null);
+  const chart = abLine(p.series.gear.filter((r) => r[0] >= tl.frames[0]), { until: ctx.summary.generated, extra: [
+    { series: pick(10), color: "#8f8e86", label: "Median" }, { series: pick(18), color: "#3987e5", label: "Beste 10 %" }] });
+  const legend = el("div", { class: "ab-legend" });
+  sc.body.append(chart.svg, legend);
+  return { node: sc.root, update(prog) {
+    const r = chart.draw(span(prog, 0.04, 0.92));
+    legend.replaceChildren(el("span", { style: "color:#8f8e86" }, `Median ${r.values[0] == null ? "" : fmtInt(r.values[0])}`),
+      el("span", { style: "color:#3987e5" }, `Beste 10 % ${r.values[1] == null ? "" : fmtInt(r.values[1])}`),
+      el("span", { style: "color:#f0c35a" }, `Du ${r.values[2] == null ? "" : fmtInt(r.values[2])}`));
+  } };
+}
+
+function abMeRank(p, ctx) {
+  const r = p.series.rank.filter((x) => x[1] >= 1), best = Math.min(...r.map((x) => x[1]));
+  const sc = abScene("Dein Platz", "Dein Weg durch die Rangliste", "Platz 1 steht oben; zu sehen sind nur die Zeiten in den Top 100");
+  const chart = abLine(r, { invert: true, step: true, until: ctx.summary.generated }), cap = el("div", { class: "ab-cap" });
+  const now = abBig("", "Platz"), bestBox = abBig(`#${fmtInt(best)}`, "beste Platzierung");
+  sc.body.append(chart.svg, cap, el("div", { class: "ab-row" }, now.box, bestBox.box));
+  return { node: sc.root, update(prog) {
+    const x = chart.draw(span(prog, 0.04, 0.92));
+    cap.textContent = AB_DAY(x.now); now.set(x.values[x.values.length - 1] == null ? "-" : `#${fmtInt(x.values[x.values.length - 1])}`);
+  } };
+}
+
+// The split of attack, defense and support next to what players of your main stat usually have.
+function abMeBuild(p) {
+  const sp = p.split, med = p.peers && p.peers.cls && p.peers.cls.med;
+  const sc = abScene("Dein Build", "Wie sich dein Wert verteilt", med ? "Du, und was Spieler mit demselben Hauptwert im Schnitt haben" : "Angriff, Verteidigung und Unterstützung");
+  const mk = (name, v) => {
+    const sum = (v.atk || 0) + (v.def || 0) + (v.sup || 0) || 1, segs = [["atk", "ATK"], ["def", "DEF"], ["sup", "SUP"]].map(([k, l]) => ({ k, l, n: v[k] || 0, i: el("i", { class: k }, "") }));
+    const bar = el("div", { class: "ab-split" }, ...segs.map((x) => x.i));
+    return { name, sum, segs, bar, node: el("div", { class: "ab-rows" }, el("h3", {}, name), bar,
+      el("div", { class: "ab-legend" }, ...segs.map((x) => el("span", { style: `color:var(--${x.k})` }, `${x.l} ${fmtDec(100 * x.n / sum, 0)} %`)))) };
+  };
+  const rows = [mk("Du", sp), ...(med ? [mk("Typisch für deine Klasse", med)] : [])];
+  sc.body.append(...rows.map((r) => r.node));
+  return { node: sc.root, update(prog) {
+    const w = span(prog, 0.1, 0.7);
+    rows.forEach((r) => r.segs.forEach((x) => { x.i.style.width = `${(100 * x.n / r.sum * w).toFixed(2)}%`; }));
+  } };
+}
+
+function abMeSilver(p, ctx) {
+  const sc = abScene("Dein Silber", "Wie dein Silber wuchs", "Silber im Beutel zum Zeitpunkt jedes Laufs");
+  const chart = abLine(p.series.silver, { until: ctx.summary.generated }), cap = el("div", { class: "ab-cap" }), now = abBig("", "Silber");
+  sc.body.append(chart.svg, cap, el("div", { class: "ab-row" }, now.box));
+  return { node: sc.root, update(prog) {
+    const x = chart.draw(span(prog, 0.04, 0.92));
+    cap.textContent = AB_DAY(x.now); now.set(fmtSilver(x.values[x.values.length - 1]));
+  } };
+}
+
+// A search for another player's film: a box with the names (players.json) and a button.
+function abSearch() {
+  const names = el("datalist", { id: "ab-names" });
+  const input = el("input", { type: "search", class: "cmp pick", list: "ab-names", placeholder: "Spieler suchen", "aria-label": "Spieler suchen" });
+  load("players.json").then((rows) => names.append(...rows.slice(0, 400).map((r) => el("option", { value: r[1] })))).catch(() => {});
+  const go = () => {
+    const q = input.value.trim().toLowerCase();
+    load("players.json").then((rows) => { const hit = rows.find((r) => r[0] === q || r[1].toLowerCase() === q); if (hit) location.hash = `#/abspann/${encodeURIComponent(hit[0])}`; }).catch(() => {});
+  };
+  input.addEventListener("change", go);
+  return el("div", { class: "ab-actions" }, input, names, el("button", { class: "ab-btn", onclick: go }, "Abspann zeigen"));
+}
+
+function abMeEnd(p, ctx) {
+  const sc = abScene("Das war deine Saison", `Danke, ${p.name}`, "Noch einen Abspann ansehen?");
+  sc.body.append(abSearch(),
+    el("div", { class: "ab-actions" }, el("button", { class: "ab-btn alt", onclick: () => ctx.restart() }, "Noch einmal"),
+      el("a", { class: "ab-btn alt", href: `#/spieler/${encodeURIComponent(p.login)}` }, "Zum Profil"),
+      el("a", { class: "ab-btn alt", href: "#/saison/abspann" }, "Der große Abspann")));
+  return { node: sc.root, update() {} };
+}
+
+async function viewMyAbspann(s, sub, login) {
+  let p;
+  try { p = await load(`p/${encodeURIComponent(login)}.json`); }
+  catch { return [card("Nicht gefunden", el("p", { class: "note" }, `"${login}" ist nicht erfasst. `, el("a", { href: "#/saison/abspann" }, "Zum großen Abspann")))]; }
+  if (REDUCED_MOTION || !p.series.gear.length) { location.replace(`#/spieler/${encodeURIComponent(login)}`); return []; }
+  let tl = null;
+  try { tl = await load("timelapse.json"); } catch { /* no comparison with the field */ }
+  const ctx = { tl, summary: s };
+  const list = [["title", 6, (d) => abMeTitle(d)], ["way", 22, (d, x) => abMeWay(d, x)],
+    ...(tl && tl.groups.length ? [["field", 22, (d, x) => abMeField(d, x)]] : []),
+    ...(p.series.rank.filter((x) => x[1] >= 1).length > 1 ? [["rank", 20, (d, x) => abMeRank(d, x)]] : []),
+    ...(p.split && p.split.atk != null ? [["build", 12, (d) => abMeBuild(d)]] : []),
+    ...(p.series.silver.length > 4 ? [["silver", 18, (d, x) => abMeSilver(d, x)]] : []),
+    ["end", Infinity, (d, x) => abMeEnd(d, x)]];
+  const stage = abPlayer({ data: p, ctx, list, exit: `#/spieler/${encodeURIComponent(login)}`,
+    poster: { kick: "Dein Abspann", title: p.name, sub: "Deine Saison, nur mit deinen Zahlen", back: "Zurück zum Profil" } });
+  return [el("section", { class: "grid" }, stage)];
+}
+
+// The player: steps through `list` ([id, seconds, make(data, ctx)]), `poster` is the start screen, `exit` the hash Esc goes to.
+function abPlayer({ data, ctx, list, poster: pst, exit }) {
   const stage = el("div", { class: "ab-stage" }), host = el("div", { class: "ab-host" });
   const bar = el("div", { class: "ab-prog" }, el("i", {})), label = el("span", { class: "ab-label" });
   const playBtn = el("button", { class: "ab-ctl", "aria-label": "Pause" }, "❚❚");
@@ -3186,11 +3346,11 @@ async function viewAbspann(s) {
   const prev = el("button", { class: "ab-ctl", "aria-label": "Vorheriges Kapitel", onclick: () => go(idx - 1) }, "⏮");
   const next = el("button", { class: "ab-ctl", "aria-label": "Nächstes Kapitel", onclick: () => go(idx + 1) }, "⏭");
   const ctl = el("div", { class: "ab-ctls" }, prev, playBtn, next, ...speeds, autoBtn, label, bar);
-  const poster = el("div", { class: "ab-poster" }, el("div", { class: "ab-kick" }, "Das Spiel ist gewonnen"), el("h1", { class: "ab-title" }, "Chat-RPG"),
-    el("p", { class: "ab-sub" }, "Der Abspann unserer Messungen"),
+  const poster = el("div", { class: "ab-poster" }, el("div", { class: "ab-kick" }, pst.kick), el("h1", { class: "ab-title" }, pst.title),
+    el("p", { class: "ab-sub" }, pst.sub),
     el("button", { class: "ab-btn", onclick: () => start(0) }, "▶ Abspann abspielen"),
     el("p", { class: "ab-note" }, "Leertaste: Pause · Pfeiltasten: Kapitel · 5, 1, 2, 4: Tempo · A: nicht automatisch weiter · Esc: zur Seite"),
-    el("a", { class: "ab-link", href: "#/saison/seite" }, "Lieber als Seite lesen"));
+    el("a", { class: "ab-link", href: exit }, pst.back));
   stage.append(poster);
   let idx = 0, t = 0, playing = false, speed = 1, auto = true, cur = null, last = 0, raf = 0;
   const paint = () => {
@@ -3204,7 +3364,7 @@ async function viewAbspann(s) {
   function go(i, frac = 0) {
     idx = Math.max(0, Math.min(list.length - 1, i)); t = frac * (list[idx][1] === Infinity ? 0 : list[idx][1]);
     const [, , make] = list[idx];
-    cur = make(s, ctx);
+    cur = make(data, ctx);
     host.replaceChildren(cur.node); cur.node.classList.add("in");
     cur.update(frac); paint();
   }
@@ -3233,13 +3393,31 @@ async function viewAbspann(s) {
     else if (["1", "2", "4"].includes(e.key)) { speed = +e.key; paint(); }
     else if (e.key === "5") { speed = 0.5; paint(); }
     else if (e.key === "a" || e.key === "A") { auto = !auto; paint(); }
-    else if (e.key === "Escape") location.hash = "#/saison/seite";
+    else if (e.key === "Escape") location.hash = exit;
   };
   document.addEventListener("keydown", keys);
   // ?kapitel=race (or race:0.5 for halfway in) starts the film at that chapter; the ids are the first entries of AB_SCENES
   const [wantedId, wantedAt] = (new URLSearchParams(location.search).get("kapitel") || "").split(":");
   const wanted = list.findIndex(([id]) => id === wantedId);
   if (wanted >= 0) requestAnimationFrame(() => start(wanted, +wantedAt || 0));
+  ctx.restart = () => go(0);
+  return stage;
+}
+
+
+async function viewAbspann(s) {
+  if (!s.abspann || !s.finale?.top || REDUCED_MOTION) return viewSeason(s);
+  let top = null, tl = null;
+  try { top = await load("toplapse.json"); } catch { /* the race scene is left out */ }
+  try { tl = await load("timelapse.json"); } catch { /* the capsule shows no hurdle */ }
+  const ctx = { top, tl, summary: s };
+  const list = AB_SCENES.filter(([id]) => (id !== "race" && id !== "capsule") || (top && top.frames.length > 1))
+    .filter(([id]) => id !== "overtakes" || s.abspann.overtakes)
+    .filter(([id]) => id !== "growth" || s.abspann.growth.gains.length)
+    .filter(([id]) => id !== "guilds" || s.abspann.guilds.length)
+    .filter(([id]) => id !== "builds" || s.abspann.builds.length > 1);
+  const stage = abPlayer({ data: s, ctx, list, exit: "#/saison/seite",
+    poster: { kick: "Das Spiel ist gewonnen", title: "Chat-RPG", sub: "Der Abspann unserer Messungen", back: "Lieber als Seite lesen" } });
   return [el("section", { class: "grid" }, stage)];
 }
 
@@ -3247,6 +3425,7 @@ async function viewAbspann(s) {
 // Each section has sub pages (one per ranking, guild or fight table), shown as a second tab row.
 const SECTIONS = {
   changelog: { subs: () => [], render: viewSiteChanges },
+  abspann: { subs: () => [], render: viewMyAbspann },
   saison: { subs: (d) => d.abspann ? [["abspann", "Abspann"], ["seite", "Als Seite lesen"]] : [], render: (d, sub) => sub === "seite" ? viewSeason(d) : viewAbspann(d) },
   start: { subs: () => [], render: viewStart },
   rangliste: { subs: () => [["ausruestungswert", "Ausrüstungswert"], ["kampfkraft", "Kampfkraft"], ["aufsteiger", "Aufsteiger"], ["zeitraffer", "Zeitraffer"]],
@@ -3277,7 +3456,7 @@ async function route() {
   $("suggest").hidden = true; $("q").value = "";
   const [, name, arg] = location.hash.split("/");
   const view = name === "spieler" ? "player" : SECTIONS[name] ? name : "start";
-  $("season").value = SEASON_ID ? `archive:${SEASON_ID}` : view === "saison" ? "report" : "live";
+  $("season").value = SEASON_ID ? `archive:${SEASON_ID}` : view === "saison" || view === "abspann" ? "report" : "live";
   for (const a of document.querySelectorAll("header .tabs a")) a.toggleAttribute("aria-current", a.dataset.view === view);
   let s;
   try { s = await load("summary.json"); }
@@ -3300,7 +3479,7 @@ async function route() {
         el("a", { href: `#/${view}/${key}`, ...(key === sub ? { "aria-current": "page" } : {}) }, label)));
     }
     $("subtabs").hidden = subs.length < 2;
-    parts = await SECTIONS[view].render(s, sub);
+    parts = await SECTIONS[view].render(s, sub, login);
   }
   // The search box lives in the header, on the start page it moves into the page.
   const search = document.querySelector(".search"), header = document.querySelector("header");

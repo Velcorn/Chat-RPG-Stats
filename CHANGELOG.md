@@ -45,7 +45,7 @@ Die letzten 30 bisherigen Versionen sind diesen Tagesversionen zugeordnet:
 ## 2026.10.28 (28.10.2026)
 
 ### Verbessert
-- Saisonrückblick: Neben "Als Erster auf 681" steht auch, wer als Erster auf 680 war (der andere Höchstwert, mit Zweihandwaffe); wer auf 680 steht, zählt bei "Aktuell auf dem Höchstwert" mit.
+- Saisonrückblick: Unter "Erster auf" stehen jetzt beide Höchstwerte, 680 und 681, je mit dem Ersten und dem Zeitpunkt in einer Zeile (680 ist der andere Höchstwert, mit Zweihandwaffe); wer auf 680 steht, zählt bei "Aktuell auf dem Höchstwert" mit.
 
 ### Behoben
 - Saisonrückblick: "Zeit an der Spitze" zählt die Stunden der Sperrstunde nicht mehr mit (nur die Spielzeit des Spiels, wie sie zu dem Zeitpunkt galt).

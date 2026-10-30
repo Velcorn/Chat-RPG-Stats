@@ -1781,7 +1781,7 @@ function viewStart(s) {
       tile("Gilden", fmtInt(s.guilds.length), `${fmtInt(s.guilds.reduce((n, g) => n + g.members, 0))} Mitglieder`)),
     s.abspann ? card(null, el("div", { class: "head" },
       el("div", {}, el("h2", {}, "Der Abspann der Saison"), el("p", { class: "note" }, "Der Weg an die Spitze, die Überholmanöver, das Rennen der Besten und mehr, als Film.")),
-      el("a", { class: "season-badge", href: "#/abspann" }, "Film ansehen"))) : null,
+      el("a", { class: "season-badge", href: "#/saison/abspann" }, "Film ansehen"))) : null,
     card("Spieler suchen", el("div", { id: "hero-search" }), el("p", { class: "note" }, "Erfasst sind alle aktiven Gildenmitglieder und die Top 100.")),
     el("div", { class: "grid two" },
       card("Top 5 nach Ausrüstungswert", top.length ? [table([

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Chat-RPG Statistik</title>
-<meta name="description" content="Ranglisten, Verlauf und Prognosen für das Twitch-Chat-RPG rpg.sola.rip">
+<meta name="description" content="Ranglisten, Verlauf und Abspann der ersten Saison des Twitch-Chat-RPG rpg.sola.rip">
 <style>
   @font-face { font-family: "Inter"; font-weight: 400; font-style: normal; font-display: swap; src: url("fonts/Inter-Regular.woff2") format("woff2"); }
   @font-face { font-family: "Inter"; font-weight: 700; font-style: normal; font-display: swap; src: url("fonts/Inter-Bold.woff2") format("woff2"); }
@@ -1581,12 +1581,12 @@ async function viewPlayer(s, login) {
     return [card("Nicht gefunden", el("p", { class: "note" }, `"${login}" ist nicht erfasst. Erfasst sind alle aktiven Gildenmitglieder und die Top 100; Spieler ohne Gilde kommen über die `,
       el("a", { href: WATCH_FORM }, "Beobachtungsliste"), " dazu."))];
   }
-  const f = p.forecast, g = p.guild;
+  const f = p.forecast, g = p.guild, ended = !!s.season?.ended;
   const hero = gearHero(p);
 
   let top100;
   if (f.top100_gap == null) top100 = p.board_rank ? `drin, Platz ${p.board_rank}` : "-";
-  else top100 = `${count(f.top100_gap, "Punkt", "Punkte")} bis zur Grenze` + (f.top100_days ? `, bei deinem Tempo ${inDays(f.top100_days)}`
+  else top100 = `${count(f.top100_gap, "Punkt", "Punkte")} bis zur Grenze` + (ended ? "" : f.top100_days ? `, bei deinem Tempo ${inDays(f.top100_days)}`
     : p.pace == null ? "" : ", die Grenze steigt schneller als du");
   const forecast = el("dl", { class: "facts" },
     el("dt", {}, "Vergleich"), el("dd", {}, p.standing.better >= 99.95
@@ -1596,9 +1596,9 @@ async function viewPlayer(s, login) {
       ? (f.gap.ahead ? `du stehst vorn, ${fmtSilver(f.gap.amount)} Silber vor #2 (gleicher Ausrüstungswert, das Silber entscheidet)`
         : `${fmtSilver(f.gap.amount)} Silber (gleicher Ausrüstungswert, das Silber entscheidet)`)
       : f.next_gap == null ? "du stehst vorn"
-      : `${count(f.next_gap, "Punkt", "Punkte")}` + (f.next_days ? `, bei deinem Tempo ${inDays(f.next_days)}` : "")),
+      : `${count(f.next_gap, "Punkt", "Punkte")}` + (!ended && f.next_days ? `, bei deinem Tempo ${inDays(f.next_days)}` : "")),
     el("dt", {}, "Top 100"), el("dd", {}, top100),
-    el("dt", {}, "Tempo"), el("dd", {}, p.peers && p.peers.pace != null && p.pace != null
+    ended ? null : el("dt", {}, "Tempo"), ended ? null : el("dd", {}, p.peers && p.peers.pace != null && p.pace != null
       ? `${signed(p.pace, 1)} pro Tag (Ähnliche: ${signed(p.peers.pace, 1)})`
       : "nach 12 Stunden Verlauf"));
   const guild = g ? el("dl", { class: "facts" },
@@ -1617,8 +1617,8 @@ async function viewPlayer(s, login) {
     el("div", { class: "grid two" }, hero, chartCard("Ausrüstungswert", p.series.gear, { until: s.generated, compare: gearCompare(s, p, login) })),
     hasGear ? gearCard(p.watch.slots, p.power) : null,
     hasGear ? upgradePlanCard(p.watch.slots) : null,
-    // Prognose and Gilde in one card, side by side
-    el("section", { class: "card" }, el("div", { class: "grid two" }, el("div", {}, el("h2", {}, "Prognose"), forecast), el("div", {}, el("h2", {}, "Gilde"), guild))),
+    // Prognose (Endstand once the season is over) and Gilde in one card, side by side
+    el("section", { class: "card" }, el("div", { class: "grid two" }, el("div", {}, el("h2", {}, ended ? "Endstand" : "Prognose"), forecast), el("div", {}, el("h2", {}, "Gilde"), guild))),
   ];
   const charts = [];
   if (p.series.rank.length) charts.push(chartCard("Rang (Top 100)", p.series.rank, { invert: true, until: s.generated }));
@@ -1779,6 +1779,9 @@ function viewStart(s) {
       tile("Platz 1", top[0] ? playerLink(top[0]) : "-", top[0] ? `${fmtInt(top[0].gear)} Ausrüstungswert` : ""),
       tile("Kämpfe", fmtInt(t.n), t.n ? `${fmtInt(t.wins)} gewonnen, letzte ${fmtInt(s.stats.days)} Tage` : ""),
       tile("Gilden", fmtInt(s.guilds.length), `${fmtInt(s.guilds.reduce((n, g) => n + g.members, 0))} Mitglieder`)),
+    s.abspann ? card(null, el("div", { class: "head" },
+      el("div", {}, el("h2", {}, "Der Abspann der Saison"), el("p", { class: "note" }, "Der Weg an die Spitze, die Überholmanöver, das Rennen der Besten und mehr, als Film.")),
+      el("a", { class: "season-badge", href: "#/abspann" }, "Film ansehen"))) : null,
     card("Spieler suchen", el("div", { id: "hero-search" }), el("p", { class: "note" }, "Erfasst sind alle aktiven Gildenmitglieder und die Top 100.")),
     el("div", { class: "grid two" },
       card("Top 5 nach Ausrüstungswert", top.length ? [table([
@@ -2789,17 +2792,18 @@ async function comparisonSummary() {
 }
 
 async function viewSeason(s) {
-  const season = s.season || {}, archived = !!season.archived;
+  const season = s.season || {}, archived = !!season.archived, ended = !!season.ended;
   const label = season.label || (archived ? "Archiv" : "Aktuelle Saison");
-  const days = s.since ? Math.max(1, Math.ceil((s.generated - s.since) / DAY_S)) : null;
+  const days = s.since ? Math.max(1, Math.ceil(((ended && season.end ? season.end : s.generated) - s.since) / DAY_S)) : null;
   const leader = s.board[0], strongest = [...s.guilds].filter((g) => g.active >= 10).sort((a, b) => (b.avg_gear || 0) - (a.avg_gear || 0))[0];
   const total = s.stats.total;
-  const badge = archived ? "Saison abgeschlossen" : "Saison läuft";
-  const end = archived && season.end ? fmtSince(season.end) : `Stand ${fmtTime(s.generated)}`;
+  const badge = archived ? "Saison abgeschlossen" : ended ? "Saison beendet" : "Saison läuft";
+  const end = (archived || ended) && season.end ? fmtSince(season.end) : `Stand ${fmtTime(s.generated)}`;
   const intro = el("div", { class: "season-hero" },
     card(null, el("span", { class: "season-badge" }, badge), el("h1", { class: "season-title" }, `${label}: Der Rückblick`),
       el("p", { class: "secondary" }, archived
         ? "Der unveränderliche Abschluss mit Rangreise, Meilensteinen und den wichtigsten Zahlen."
+        : ended ? "Der letzte Boss ist gefallen. Die Zahlen sind der Stand zum Saisonende, mit Rangreise, Meilensteinen und den wichtigsten Zahlen."
         : "Der Zwischenstand wird mit jedem Sammellauf aktualisiert und beim Saisonende unveränderlich archiviert.")),
     card(label, el("div", { class: "season-days" }, days == null ? "-" : count(days, "Tag", "Tage")),
       el("p", { class: "note" }, s.since ? `${fmtSince(s.since)} bis ${end}` : end)));
@@ -3478,7 +3482,8 @@ async function route() {
   const requests = ld && ld.per_run ? `, zusammen etwa ${fmtInt(ld.per_run * ld.runs_per_day)} Anfragen am Tag: ${fmtInt(ld.per_run)} pro Lauf, ${fmtInt(ld.runs_per_day)} Läufe` : "";
   $("footer").replaceChildren(`${s.season?.archived ? "Archivstand" : "Stand"} ${fmtTime(s.generated)}${s.since ? `, Daten seit ${fmtSince(s.since)}` : ""}. Liest nur öffentliche Daten von `,
     el("a", { href: "https://rpg.sola.rip" }, "rpg.sola.rip"),
-    ` (etwa alle 5 Minuten, von 1 bis 9 Uhr alle 15, ohne Anmeldung${requests}). Kein offizielles Angebot des Spiels. Fast komplett vibe-coded (von einer KI geschrieben, nur stichprobenartig geprüft), die Zahlen sind Schätzungen. `,
+    s.season?.ended ? ` (ohne Anmeldung). Die Sammlung ist beendet, die Zahlen sind der letzte Stand.`
+    : ` (etwa alle 5 Minuten, von 1 bis 9 Uhr alle 15, ohne Anmeldung${requests}). Kein offizielles Angebot des Spiels. Fast komplett vibe-coded (von einer KI geschrieben, nur stichprobenartig geprüft), die Zahlen sind Schätzungen. `,
     el("a", { href: `https://github.com/${REPO}` }, "Quellcode und Beobachtungsliste"), ". ",
     el("a", { href: "#/changelog" }, "Änderungen der Seite"), ". Im Spiel: ",
     gameLink("/kampf", "Kämpfe"), ", ", gameLink("/bestenliste", "Bestenliste"), ", ", gameLink("/gilden", "Gilden"), ", ",

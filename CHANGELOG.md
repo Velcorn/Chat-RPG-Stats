@@ -44,6 +44,14 @@ Die letzten 30 bisherigen Versionen sind diesen Tagesversionen zugeordnet:
 
 ## 2026.10.30 (30.10.2026)
 
+### Neu
+- Startseite: Eine Karte führt direkt zum Abspann der Saison.
+
+### Verbessert
+- Die Saison ist als beendet markiert ("Saison beendet" mit den Tagen bis zum letzten Boss), und die Fußzeile sagt, dass nicht mehr gesammelt wird.
+- Spielerseite: Die Karte "Prognose" heißt jetzt "Endstand" und rechnet nicht mehr in die Zukunft (kein Tempo, keine Tage bis zu einem Rang).
+- Die Beschreibung der Seite nennt den Abspann statt Prognosen.
+
 ### Entfernt
 - Die Karte "Letzter Boss" mit dem Countdown ist von der Startseite verschwunden: der Termin (28.10.2026) ist vorbei.
 

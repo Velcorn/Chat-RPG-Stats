@@ -14,7 +14,9 @@ import statistics
 import time
 import tomllib
 from collections import defaultdict
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import collect
 import fightstats
@@ -25,6 +27,7 @@ from timelapse import timelapse, top_lapse
 DAY = 86400
 BOARD_LAG = 12 * 3600  # the board shows the plain gear score only a few frames after GEAR_SINCE
 BOARD_GRID = 2 * 3600  # the top-100 time lapse has a frame every two hours
+SEASON_END = datetime(2026, 10, 28, 18, 0, tzinfo=ZoneInfo("Europe/Berlin")).timestamp()  # the final boss
 PEERS_MIN = 8
 PEERS_CLASS_MIN = 20  # class peers for the stat bars: within 10 % of the gear score, else this many nearest
 PEERS_BAND = 4  # class peers from which on the stat bars show the band (10 % to 90 %)
@@ -306,7 +309,8 @@ def build(data: Path, out: Path, now: float | None = None, include_archives: boo
     loot_rows = fightstats.loot_rows(h.fights, h.fightx)
     summary_stats = fightstats.fight_stats(h.fights, h.fightx, now, boss_rec=boss_rec)
     summary = {"generated": int(now), "version": project_version(), "since": h.first, "runs": h.runs,
-               "season": {**manifest.get("current", {}), "start": h.first, "end": None, "archived": False},
+               "season": {**manifest.get("current", {}), "start": h.first, "archived": False,
+                          "end": SEASON_END if now >= SEASON_END else None, "ended": now >= SEASON_END},
                "load": {"per_run": h.requests,
                         "runs_per_day": collect.RUNS_PER_DAY},
                "players": len(players),

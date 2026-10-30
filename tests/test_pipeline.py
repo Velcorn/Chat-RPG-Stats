@@ -667,3 +667,12 @@ class AbspannSummaryTests(unittest.TestCase):
             pipe.run(snap({"karni": [member("a", 100 + step), member("b", 100)]}, board=board), T0 + step * 7200)
         summary, _ = pipe.build(T0 + 3 * 7200)
         self.assertEqual(sorted(summary["abspann"]), ["builds", "growth", "guilds", "overtakes"])
+
+    def test_the_season_counts_as_ended_after_the_final_boss(self):
+        import build
+        pipe = Pipeline()
+        pipe.run(snap({"karni": [member("a", 100)]}, board=[("a", 100, 1, 1, 1)]), T0)
+        before = pipe.build(build.SEASON_END - 1)[0]["season"]
+        after = pipe.build(build.SEASON_END + 1)[0]["season"]
+        self.assertEqual((before["ended"], before["end"]), (False, None))
+        self.assertEqual((after["ended"], after["end"]), (True, build.SEASON_END))

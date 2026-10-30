@@ -5,7 +5,7 @@
 [![collect](https://github.com/Velcorn/Chat-RPG-Stats/actions/workflows/collect.yml/badge.svg)](https://github.com/Velcorn/Chat-RPG-Stats/actions/workflows/collect.yml)
 [![license: MIT](https://img.shields.io/github/license/Velcorn/Chat-RPG-Stats)](LICENSE)
 
-Ranglisten, Verlauf und Prognosen für das Twitch-Chat-RPG [rpg.sola.rip](https://rpg.sola.rip): Wie schnell wächst
+Ranglisten, Verlauf und Abspann der ersten Saison für das Twitch-Chat-RPG [rpg.sola.rip](https://rpg.sola.rip): Wie schnell wächst
 dein Ausrüstungswert, wann erreichst du den nächsten Rang oder die Top 100, wie verteilen ähnlich starke Spieler ihre
 Werte, wo stehst du in deiner Gilde und welche Kämpfe gewinnt man meistens. Die Seite hat vier Bereiche mit
 Unterseiten: Ranglisten (Ausrüstungswert, Kampfkraft, Aufsteiger), Gilden (Vergleich mit den ersten Siegen über die Bosse und eine Seite pro Gilde),
@@ -22,7 +22,7 @@ nichts in den Chat. Kein offizielles Angebot des Spiels.
 
 ## Was erfasst wird
 
-Ein Sammler läuft etwa alle 5 Minuten, rund um die Uhr, von 1 bis 9 Uhr nur alle 15 Minuten (die Spielzeit des Spiels ändert sich ab und zu, nachts ändert sich meist nichts)
+(Seit dem Saisonende am 28.10.2026 sammelt niemand mehr, die Seite zeigt den letzten Stand.) Ein Sammler läuft etwa alle 5 Minuten, rund um die Uhr, von 1 bis 9 Uhr nur alle 15 Minuten (die Spielzeit des Spiels ändert sich ab und zu, nachts ändert sich meist nichts)
 als GitHub Action und fragt die öffentlichen Schnittstellen der Seite ab, dieselben, die sie selbst ohne Anmeldung
 zeigt:
 

@@ -48,6 +48,7 @@ Die letzten 30 bisherigen Versionen sind diesen Tagesversionen zugeordnet:
 - Startseite: Eine Karte führt direkt zum Abspann der Saison.
 
 ### Verbessert
+- Saison > Als Seite lesen folgt dem Film: Kapitel "Der Weg an die Spitze" mit den Wechseln an der Spitze (und wie viele das Silber entschied), neu "Wachstum und Bauweise", "Die Gilden zum Schluss" und "Erste Bosssiege"; die Wörter sind auf das Saisonende umgestellt (kein "aktuell", "Stand jetzt" oder "Finale"), und ein Knopf führt zum Film.
 - Die Saison ist als beendet markiert ("Saison beendet" mit den Tagen bis zum letzten Boss), und die Fußzeile sagt, dass nicht mehr gesammelt wird.
 - Spielerseite: Die Karte "Prognose" heißt jetzt "Endstand" und rechnet nicht mehr in die Zukunft (kein Tempo, keine Tage bis zu einem Rang).
 - Die Beschreibung der Seite nennt den Abspann statt Prognosen.

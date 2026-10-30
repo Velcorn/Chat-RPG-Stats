@@ -2792,29 +2792,30 @@ async function comparisonSummary() {
 }
 
 async function viewSeason(s) {
-  const season = s.season || {}, archived = !!season.archived, ended = !!season.ended;
-  const label = season.label || (archived ? "Archiv" : "Aktuelle Saison");
+  const season = s.season || {}, archived = !!season.archived, ended = !!season.ended, over = archived || ended;
+  const label = season.label && !(ended && season.label === "Aktuelle Saison") ? season.label : archived ? "Archiv" : ended ? "Die Saison" : "Aktuelle Saison";
   const days = s.since ? Math.max(1, Math.ceil(((ended && season.end ? season.end : s.generated) - s.since) / DAY_S)) : null;
   const leader = s.board[0], strongest = [...s.guilds].filter((g) => g.active >= 10).sort((a, b) => (b.avg_gear || 0) - (a.avg_gear || 0))[0];
   const total = s.stats.total;
   const badge = archived ? "Saison abgeschlossen" : ended ? "Saison beendet" : "Saison läuft";
   const end = (archived || ended) && season.end ? fmtSince(season.end) : `Stand ${fmtTime(s.generated)}`;
   const intro = el("div", { class: "season-hero" },
-    card(null, el("span", { class: "season-badge" }, badge), el("h1", { class: "season-title" }, `${label}: Der Rückblick`),
+    card(null, el("span", { class: "season-badge" }, badge), el("h1", { class: "season-title" }, label === "Die Saison" ? "Der Rückblick auf die Saison" : `${label}: Der Rückblick`),
       el("p", { class: "secondary" }, archived
         ? "Der unveränderliche Abschluss mit Rangreise, Meilensteinen und den wichtigsten Zahlen."
         : ended ? "Der letzte Boss ist gefallen. Die Zahlen sind der Stand zum Saisonende, mit Rangreise, Meilensteinen und den wichtigsten Zahlen."
-        : "Der Zwischenstand wird mit jedem Sammellauf aktualisiert und beim Saisonende unveränderlich archiviert.")),
+        : "Der Zwischenstand wird mit jedem Sammellauf aktualisiert und beim Saisonende unveränderlich archiviert."),
+      s.abspann ? el("p", {}, el("a", { class: "season-badge", href: "#/saison/abspann" }, "Als Film ansehen")) : null),
     card(label, el("div", { class: "season-days" }, days == null ? "-" : count(days, "Tag", "Tage")),
       el("p", { class: "note" }, s.since ? `${fmtSince(s.since)} bis ${end}` : end)));
 
   const f = s.finale, podium = s.board.slice(0, 3);
   const headline = f ? null : el("div", { class: "grid tiles" },
-    tile(archived ? "Platz 1" : "Aktuell Platz 1", leader ? leader.name : "-", leader ? `${fmtInt(leader.gear)} Ausrüstungswert` : ""),
+    tile(over ? "Platz 1" : "Aktuell Platz 1", leader ? leader.name : "-", leader ? `${fmtInt(leader.gear)} Ausrüstungswert` : ""),
     tile("Kämpfe", fmtInt(total.n), `${fmtInt(total.wins)} gewonnen (${pct(total.wins, total.n)})`),
     tile("Aktive Spieler", fmtInt(s.active), `${fmtInt(s.players)} insgesamt erfasst`));
   const medals = ["Gold", "Silber", "Bronze"];
-  const stage = f && podium.length ? [el("div", { class: "head" }, el("h1", {}, archived ? "Das Podium" : "Das Podium (Stand jetzt)")),
+  const stage = f && podium.length ? [el("div", { class: "head" }, el("h1", {}, over ? "Das Podium" : "Das Podium (Stand jetzt)")),
     el("div", { class: "grid tiles season-podium" }, ...podium.map((r, i) => {
       const t = tile(medals[i], r.name || r.login, `${fmtInt(r.gear)} Ausrüstungswert${r.silver != null ? `, ${fmtSilver(r.silver)} Silber` : ""}${r.guild ? `, ${r.guild}` : ""}`);
       t.addEventListener("click", () => { location.hash = `#/spieler/${r.login}`; });
@@ -2822,7 +2823,7 @@ async function viewSeason(s) {
       t.classList.add(`podium-${i + 1}`);
       return t;
     }))] : [];
-  const top = f && f.top;
+  const top = f && f.top, ov = s.abspann?.overtakes;
   const way = top ? [el("div", { class: "head" }, el("h1", {}, "Der Weg an die Spitze")),
     el("div", { class: "grid two" },
       chartCard("Höchster Ausrüstungswert der Saison", top.series, { until: s.generated }),
@@ -2831,12 +2832,22 @@ async function viewSeason(s) {
             el("dd", {}, el("a", { href: `#/spieler/${top.first_alt.login}` }, top.first_alt.name), `, ${fmtSince(top.first_alt.t).replace(/ Uhr$/, "")}`)] : null,
           top.first ? [el("dt", {}, `Erster auf ${fmtInt(top.score)}`),
             el("dd", {}, el("a", { href: `#/spieler/${top.first.login}` }, top.first.name), `, ${fmtSince(top.first.t).replace(/ Uhr$/, "")}`)] : null,
-          el("dt", {}, archived ? "Zum Schluss auf dem Höchstwert" : "Aktuell auf dem Höchstwert"),
-          el("dd", {}, count(top.now, "Spieler", "Spieler"))),
+          el("dt", {}, over ? "Zum Schluss auf dem Höchstwert" : "Aktuell auf dem Höchstwert"),
+          el("dd", {}, count(top.now, "Spieler", "Spieler")),
+          ov ? [el("dt", {}, "Wechsel an der Spitze"), el("dd", {}, fmtInt(ov.changes)),
+            el("dt", {}, "Davon vom Silber entschieden"), el("dd", {}, fmtInt(ov.silver))] : null),
         el("div", { class: "scroll" }, table([
           { label: "Spieler", get: (r) => el("a", { href: `#/spieler/${r[0]}` }, r[1]) },
           { label: "Zeit an der Spitze", num: true, get: (r) => `${fmtDec(r[2], 0)} h` }], top.holders)),
         el("p", { class: "note" }, "An der Spitze steht, wer auf Platz 1 der Rangliste stand: bei gleichem Wert entscheidet das Silber (gemessen bei jedem Sammellauf, also alle paar Minuten); die Sperrstunde zählt nicht mit")))] : [];
+  const gr = s.abspann?.growth, bl = s.abspann?.builds;
+  const buildNames = [["Angriff", 1], ["Verteidigung", 2], ["Unterstützung", 3]];
+  const growth = gr || bl ? [el("div", { class: "head" }, el("h1", {}, "Wachstum und Bauweise")),
+    el("div", { class: "grid two" },
+      gr ? chartCard("Zuwachs der Spitze pro Tag", gr.gains.map(([d, n]) => [d, Math.max(n, 0)]), { until: s.generated }) : null,
+      bl && bl.length > 1 ? card("Die Bauweise", el("dl", { class: "facts" }, ...buildNames.flatMap(([name, k]) =>
+        [el("dt", {}, name), el("dd", {}, `${fmtDec(100 * bl[0][k], 1)} % -> ${fmtDec(100 * bl[bl.length - 1][k], 1)} %`)])),
+        el("p", { class: "note" }, `Durchschnittlicher Anteil am Ausrüstungswert, ${AB_DAY(bl[0][0])} gegen ${AB_DAY(bl[bl.length - 1][0])}`)) : null)] : [];
   const rec = f && f.records;
   const records = rec ? [el("div", { class: "head" }, el("h1", {}, "Rekorde")),
     el("div", { class: "grid two" },
@@ -2856,7 +2867,7 @@ async function viewSeason(s) {
       tile("Bosssiege der Gilden", fmtInt(bossWins), count(gb.guilds, "Gilde", "Gilden")),
       tile("Gespendet", fmtSilver(s.guilds.reduce((n, g) => n + (g.donated || 0), 0)), "in die Gildenkassen")),
     chartCard("Einstiegshürde (Platz 100)", s.top100.series, { until: s.generated })] : [];
-  const guildsEnd = f && s.guilds.some((g) => g.active >= 10) ? [el("div", { class: "head" }, el("h1", {}, "Das Gildenfinale")),
+  const guildsEnd = f && s.guilds.some((g) => g.active >= 10) ? [el("div", { class: "head" }, el("h1", {}, "Die Gilden zum Schluss")),
     guildTiles(s),
     card("Alle Gilden", el("div", { class: "scroll" }, table([
       { label: "Gilde", get: (g) => el("a", { href: `#/gilden/${g.login}` }, g.name) },
@@ -2870,7 +2881,7 @@ async function viewSeason(s) {
   const cards = el("div", { class: "grid season-share" },
     seasonShareCard("Ranglistenkarte", leader ? `${leader.name} · #1` : "Noch offen",
       leader ? `${fmtInt(leader.gear)} Ausrüstungswert` : "Noch keine Rangliste",
-      leader ? `${label}: ${leader.name} ${archived ? "beendet die Saison" : "steht aktuell"} auf Rang 1 mit ${fmtInt(leader.gear)} Ausrüstungswert.` : label),
+      leader ? `${label}: ${leader.name} ${over ? "beendet die Saison" : "steht aktuell"} auf Rang 1 mit ${fmtInt(leader.gear)} Ausrüstungswert.` : label),
     seasonShareCard("Bossjäger", count(total.wins, "Sieg", "Siege"), `${pct(total.wins, total.n)} der Kämpfe gewonnen`,
       `${label}: ${fmtInt(total.wins)} von ${fmtInt(total.n)} Kämpfen gewonnen.`),
     seasonShareCard("Stärkste Gilde", strongest ? strongest.name : "-",
@@ -2896,7 +2907,7 @@ async function viewSeason(s) {
     if (!first.has(row[0])) first.set(row[0], row);
   }
   const milestones = [...first.values()].slice(-8).reverse();
-  const moments = milestones.length ? card("Saisonmomente", el("div", { class: "milestones" }, ...milestones.map((r) =>
+  const moments = milestones.length ? card("Erste Bosssiege", el("div", { class: "milestones" }, ...milestones.map((r) =>
     el("div", { class: "milestone" }, el("span", { class: "muted" }, r[4] ? fmtSince(iso(r[4])) : "-"),
       el("div", {}, el("strong", {}, `${r[3] || r[2]} besiegt ${r[0]} zuerst`),
         el("div", { class: "note" }, "Erster Gildensieg laut Spiel")))))) : null;
@@ -2908,9 +2919,9 @@ async function viewSeason(s) {
       comparisonCard("Aktive Spieler", s.active, other.data.active),
       comparisonCard("Gewonnene Kämpfe", total.wins, other.data.stats.total.wins))] : [];
 
-  return [el("section", { class: "grid" }, intro, headline, ...stage, ...way, ...records, ...numbers, ...guildsEnd, moments,
+  return [el("section", { class: "grid" }, intro, headline, ...stage, ...way, ...growth, ...records, ...numbers, ...guildsEnd, moments,
     journey, el("div", { class: "head" }, el("h1", {}, "Zum Teilen")), cards, ...compare,
-    card(archived ? "Finale Rangliste" : "Aktuelle Top 10", table([
+    card(over ? "Die Top 10 zum Schluss" : "Aktuelle Top 10", table([
       { label: "#", num: true, get: (r) => fmtInt(r.rank) },
       { label: "Spieler", get: playerLink },
       { label: "Ausrüstungswert", short: "AW", num: true, get: (r) => fmtInt(r.gear) },
@@ -3429,7 +3440,7 @@ async function initSeasons() {
   try { SEASONS = await loadBase("seasons.json"); } catch { /* first build before the season index exists */ }
   const pick = $("season");
   pick.replaceChildren(el("option", { value: "live" }, SEASONS.current?.label || "Aktuelle Saison"),
-    el("option", { value: "report" }, "Aktueller Saisonbericht"),
+    el("option", { value: "report" }, "Saisonbericht"),
     ...SEASONS.archives.map((s) => el("option", { value: `archive:${s.id}` }, s.label)));
   pick.addEventListener("change", () => {
     if (pick.value.startsWith("archive:")) {

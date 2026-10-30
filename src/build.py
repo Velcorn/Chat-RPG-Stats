@@ -14,9 +14,7 @@ import statistics
 import time
 import tomllib
 from collections import defaultdict
-from datetime import datetime
 from pathlib import Path
-from zoneinfo import ZoneInfo
 
 import collect
 import fightstats
@@ -30,7 +28,6 @@ BOARD_GRID = 2 * 3600  # the top-100 time lapse has a frame every two hours
 PEERS_MIN = 8
 PEERS_CLASS_MIN = 20  # class peers for the stat bars: within 10 % of the gear score, else this many nearest
 PEERS_BAND = 4  # class peers from which on the stat bars show the band (10 % to 90 %)
-FINAL_BOSS_AT = datetime(2026, 10, 28, 18, 0, tzinfo=ZoneInfo("Europe/Berlin")).isoformat()  # announced by the game
 
 
 def replay(days: Path):
@@ -320,7 +317,6 @@ def build(data: Path, out: Path, now: float | None = None, include_archives: boo
                "top100": {"gear": top100_gear, "pace": rounded(top100_pace), "series": border_series,
                           "roles": top_roles},
                "guilds": sorted(guild_rows, key=lambda g: -(g.get("gear") or 0)),
-               "final_boss_at": FINAL_BOSS_AT,
                "fights": {"recent": recent_fights(h),
                           "total": len(h.fights)},
                "stats": summary_stats,

@@ -42,6 +42,11 @@ Die letzten 30 bisherigen Versionen sind diesen Tagesversionen zugeordnet:
 | 0.45.10 | 2026.10.15 |
 | 0.45.9 | 2026.10.15 |
 
+## 2026.10.30 (30.10.2026)
+
+### Entfernt
+- Die Karte "Letzter Boss" mit dem Countdown ist von der Startseite verschwunden: der Termin (28.10.2026) ist vorbei.
+
 ## 2026.10.28 (28.10.2026)
 
 ### Neu

@@ -97,11 +97,6 @@
   .stream .head { margin-bottom: 4px; }
   .stream .lines { display: grid; gap: 2px; margin: 8px 0; }
   .stream .lines div { display: flex; justify-content: space-between; gap: 8px; }
-  .key-card { background: linear-gradient(135deg, #211f2b, #18252d); border-color: #4e4962; }
-  .key-card > .head { align-items: flex-start; }
-  .key-finish { text-align: right; color: var(--text-secondary); }
-  .key-finish strong { display: block; color: #fff; font-size: 17px; }
-  @media (max-width: 760px) { .key-finish { text-align: left; } }
   h3 { font-size: 13px; margin: 14px 0 0; font-weight: 600; }
   .era { margin-bottom: 4px; }
   h2.section { font-size: 15px; margin: 10px 0 0; color: var(--text-secondary); }
@@ -1764,20 +1759,6 @@ function channelLines(c) {
     c.death != null ? el("div", {}, el("span", { class: "muted" }, "Gefallen in Siegen"), pctv(c.death)) : null);
 }
 
-function keyCard(s) {
-  const at = new Date(s.final_boss_at);
-  const label = at.toLocaleDateString("de-DE", { timeZone: TZ, weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" });
-  const time = at.toLocaleTimeString("de-DE", { timeZone: TZ, hour: "2-digit", minute: "2-digit" });
-  const hours = Math.floor((at - Date.now()) / 3600000);
-  const countdown = hours >= 24 ? `noch ${count(Math.floor(hours / 24), "Tag", "Tage")} ${count(hours % 24, "Stunde", "Stunden")}`
-    : hours >= 0 ? `noch ${count(hours, "Stunde", "Stunden")}` : "vorbei";
-  const box = card(null, el("div", { class: "head" },
-    el("div", {}, el("h2", {}, "Letzter Boss"), el("p", { class: "note" }, `${label}, ${time} Uhr`)),
-    el("div", { class: "key-finish" }, el("strong", {}, countdown))));
-  box.classList.add("key-card");
-  return box;
-}
-
 function viewStart(s) {
   const streams = Object.entries(s.channels).map(([login, live]) => ({ login, live, guild: s.guilds.find((g) => g.login === login) }))
     .sort((a, b) => (b.live - a.live) || ((b.guild?.avg_gear || 0) - (a.guild?.avg_gear || 0)));
@@ -1798,7 +1779,6 @@ function viewStart(s) {
       tile("Platz 1", top[0] ? playerLink(top[0]) : "-", top[0] ? `${fmtInt(top[0].gear)} Ausrüstungswert` : ""),
       tile("Kämpfe", fmtInt(t.n), t.n ? `${fmtInt(t.wins)} gewonnen, letzte ${fmtInt(s.stats.days)} Tage` : ""),
       tile("Gilden", fmtInt(s.guilds.length), `${fmtInt(s.guilds.reduce((n, g) => n + g.members, 0))} Mitglieder`)),
-    keyCard(s),
     card("Spieler suchen", el("div", { id: "hero-search" }), el("p", { class: "note" }, "Erfasst sind alle aktiven Gildenmitglieder und die Top 100.")),
     el("div", { class: "grid two" },
       card("Top 5 nach Ausrüstungswert", top.length ? [table([

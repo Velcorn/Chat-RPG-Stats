@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10.2.0
+      - uses: astral-sh/setup-uv@v10.3.3
       - run: uv sync --frozen
       # The same hooks as on every local commit: ruff, tests, plain punctuation, file hygiene.
       - run: uv run prek run --all-files --show-diff-on-failure
